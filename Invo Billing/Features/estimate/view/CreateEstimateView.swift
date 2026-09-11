@@ -166,7 +166,7 @@ struct CreateEstimateView: View {
             SelectItemSheet(selectedItems: $vm.items)
         }
         .sheet(isPresented: $vm.showScanner) {
-            ItemScannerView { scannedValue in
+            ItemScannerView(onCancel: { vm.showScanner = false }) { scannedValue in
                 vm.handleScannedCode(scannedValue)
             }
         }

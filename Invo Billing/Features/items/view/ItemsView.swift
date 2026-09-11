@@ -231,7 +231,7 @@ struct ItemsView: View {
                 BulkPrintLabelsScreen(items: vm.items.filter { selectedItemIDs.contains($0.id) })
             }
             .fullScreenCover(isPresented: $showLookupScanner) {
-                ItemScannerView { code in
+                ItemScannerView(onCancel: { showLookupScanner = false }) { code in
                     showLookupScanner = false
                     // Asks the server: the scanned item may be on a page that was never
                     // loaded, so checking only what is in memory would report "no match"
