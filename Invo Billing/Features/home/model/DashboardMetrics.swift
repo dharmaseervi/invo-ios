@@ -26,7 +26,11 @@ struct RevenueBlock: Codable {
     enum CodingKeys: String, CodingKey {
         case total
         case changePercent = "change_percent"
+        case trend
     }
+    /// Last seven days, oldest first. Optional so an older server that does not send
+    /// it still decodes — the chart falls back to hiding itself rather than lying.
+    let trend: [DailyRevenue]?
 }
 
 struct CountBlock: Codable {
@@ -51,4 +55,12 @@ struct RecentInvoice: Identifiable, Codable {
         case status
         case createdAt = "created_at"
     }
+}
+
+
+struct DailyRevenue: Codable, Identifiable {
+    let date: String
+    let total: Double
+
+    var id: String { date }
 }

@@ -298,6 +298,15 @@ struct InvoiceView: View {
                         InvoiceRowCard(invoice: invoice, vm: vm, isOverdue: isOverdue(invoice))
                     }
                     .buttonStyle(PlainButtonStyle())
+                    .task {
+                        await vm.loadMoreInvoices(currentItem: invoice)
+                    }
+                }
+
+                if vm.isLoadingMoreInvoices {
+                    ProgressView()
+                        .tint(.sAccent)
+                        .padding(.vertical, 12)
                 }
             }
             .padding(.horizontal, 20)

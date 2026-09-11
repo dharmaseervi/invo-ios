@@ -99,6 +99,8 @@ struct HomeView: View {
         }
     }
     
+    private var revenueTrend: [DailyRevenue]? { viewModel.dashboard?.revenue.trend }
+
     // MARK: - Revenue Card
     var revenueCard: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -140,21 +142,32 @@ struct HomeView: View {
                 )
             }
             
-            // Mini bar chart
-            HStack(alignment: .bottom, spacing: 3) {
-                ForEach(0..<7, id: \.self) { i in
-                    let heights: [CGFloat] = [28, 44, 34, 56, 40, 62, 48]
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(i == 6 ? Color.sAccent : Color.sMuted)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 3)
-                                .stroke(i == 6 ? Color.clear : Color.sBorder, lineWidth: 0.5)
-                        )
-                        .frame(maxWidth: .infinity)
-                        .frame(height: heights[i])
+            // Last seven days of real revenue. This previously drew a fixed set of bar
+            // heights — invented data on the dashboard of a billing app. Hidden
+            // entirely when the server sends no trend, rather than showing something
+            // made up.
+            if let trend = revenueTrend, !trend.isEmpty {
+                let peak = max(trend.map(\.total).max() ?? 0, 1)
+
+                HStack(alignment: .bottom, spacing: 3) {
+                    ForEach(Array(trend.enumerated()), id: \.element.id) { index, day in
+                        let isToday = index == trend.count - 1
+                        // Scaled against the week's peak, with a visible floor so a
+                        // zero-revenue day reads as an empty day rather than a gap.
+                        let height = max(3, CGFloat(day.total / peak) * 64)
+
+                        RoundedRectangle(cornerRadius: 3)
+                            .fill(isToday ? Color.sAccent : Color.sMuted)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 3)
+                                    .stroke(isToday ? Color.clear : Color.sBorder, lineWidth: 0.5)
+                            )
+                            .frame(maxWidth: .infinity)
+                            .frame(height: height)
+                    }
                 }
+                .frame(height: 64)
             }
-            .frame(height: 64)
         }
         .padding(16)
         .background(Color.sCard)

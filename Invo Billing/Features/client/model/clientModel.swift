@@ -17,6 +17,39 @@ struct ClientModel: Codable, Identifiable, Equatable {
     var city: String
     var state: String
     var pincode: String
+
+    /// Decoded defensively: every field except id and name is nullable in the database,
+    /// and a quick-sale Cash or UPI client is created with most of them blank. With the
+    /// synthesised decoder a single null failed the whole array, so one incomplete
+    /// client made the entire list disappear behind an error rather than showing a
+    /// blank field on one row.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(Int.self, forKey: .id)
+        company_id = try c.decodeIfPresent(Int.self, forKey: .company_id) ?? 0
+        name = try c.decodeIfPresent(String.self, forKey: .name) ?? ""
+        address = try c.decodeIfPresent(String.self, forKey: .address) ?? ""
+        email = try c.decodeIfPresent(String.self, forKey: .email) ?? ""
+        phone = try c.decodeIfPresent(String.self, forKey: .phone) ?? ""
+        city = try c.decodeIfPresent(String.self, forKey: .city) ?? ""
+        state = try c.decodeIfPresent(String.self, forKey: .state) ?? ""
+        pincode = try c.decodeIfPresent(String.self, forKey: .pincode) ?? ""
+    }
+
+    init(
+        id: Int, company_id: Int, name: String, address: String, email: String,
+        phone: String, city: String, state: String, pincode: String
+    ) {
+        self.id = id
+        self.company_id = company_id
+        self.name = name
+        self.address = address
+        self.email = email
+        self.phone = phone
+        self.city = city
+        self.state = state
+        self.pincode = pincode
+    }
 }
 
 /// Default "quick sale" accounts (Tally-style Cash/UPI ledgers) — just normal clients

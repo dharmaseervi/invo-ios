@@ -24,6 +24,8 @@ class InvoiceViewModel: ObservableObject {
     @Published var invoiceDetail: InvoiceDetailResponse?
     @Published var itemNames: [Int: String] = [:]
     @Published var isFetchingList = false
+    @Published var isLoadingMoreInvoices = false
+    @Published var hasMoreInvoices = false
     @Published var isFetchingDetail = false
     @Published var showScanner = false
     @Published var invoiceNumber: String = "Auto-generated"
@@ -266,14 +268,30 @@ class InvoiceViewModel: ObservableObject {
     }
 
     // MARK: - Fetch Invoice List
+
+    /// Page size. The server caps any request at 200.
+    private static let invoicePageSize = 50
+
+    /// Paging state. hasMoreInvoices goes false once a page comes back short, which is
+    /// what stops the list asking forever at the bottom.
+    private var invoiceOffset = 0
+    private var listCompanyID: Int?
+    private var listClientID: Int?
+
     func fetchInvoices(
         companyID: Int? = nil,
         clientID: Int? = nil,
-        limit: Int = 100,
+        limit: Int = invoicePageSize,
         offset: Int = 0
     ) async {
         isFetchingList = true
         defer { isFetchingList = false }
+
+        // Remembered so loadMoreInvoices can continue the same query.
+        listCompanyID = companyID
+        listClientID = clientID
+        invoiceOffset = 0
+        hasMoreInvoices = false
 
         do {
             let response = try await service.getInvoices(
@@ -283,6 +301,8 @@ class InvoiceViewModel: ObservableObject {
                 offset: offset
             )
             invoices = response.data
+            invoiceOffset = response.data.count
+            hasMoreInvoices = response.data.count >= limit
         } catch let error as NSError {
             // Handle 404 "No invoices found" gracefully
             if error.code == 404 {
@@ -292,6 +312,37 @@ class InvoiceViewModel: ObservableObject {
             showError(error.localizedDescription)
         } catch {
             showError(error.localizedDescription)
+        }
+    }
+
+    /// Loads the next page as the list nears its end.
+    ///
+    /// The list previously fetched a fixed first 100 and never advanced the offset, so
+    /// past a hundred invoices the older ones vanished from the list and from search —
+    /// and the Outstanding total on the summary card silently under-reported what was
+    /// actually owed, because it is computed from the loaded rows.
+    func loadMoreInvoices(currentItem invoice: InvoiceResponse) async {
+        guard !isLoadingMoreInvoices, hasMoreInvoices else { return }
+        guard let index = invoices.firstIndex(where: { $0.id == invoice.id }),
+              index >= invoices.count - 10 else { return }
+
+        isLoadingMoreInvoices = true
+        defer { isLoadingMoreInvoices = false }
+
+        do {
+            let response = try await service.getInvoices(
+                companyID: listCompanyID ?? SessionManager.shared.selectedCompanyId,
+                clientID: listClientID,
+                limit: Self.invoicePageSize,
+                offset: invoiceOffset
+            )
+            let existing = Set(invoices.map(\.id))
+            invoices.append(contentsOf: response.data.filter { !existing.contains($0.id) })
+            invoiceOffset += response.data.count
+            hasMoreInvoices = response.data.count >= Self.invoicePageSize
+        } catch {
+            // A failed page should not replace a list that already has content.
+            hasMoreInvoices = false
         }
     }
 
