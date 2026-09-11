@@ -168,11 +168,30 @@ extension PDFLookView {
     
     private func present(_ vc: UIViewController) {
         guard
-            let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-            let root = scene.windows.first?.rootViewController
+            let scene = UIApplication.shared.connectedScenes
+                .compactMap({ $0 as? UIWindowScene })
+                .first(where: { $0.activationState == .foregroundActive })
+                ?? UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first,
+            let window = scene.windows.first(where: { $0.isKeyWindow }) ?? scene.windows.first,
+            var top = window.rootViewController
         else { return }
-        
-        root.present(vc, animated: true)
+
+        // This view is itself shown inside a sheet, so the root controller is already
+        // presenting something — asking it to present again does nothing at all, which is
+        // why Share, Save to Files and Print were silently dead. Walk to whatever is
+        // actually on top and present from there.
+        while let presented = top.presentedViewController {
+            top = presented
+        }
+
+        // On iPad an activity or document picker is a popover and needs an anchor.
+        if let popover = vc.popoverPresentationController {
+            popover.sourceView = top.view
+            popover.sourceRect = CGRect(x: top.view.bounds.midX, y: top.view.bounds.midY, width: 0, height: 0)
+            popover.permittedArrowDirections = []
+        }
+
+        top.present(vc, animated: true)
     }
 }
 

@@ -434,6 +434,20 @@ class InvoiceViewModel: ObservableObject {
         discount = 0
     }
 
+    /// Deletes a draft invoice. Returns true so the caller can dismiss the detail screen,
+    /// which would otherwise sit there showing an invoice that no longer exists.
+    func deleteInvoice(invoiceID: Int) async -> Bool {
+        isLoading = true
+        defer { isLoading = false }
+        do {
+            try await service.deleteInvoice(invoiceID: invoiceID)
+            return true
+        } catch {
+            showError(error.localizedDescription)
+            return false
+        }
+    }
+
     private func showError(_ message: String) {
         errorMessage = message
         showAlert = true

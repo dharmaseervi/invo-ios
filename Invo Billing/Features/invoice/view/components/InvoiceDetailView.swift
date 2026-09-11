@@ -409,6 +409,23 @@ struct InvoiceDetailView: View {
             }
         }
         .confirmationDialog(
+            "Delete this invoice?",
+            isPresented: $showDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Delete invoice", role: .destructive) {
+                Task {
+                    isDeleting = true
+                    let deleted = await vm.deleteInvoice(invoiceID: invoiceID)
+                    isDeleting = false
+                    if deleted { dismiss() }
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This draft will be removed permanently. Issued invoices cannot be deleted — reverse those with a credit note.")
+        }
+        .confirmationDialog(
             "Select Copy",
             isPresented: $vm.showCopyPicker,
             titleVisibility: .visible

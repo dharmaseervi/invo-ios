@@ -521,7 +521,17 @@ final class InvoiceService {
                 ]
             )
         default:
-            // Try to parse error message
+            // The API reports failures as {"error": "..."} — read that first so the real
+            // reason (e.g. the invoice has payments against it) reaches the user instead
+            // of a generic message.
+            if let payload = try? JSONDecoder().decode([String: String].self, from: data),
+               let reason = payload["error"], !reason.isEmpty {
+                throw NSError(
+                    domain: "Invoice",
+                    code: http.statusCode,
+                    userInfo: [NSLocalizedDescriptionKey: reason]
+                )
+            }
             if let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data) {
                 throw NSError(
                     domain: "Invoice",

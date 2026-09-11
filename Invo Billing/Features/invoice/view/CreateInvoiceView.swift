@@ -80,7 +80,13 @@ struct CreateInvoiceView: View {
                     }
                     Spacer()
                     Button(action: {
-                        Task { await vm.createInvoice() }
+                        // Dismiss on success. Without this the form silently blanks and
+                        // the screen stays put, which reads as failure — users re-enter
+                        // the invoice and submit again, creating a duplicate under a
+                        // second invoice number.
+                        Task {
+                            if await vm.createInvoice() { dismiss() }
+                        }
                     }) {
                         HStack(spacing: 8) {
                             if vm.isLoading {
