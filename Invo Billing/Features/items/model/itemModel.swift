@@ -8,9 +8,10 @@
 struct ItemRequestDTO: Codable {
     let company_id: Int
     let name: String
-    let category_id: Int?     // <-- FIX NAME
+    let category_id: Int?
     let sku: String
-    let hsn_code: String       // ← add
+    let hsn_code: String
+    let unit: String?
     let description: String
     let cost_price: Double
     let price: Double
@@ -24,9 +25,11 @@ struct CategoryModel: Codable, Identifiable {
     let name: String
 }
 
-struct CategoryRequest: Codable{
+struct CategoryRequest: Codable {
     let name: String
     let company_id: Int
+    let default_hsn_code: String?
+    let default_tax_rate: Double?
 }
 
 struct CategoryResponse: Codable, Identifiable {
@@ -34,13 +37,15 @@ struct CategoryResponse: Codable, Identifiable {
     let name: String
     let user_id: Int
     let company_id: Int
+    let default_hsn_code: String?
+    let default_tax_rate: Double?
 }
 
 struct CategoryListResponse: Codable {
     let categories: [CategoryResponse]
 }
 
-struct ItemResponse: Codable, Identifiable {
+struct ItemResponse: Codable, Identifiable, Hashable {
     let id: Int
     let name: String
     let category_id: Int?

@@ -35,13 +35,40 @@ struct ItemDetailsSection: View {
                 )
                 .focused($focusedField, equals: .name)
 
-                FormFieldHalf(
-                    title: "SKU / Barcode",
-                    placeholder: "Product code",
-                    text: $vm.sku,
-                    focused: focusedField == .sku
-                )
-                .focused($focusedField, equals: .sku)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("SKU / Barcode")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.sForeground)
+
+                    HStack(spacing: 8) {
+                        TextField("Product code", text: $vm.sku)
+                            .font(.system(size: 14))
+                            .foregroundColor(.sForeground)
+                            .tint(.sAccent)
+                            .autocorrectionDisabled()
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 10)
+                            .background(Color.sCard)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color.sInput, lineWidth: 0.5)
+                            )
+                            .cornerRadius(8)
+                            .focused($focusedField, equals: .sku)
+
+                        Button {
+                            vm.sku = ItemViewModel.generateSKU()
+                        } label: {
+                            Text("Generate")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(.sAccent)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 10)
+                                .background(Color.sAccentMuted)
+                                .cornerRadius(8)
+                        }
+                    }
+                }
 
                 // HSN Code field
                 VStack(alignment: .leading, spacing: 6) {
@@ -108,7 +135,12 @@ struct ItemDetailsSection: View {
 struct UnitPicker: View {
     @Binding var selectedUnit: String?
 
-    let units = ["Pieces", "Box", "Kg", "Liter", "Bag"]
+    let units = [
+        "Pieces", "Box", "Pair", "Set", "Dozen",
+        "Kg", "Gram", "Liter", "ML",
+        "Meter", "Feet", "Roll",
+        "Bag", "Packet", "Carton", "Bundle",
+    ]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -165,6 +197,7 @@ struct CategoryPicker: View {
                 ForEach(vm.categories) { cat in
                     Button {
                         vm.selectedCategoryId = cat.id
+                        vm.applyCategoryDefaults(cat)
                     } label: {
                         Text(cat.name)
                     }

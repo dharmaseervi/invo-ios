@@ -32,3 +32,6 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
+
+# Brother SDK download (vendor samples + docs) — only the .xcframework is needed to build
+BrotherSDK_bpsdki4130/

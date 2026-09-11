@@ -24,14 +24,22 @@ struct PricingStockSection: View {
 
             VStack(spacing: 12) {
                 HStack(spacing: 10) {
-                    FormFieldHalf(
-                        title: "Cost price",
-                        placeholder: "₹0.00",
-                        text: $vm.costPrice,
-                        keyboardType: .decimalPad,
-                        focused: focusedField == .costPrice
-                    )
-                    .focused($focusedField, equals: .costPrice)
+                    VStack(alignment: .leading, spacing: 4) {
+                        FormFieldHalf(
+                            title: "Cost price",
+                            placeholder: "₹0.00",
+                            text: $vm.costPrice,
+                            keyboardType: .decimalPad,
+                            focused: focusedField == .costPrice
+                        )
+                        .focused($focusedField, equals: .costPrice)
+
+                        if let cost = Double(vm.costPrice), cost > 0 {
+                            Text("Label code: \(CostPriceCoder.encode(cost))")
+                                .font(.system(size: 10))
+                                .foregroundColor(.sMutedFG)
+                        }
+                    }
 
                     FormFieldHalf(
                         title: "Selling price",
@@ -63,18 +71,60 @@ struct PricingStockSection: View {
                     .focused($focusedField, equals: .lowAlert)
                 }
 
-                FormField(
-                    title: "Tax rate (%)",
-                    placeholder: "e.g. 18",
-                    text: $vm.taxRate,
-                    keyboardType: .decimalPad,
-                    focused: focusedField == .taxRate
-                )
-                .focused($focusedField, equals: .taxRate)
+                TaxRatePicker(taxRate: $vm.taxRate)
             }
             .padding(.horizontal, 20)
         }
         .padding(.top, 20)
+    }
+}
+
+// MARK: - Tax Rate Picker (GST slabs — 5%, 12%, 18% cover almost everything)
+struct TaxRatePicker: View {
+    @Binding var taxRate: String
+
+    private let options = ["5", "12", "18"]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Tax rate (GST %)")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(.sForeground)
+
+            Menu {
+                ForEach(options, id: \.self) { rate in
+                    Button {
+                        taxRate = rate
+                    } label: {
+                        if taxRate == rate {
+                            Label("\(rate)%", systemImage: "checkmark")
+                        } else {
+                            Text("\(rate)%")
+                        }
+                    }
+                }
+            } label: {
+                HStack {
+                    Text(taxRate.isEmpty ? "Select" : "\(taxRate)%")
+                        .font(.system(size: 14))
+                        .foregroundColor(.sForeground)
+
+                    Spacer()
+
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.sMutedFG)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(Color.sCard)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.sInput, lineWidth: 0.5)
+                )
+                .cornerRadius(8)
+            }
+        }
     }
 }
 

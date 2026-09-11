@@ -8,13 +8,118 @@
 import Combine
 import Foundation
 
+struct ItemServiceError: LocalizedError {
+    let message: String
+    var errorDescription: String? { message }
+}
+
+private struct APIErrorBody: Decodable {
+    let error: String?
+}
+
 class ItemService {
     private let baseURL = AppEnvironment.baseURL
 
     init() {}
 
+    /// Throws ItemServiceError with the server's own message when the response
+    /// isn't one of `okStatuses` — e.g. a duplicate-SKU 409 becomes a real message
+    /// instead of a generic "failed to save".
+    private func decodeErrorIfNeeded(data: Data, response: URLResponse, okStatuses: Set<Int>) throws {
+        guard let http = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+        guard !okStatuses.contains(http.statusCode) else { return }
+
+        if let body = try? JSONDecoder().decode(APIErrorBody.self, from: data), let message = body.error {
+            throw ItemServiceError(message: message)
+        }
+        throw URLError(.badServerResponse)
+    }
+
     func createItem(payload: ItemRequestDTO) async throws -> Bool {
         guard let url = URL(string: "\(baseURL)/items") else {
+            throw URLError(.badURL)
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        if let token = KeychainManager.shared.loadToken() {
+            request.setValue(
+                "Bearer \(token)",
+                forHTTPHeaderField: "Authorization"
+            )
+        }
+
+        request.httpBody = try JSONEncoder().encode(payload)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try decodeErrorIfNeeded(data: data, response: response, okStatuses: [201])
+        return true
+    }
+
+    func updateItem(id: Int, payload: ItemRequestDTO) async throws -> Bool {
+        guard let url = URL(string: "\(baseURL)/items/\(id)") else {
+            throw URLError(.badURL)
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        if let token = KeychainManager.shared.loadToken() {
+            request.setValue(
+                "Bearer \(token)",
+                forHTTPHeaderField: "Authorization"
+            )
+        }
+
+        request.httpBody = try JSONEncoder().encode(payload)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try decodeErrorIfNeeded(data: data, response: response, okStatuses: [200])
+        return true
+    }
+
+    func loadItems(companyId: Int) async throws -> [ItemResponse] {
+
+        guard let url = URL(string: "\(baseURL)/items/\(companyId)/all") else {
+            throw URLError(.badURL)
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+
+        if let token = KeychainManager.shared.loadToken() {
+            request.setValue(
+                "Bearer \(token)",
+                forHTTPHeaderField: "Authorization"
+            )
+        }
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+        // A 401 has to be told apart from a server error: retrying a rejected token can
+        // never succeed, so the screen needs to say "sign in again" rather than offering
+        // a Try again button that is guaranteed to fail.
+        if http.statusCode == 401 {
+            throw SessionExpiredError()
+        }
+        guard http.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+
+        let decode = try JSONDecoder().decode(ItemListResponse.self, from: data)
+        
+        return decode.items
+    }
+    
+    func restockItem(id: Int, payload: RestockRequestDTO) async throws -> Bool {
+        guard let url = URL(string: "\(baseURL)/item/\(id)/restock") else {
             throw URLError(.badURL)
         }
 
@@ -36,36 +141,9 @@ class ItemService {
             throw URLError(.badServerResponse)
         }
 
-        return http.statusCode == 201
+        return http.statusCode == 200
     }
 
-    func loadItems(companyId: Int) async throws -> [ItemResponse] {
-
-        guard let url = URL(string: "\(baseURL)/items/\(companyId)/all") else {
-            throw URLError(.badURL)
-        }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-
-        if let token = KeychainManager.shared.loadToken() {
-            request.setValue(
-                "Bearer \(token)",
-                forHTTPHeaderField: "Authorization"
-            )
-        }
-
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, http.statusCode == 200
-        else {
-            throw URLError(.badServerResponse)
-        }
-
-        let decode = try JSONDecoder().decode(ItemListResponse.self, from: data)
-        
-        return decode.items
-    }
-    
     func getItemByID(_ id: Int) async throws -> [ItemResponse] {
         
         guard let url = URL(string: "\(baseURL)/item/\(id)/one") else {
@@ -147,7 +225,12 @@ class CategoryService: ObservableObject {
     }
 
     // POST create category
-    func createCategory(name: String, companyId: Int) async throws {
+    func createCategory(
+        name: String,
+        companyId: Int,
+        defaultHSNCode: String? = nil,
+        defaultTaxRate: Double? = nil
+    ) async throws {
         let url = URL(string: "\(baseURL)/categories")!
 
         var req = URLRequest(url: url)
@@ -158,7 +241,12 @@ class CategoryService: ObservableObject {
             req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
 
-        let payload = CategoryRequest(name: name, company_id: companyId)
+        let payload = CategoryRequest(
+            name: name,
+            company_id: companyId,
+            default_hsn_code: defaultHSNCode,
+            default_tax_rate: defaultTaxRate
+        )
 
         req.httpBody = try JSONEncoder().encode(payload)
 

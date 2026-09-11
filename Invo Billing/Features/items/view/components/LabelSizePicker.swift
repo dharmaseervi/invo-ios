@@ -14,7 +14,13 @@ struct PrintLabelScreen: View {
     @State private var codeType: LabelCodeType = .qr
     @State private var quantity: Int = 1
     @State private var shareImage: UIImage?
+    @State private var isPrinting = false
+    @State private var printError: String?
+    @State private var selectedPrinter: DiscoveredPrinter?
+    @State private var autoCut = true
 
+    @StateObject private var printerManager = LabelPrinterManager.shared
+    @StateObject private var styleManager = LabelStyleManager.shared
     @Environment(\.displayScale) private var displayScale
     @Environment(\.dismiss) private var dismiss
 
@@ -23,7 +29,8 @@ struct PrintLabelScreen: View {
             item: item,
             size: selectedSize,
             codeType: codeType,
-            scale: displayScale
+            scale: displayScale,
+            style: styleManager.style
         )
     }
 
@@ -35,8 +42,10 @@ struct PrintLabelScreen: View {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 24) {
                         preview
+                        PrinterPickerSection(selectedPrinter: $selectedPrinter, autoCut: $autoCut)
                         codeTypeSection
                         sizeSection
+                        LabelStyleSection()
                         quantitySection
                     }
                     .padding(20)
@@ -52,6 +61,14 @@ struct PrintLabelScreen: View {
             set: { shareImage = $0?.image }
         )) { wrapper in
             ActivityView(activityItems: [wrapper.image])
+        }
+        .alert("Couldn't print", isPresented: Binding(
+            get: { printError != nil },
+            set: { if !$0 { printError = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(printError ?? "")
         }
     }
 
@@ -82,8 +99,54 @@ struct PrintLabelScreen: View {
             Text("\(selectedSize.subtitle) label · \(codeType.rawValue)")
                 .font(.system(size: 12))
                 .foregroundColor(.sMutedFG)
+
+            Text(includedSummary)
+                .font(.system(size: 11))
+                .foregroundColor(.sMutedFG)
+                .multilineTextAlignment(.center)
+
+            if let warning = dataWarning {
+                Text(warning)
+                    .font(.system(size: 11))
+                    .foregroundColor(Color(red: 0.851, green: 0.588, blue: 0.082))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 24)
+            }
         }
         .frame(maxWidth: .infinity)
+    }
+
+    /// Spells out what actually lands on the label. A toggle can be switched on while the
+    /// item has no SKU or cost price to print, and the label then comes out of the printer
+    /// silently missing that line — this makes the reason visible before wasting a label.
+    private var includedSummary: String {
+        let style = styleManager.style
+        var fields = ["Name"]
+
+        if style.template == .compact {
+            if style.showPrice { fields.append("Price") }
+        } else {
+            if style.showPrice { fields.append("Price") }
+            if style.showID, !(item.sku ?? "").isEmpty { fields.append("SKU") }
+            if style.showCostCode, (item.cost_price ?? 0) > 0 { fields.append("Cost code") }
+        }
+
+        return "Prints: " + fields.joined(separator: " · ")
+    }
+
+    private var dataWarning: String? {
+        let style = styleManager.style
+
+        if style.template == .compact, style.showID || style.showCostCode {
+            return "Compact prints name and price only — switch template to include SKU or cost code."
+        }
+
+        var missing: [String] = []
+        if style.showID, (item.sku ?? "").isEmpty { missing.append("no SKU") }
+        if style.showCostCode, (item.cost_price ?? 0) <= 0 { missing.append("no cost price") }
+        guard !missing.isEmpty else { return nil }
+
+        return "This item has \(missing.joined(separator: " and ")) — that line won't print."
     }
 
     // MARK: - Code type
@@ -127,7 +190,7 @@ struct PrintLabelScreen: View {
                 .font(.system(size: 13, weight: .medium))
                 .foregroundColor(.sMutedFG)
 
-            HStack(spacing: 8) {
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
                 ForEach(LabelSize.allCases, id: \.self) { size in
                     let isSelected = selectedSize == size
                     Button {
@@ -214,11 +277,15 @@ struct PrintLabelScreen: View {
                 }
 
                 Button {
-                    printLabel()
+                    Task { await printLabel() }
                 } label: {
                     HStack(spacing: 6) {
-                        Image(systemName: "printer.fill")
-                        Text("Print\(quantity > 1 ? " ×\(quantity)" : "")")
+                        if isPrinting {
+                            ProgressView().tint(.sAccentFG)
+                        } else {
+                            Image(systemName: "printer.fill")
+                            Text("Print\(quantity > 1 ? " ×\(quantity)" : "")")
+                        }
                     }
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.sAccentFG)
@@ -227,6 +294,7 @@ struct PrintLabelScreen: View {
                     .background(Color.sPrimary)
                     .cornerRadius(10)
                 }
+                .disabled(isPrinting)
             }
             .padding(.horizontal, 20)
         }
@@ -234,10 +302,23 @@ struct PrintLabelScreen: View {
         .background(Color.sBackground)
     }
 
-    private func printLabel() {
+    private func printLabel() async {
         guard let image = previewImage else { return }
         let images = Array(repeating: image, count: quantity)
-        PrintManager.printImages(images, jobName: "Label-\(item.name)")
+
+        isPrinting = true
+        defer { isPrinting = false }
+
+        do {
+            try await printerManager.activeService.print(
+                images: images,
+                jobName: "Label-\(item.name)",
+                printer: selectedPrinter,
+                autoCut: autoCut
+            )
+        } catch {
+            printError = error.localizedDescription
+        }
     }
 }
 

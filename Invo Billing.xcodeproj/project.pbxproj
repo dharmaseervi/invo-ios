@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		790BC1012EF0000000A31297 /* BRLMPrinterKit.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 790BC1002EF0000000A31297 /* BRLMPrinterKit.xcframework */; };
+		790BC1022EF0000000A31297 /* BRLMPrinterKit.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 790BC1002EF0000000A31297 /* BRLMPrinterKit.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
 /* Begin PBXCopyFilesBuildPhase section */
 		790BC0232EEFE54800A31297 /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
@@ -13,6 +18,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				790BC1022EF0000000A31297 /* BRLMPrinterKit.xcframework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -21,6 +27,7 @@
 
 /* Begin PBXFileReference section */
 		790BBF742EEEBDA100A31297 /* Invo Billing.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Invo Billing.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		790BC1002EF0000000A31297 /* BRLMPrinterKit.xcframework */ = {isa = PBXFileReference; expectedSignature = "AppleDeveloperProgram:5HCL85FLGW:Brother Industries, LTD."; lastKnownFileType = wrapper.xcframework; name = BRLMPrinterKit.xcframework; path = "Invo Billing/BRLMPrinterKit.xcframework"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -36,6 +43,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				790BC1012EF0000000A31297 /* BRLMPrinterKit.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -46,6 +54,7 @@
 			isa = PBXGroup;
 			children = (
 				790BBF762EEEBDA100A31297 /* Invo Billing */,
+				790BC1002EF0000000A31297 /* BRLMPrinterKit.xcframework */,
 				790BBF752EEEBDA100A31297 /* Products */,
 			);
 			sourceTree = "<group>";

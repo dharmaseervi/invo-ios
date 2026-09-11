@@ -44,8 +44,14 @@ struct ClientPickerView: View {
                         selectQuickSale(account)
                     } label: {
                         HStack(spacing: 8) {
-                            Image(systemName: account.icon)
-                                .font(.system(size: 13, weight: .semibold))
+                            if isProvisioningQuickSale {
+                                ProgressView()
+                                    .tint(.sAccent)
+                                    .scaleEffect(0.8)
+                            } else {
+                                Image(systemName: account.icon)
+                                    .font(.system(size: 13, weight: .semibold))
+                            }
                             Text(account.rawValue)
                                 .font(.system(size: 13, weight: .medium))
                         }
@@ -262,6 +268,11 @@ struct ClientPickerView: View {
                         }
                 }
                 .presentationDetents([.large])
+            }
+            .alert("Error", isPresented: $vm.showAlert) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(vm.errorMessage ?? "Something went wrong")
             }
         }
     }

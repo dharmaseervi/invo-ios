@@ -92,6 +92,10 @@ class ClientViewModel: ObservableObject {
             return
         }
         isLoading = true
+        // Same reason as the items list: its error state is driven purely by this value,
+        // so a successful retry has to clear it or the screen never comes back.
+        errorMessage = nil
+        showAlert = false
         defer { isLoading = false }
 
         do {
