@@ -1,0 +1,40 @@
+name: iOS
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build for simulator
+    # macOS runners bill at a higher rate than Linux, so this is one build job rather
+    # than a matrix: it exists to catch a broken compile before it reaches a device.
+    runs-on: macos-15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: xcodebuild -version
+
+      - name: Build
+        # Simulator build with signing off. Archiving needs a Distribution certificate,
+        # which cannot live in CI, and compiling is what this job verifies.
+        # BRLMPrinterKit.xcframework is committed, so the Brother code path compiles
+        # here exactly as it does locally rather than falling back to its stub.
+        #
+        # xcpretty is deliberately absent: piping through it would mask xcodebuild's
+        # exit status, and a build job that cannot fail is worse than no build job.
+        run: |
+          xcodebuild build \
+            -project "Invo Billing.xcodeproj" \
+            -scheme "Invo Billing" \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO
