@@ -64,4 +64,7 @@ struct ItemResponse: Codable, Identifiable, Hashable {
 
 struct ItemListResponse: Codable {
     let items: [ItemResponse]
+    /// Present only while more pages remain. Opaque — pass it straight back to the
+    /// server rather than trying to interpret it.
+    let next_cursor: String?
 }

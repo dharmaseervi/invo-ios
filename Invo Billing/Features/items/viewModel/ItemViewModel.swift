@@ -41,6 +41,19 @@ class ItemViewModel: ObservableObject {
     /// case, because retrying with the same dead token can only fail again.
     @Published var sessionExpired = false
 
+    /// Paging state. nextCursor is nil once the catalogue is exhausted, which is also
+    /// what stops the list asking for more forever at the bottom.
+    @Published var isLoadingMore = false
+    private var nextCursor: String?
+    private var activeSearch = ""
+    private var searchTask: Task<Void, Never>?
+
+    var hasMore: Bool { nextCursor != nil }
+
+    /// Page size. Large enough that a typical catalogue is one or two requests, small
+    /// enough that the first screen appears immediately on a slow connection.
+    private static let pageSize = 100
+
     /// Set when editing an existing item; nil means the form is creating a new one.
     @Published var editingItemId: Int?
     var isEditMode: Bool { editingItemId != nil }
@@ -199,6 +212,7 @@ class ItemViewModel: ObservableObject {
 
         isLoading = true
         items = []
+        nextCursor = nil
         // Cleared up front, not just on failure: the list screen renders its error state
         // whenever this is non-nil, so a stale message from an earlier attempt would keep
         // that screen up even after a retry successfully fetched the items.
@@ -208,7 +222,13 @@ class ItemViewModel: ObservableObject {
         defer { isLoading = false }
 
         do {
-            items = try await ItemService().loadItems(companyId: companyId)
+            let page = try await ItemService().loadItems(
+                companyId: companyId,
+                limit: Self.pageSize,
+                search: activeSearch.isEmpty ? nil : activeSearch
+            )
+            items = page.items
+            nextCursor = page.next_cursor
         } catch is SessionExpiredError {
             errorMessage = "Your session has expired. Sign out and sign in again."
             sessionExpired = true
@@ -217,6 +237,75 @@ class ItemViewModel: ObservableObject {
             errorMessage = "Couldn't reach the server. Check your connection and try again."
             showAlert = true
         }
+    }
+
+    /// Fetches the next page when the list nears its end. Guarded so overlapping
+    /// scroll events cannot fire several identical requests.
+    func loadMoreIfNeeded(currentItem item: ItemResponse) async {
+        guard !isLoadingMore, let cursor = nextCursor,
+              let companyId = SessionManager.shared.selectedCompanyId else { return }
+
+        // Trigger a few rows early so the next page is usually already there by the
+        // time the user reaches the bottom.
+        guard let index = items.firstIndex(where: { $0.id == item.id }),
+              index >= items.count - 10 else { return }
+
+        isLoadingMore = true
+        defer { isLoadingMore = false }
+
+        do {
+            let page = try await ItemService().loadItems(
+                companyId: companyId,
+                limit: Self.pageSize,
+                cursor: cursor,
+                search: activeSearch.isEmpty ? nil : activeSearch
+            )
+            // Guard against duplicates if a reload landed while this was in flight.
+            let existing = Set(items.map(\.id))
+            items.append(contentsOf: page.items.filter { !existing.contains($0.id) })
+            nextCursor = page.next_cursor
+        } catch {
+            // A failed page is not worth an error screen over a list that already has
+            // content; the user can scroll again to retry.
+            nextCursor = nil
+        }
+    }
+
+    /// Debounced server-side search. Filtering client-side only works when the whole
+    /// catalogue is loaded, which is exactly what pagination stops doing.
+    func search(_ query: String) {
+        searchTask?.cancel()
+        searchTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            guard !Task.isCancelled, let self else { return }
+            self.activeSearch = query.trimmingCharacters(in: .whitespaces)
+            await self.loadItems()
+        }
+    }
+
+    /// Looks a scanned code up on the server. The scanned item may be on a page that
+    /// was never loaded, so searching the in-memory list would report "no match" for
+    /// an item that exists.
+    func findByCode(_ code: String) async -> ItemResponse? {
+        guard let companyId = SessionManager.shared.selectedCompanyId else { return nil }
+
+        let sku = code.hasPrefix("ITEM_ID:") ? "" : code
+        if !sku.isEmpty {
+            if let page = try? await ItemService().loadItems(
+                companyId: companyId, limit: 25, search: sku
+            ) {
+                if let exact = page.items.first(where: { $0.sku?.caseInsensitiveCompare(sku) == .orderedSame }) {
+                    return exact
+                }
+            }
+        }
+
+        // This app's own printed labels encode ITEM_ID:<id>.
+        if let idPart = code.split(separator: ":").last, let id = Int(idPart) {
+            if let match = items.first(where: { $0.id == id }) { return match }
+            return try? await ItemService().getItemByID(id).first
+        }
+        return nil
     }
 
     func loadCategories() async {

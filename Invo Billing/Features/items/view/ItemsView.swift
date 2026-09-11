@@ -13,12 +13,10 @@ struct ItemsView: View {
     @State private var selectedItemIDs: Set<Int> = []
     @State private var showBulkPrint = false
 
-    var filteredItems: [ItemResponse] {
-        if searchText.isEmpty { return vm.items }
-        return vm.items.filter {
-            $0.name.localizedCaseInsensitiveContains(searchText)
-        }
-    }
+    // Filtering happens on the server now. Matching locally only works while the whole
+    // catalogue is in memory, which is exactly what paging stops doing — a local search
+    // would silently miss anything the user had not yet scrolled to.
+    var filteredItems: [ItemResponse] { vm.items }
 
     /// Matches a scanned code against an item — either this app's own printed label
     /// (encoded as "ITEM_ID:<id>", see PrintImageBuilder) or a real product SKU/barcode.
@@ -42,11 +40,14 @@ struct ItemsView: View {
                             .font(.system(size: 14))
                             .foregroundColor(.sMutedFG)
 
-                        TextField("Search items", text: $searchText)
+                        TextField("Search name or SKU", text: $searchText)
                             .font(.system(size: 14))
                             .foregroundColor(.sForeground)
                             .tint(.sAccent)
                             .autocorrectionDisabled()
+                            .onChange(of: searchText) { _, query in
+                                vm.search(query)
+                            }
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 10)
@@ -147,6 +148,22 @@ struct ItemsView: View {
                                             isSelectMode: isSelectMode,
                                             isSelected: selectedItemIDs.contains(item.id)
                                         )
+                                        .task {
+                                            // Runs as each row is built; the view model
+                                            // only fetches when near the end of the list.
+                                            await vm.loadMoreIfNeeded(currentItem: item)
+                                        }
+                                    }
+
+                                    if vm.isLoadingMore {
+                                        ProgressView()
+                                            .tint(.sAccent)
+                                            .padding(.vertical, 12)
+                                    } else if !vm.hasMore && filteredItems.count > 20 {
+                                        Text("All \(filteredItems.count) items loaded")
+                                            .font(.system(size: 12))
+                                            .foregroundColor(.sMutedFG)
+                                            .padding(.vertical, 12)
                                     }
                                 }
                                 .padding(20)
@@ -216,10 +233,15 @@ struct ItemsView: View {
             .fullScreenCover(isPresented: $showLookupScanner) {
                 ItemScannerView { code in
                     showLookupScanner = false
-                    if let match = ItemsView.matchScannedCode(code, in: vm.items) {
-                        lookupResult = match
-                    } else {
-                        lookupNotFoundCode = code
+                    // Asks the server: the scanned item may be on a page that was never
+                    // loaded, so checking only what is in memory would report "no match"
+                    // for an item that plainly exists.
+                    Task {
+                        if let match = await vm.findByCode(code) {
+                            lookupResult = match
+                        } else {
+                            lookupNotFoundCode = code
+                        }
                     }
                 }
                 .ignoresSafeArea()

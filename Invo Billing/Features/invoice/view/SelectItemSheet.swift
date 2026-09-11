@@ -8,10 +8,10 @@ struct SelectItemSheet: View {
     @State private var searchText = ""
     @State private var showAddItem = false
 
-    var filteredItems: [ItemResponse] {
-        if searchText.isEmpty { return vm.items }
-        return vm.items.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
-    }
+    // Server-side, like the items list: with a paged catalogue a local filter only
+    // searches what has been scrolled to, so building an invoice from a thousand
+    // products would appear to be missing most of them.
+    var filteredItems: [ItemResponse] { vm.items }
 
     var body: some View {
         NavigationStack {
@@ -27,7 +27,10 @@ struct SelectItemSheet: View {
                             .font(.system(size: 14))
                             .foregroundColor(.sMutedFG)
 
-                        TextField("Search items", text: $searchText)
+                        TextField("Search name or SKU", text: $searchText)
+                            .onChange(of: searchText) { _, query in
+                                vm.search(query)
+                            }
                             .font(.system(size: 14))
                             .foregroundColor(.sForeground)
                             .tint(.sAccent)
@@ -169,6 +172,15 @@ struct SelectItemSheet: View {
                                             dismiss()
                                         }
                                     )
+                                    .task {
+                                        await vm.loadMoreIfNeeded(currentItem: item)
+                                    }
+                                }
+
+                                if vm.isLoadingMore {
+                                    ProgressView()
+                                        .tint(.sAccent)
+                                        .padding(.vertical, 12)
                                 }
                             }
                             .padding(.horizontal, 20)

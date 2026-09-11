@@ -83,9 +83,26 @@ class ItemService {
         return true
     }
 
-    func loadItems(companyId: Int) async throws -> [ItemResponse] {
+    /// One page of items. `cursor` continues a previous page; `search` filters on the
+    /// server so a catalogue of thousands never has to be downloaded to find one item.
+    func loadItems(
+        companyId: Int,
+        limit: Int? = nil,
+        cursor: String? = nil,
+        search: String? = nil
+    ) async throws -> ItemListResponse {
 
-        guard let url = URL(string: "\(baseURL)/items/\(companyId)/all") else {
+        guard var components = URLComponents(string: "\(baseURL)/items/\(companyId)/all") else {
+            throw URLError(.badURL)
+        }
+
+        var query: [URLQueryItem] = []
+        if let limit { query.append(URLQueryItem(name: "limit", value: String(limit))) }
+        if let cursor, !cursor.isEmpty { query.append(URLQueryItem(name: "cursor", value: cursor)) }
+        if let search, !search.isEmpty { query.append(URLQueryItem(name: "search", value: search)) }
+        components.queryItems = query.isEmpty ? nil : query
+
+        guard let url = components.url else {
             throw URLError(.badURL)
         }
 
@@ -113,9 +130,7 @@ class ItemService {
             throw URLError(.badServerResponse)
         }
 
-        let decode = try JSONDecoder().decode(ItemListResponse.self, from: data)
-        
-        return decode.items
+        return try JSONDecoder().decode(ItemListResponse.self, from: data)
     }
     
     func restockItem(id: Int, payload: RestockRequestDTO) async throws -> Bool {
