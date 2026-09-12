@@ -2,6 +2,9 @@ import SwiftUI
 import Combine
 
 struct InvoiceView: View {
+    #if DEBUG
+    @State private var debugFormOpen = false
+    #endif
     @StateObject private var vm = InvoiceViewModel()
     @State private var searchText = ""
     @State private var selectedFilter: InvoiceFilter = .all
@@ -115,6 +118,16 @@ struct InvoiceView: View {
                 Task { await vm.fetchInvoices() }
                 withAnimation(.easeOut(duration: 0.3)) { appearAnimation = true }
             }
+            // Debug builds accept -startScreen newinvoice so the creation form can be
+            // opened directly for a screenshot pass. Compiled out of release.
+            #if DEBUG
+            .navigationDestination(isPresented: $debugFormOpen) { CreateInvoiceView() }
+            .onAppear {
+                if UserDefaults.standard.string(forKey: "startScreen") == "newinvoice" {
+                    debugFormOpen = true
+                }
+            }
+            #endif
             .sheet(isPresented: $vm.showPDF) {
                 if let url = vm.pdfURL { PDFLookView(pdfURL: url) }
             }
