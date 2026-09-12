@@ -1,6 +1,9 @@
 import SwiftUI
 
 struct ClientView: View {
+    #if DEBUG
+    @State private var debugDetail = false
+    #endif
     @StateObject var vm = ClientViewModel()
     @EnvironmentObject var session: SessionManager
 
@@ -127,6 +130,16 @@ struct ClientView: View {
                 }
             }
             .navigationTitle("Clients")
+            #if DEBUG
+            .navigationDestination(isPresented: $debugDetail) {
+                if let first = filteredClients.first { ClientDetailedView(client: first) }
+            }
+            .onChange(of: filteredClients.count) { _ in
+                // onAppear fires before the list has loaded, so this waits for data.
+                if UserDefaults.standard.string(forKey: "startScreen") == "clientdetail",
+                   !filteredClients.isEmpty { debugDetail = true }
+            }
+            #endif
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

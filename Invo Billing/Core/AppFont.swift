@@ -68,3 +68,15 @@ private extension Font.Weight {
         }
     }
 }
+
+/// A date picker's label, allowed two lines so it wraps at the space rather than
+/// splitting mid-word: "Estimate date" rendered as "Estimat / e date" at a large text
+/// size, and forcing one line only turned that into "Estimate d…". Two lines breaks it
+/// as "Estimate / date", matching "Estimate number" in the row above.
+@ViewBuilder
+func datePickerLabel(_ text: String) -> some View {
+    Text(text)
+        .lineLimit(2)
+        .minimumScaleFactor(0.8)
+        .fixedSize(horizontal: false, vertical: true)
+}

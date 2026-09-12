@@ -1,6 +1,15 @@
 import SwiftUI
 
 struct ClientDetailedView: View {
+    private var hasContactDetails: Bool {
+        !client.email.isEmpty || !client.phone.isEmpty
+    }
+
+    private var hasAddress: Bool {
+        ![client.address, client.city, client.state, client.pincode]
+            .allSatisfy(\.isEmpty)
+    }
+
     let client: ClientModel
     @Environment(\.dismiss) var dismiss
 
@@ -18,12 +27,7 @@ struct ClientDetailedView: View {
 
                     // MARK: - Profile Header
                     VStack(spacing: 14) {
-                        Text(avatarLetter)
-                            .font(.scaled(32, weight: .semibold))
-                            .foregroundColor(.sAccentFG)
-                            .frame(width: 72, height: 72)
-                            .background(Color.sAccent)
-                            .cornerRadius(16)
+                        MinimalAvatarView(name: client.name, size: 72)
 
                         Text(client.name)
                             .font(.scaled(20, weight: .semibold))
@@ -32,6 +36,9 @@ struct ClientDetailedView: View {
                     .padding(.top, 20)
 
                     // MARK: - Contact Information Section
+                    // DetailInfoRow renders nothing for an empty value, so a client with
+                    // no email or phone left a card holding only its own heading.
+                    if hasContactDetails {
                     VStack(alignment: .leading, spacing: 0) {
                         Text("Contact information")
                             .font(.scaled(13, weight: .medium))
@@ -49,8 +56,10 @@ struct ClientDetailedView: View {
                     .background(Color.sCard)
                     .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
                     .cornerRadius(12)
+                    }
 
                     // MARK: - Address Section
+                    if hasAddress {
                     VStack(alignment: .leading, spacing: 0) {
                         Text("Address")
                             .font(.scaled(13, weight: .medium))
@@ -74,6 +83,7 @@ struct ClientDetailedView: View {
                     .background(Color.sCard)
                     .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
                     .cornerRadius(12)
+                    }
 
                     // MARK: - Invoices Section
                     VStack(alignment: .leading, spacing: 0) {

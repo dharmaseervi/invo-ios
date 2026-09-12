@@ -80,7 +80,9 @@ struct EditEstimateView: View {
 
                                 Rectangle().fill(Color.sBorder).frame(height: 0.5)
 
-                                DatePicker("Estimate date", selection: $vm.estimateDate, displayedComponents: .date)
+                                DatePicker(selection: $vm.estimateDate, displayedComponents: .date) {
+                                    datePickerLabel("Estimate date")
+                                }
                                     .font(.scaled(14))
                                     .padding(14)
 
@@ -93,7 +95,9 @@ struct EditEstimateView: View {
 
                                 if vm.hasExpiryDate {
                                     Rectangle().fill(Color.sBorder).frame(height: 0.5)
-                                    DatePicker("Valid until", selection: $vm.expiryDate, in: vm.estimateDate..., displayedComponents: .date)
+                                    DatePicker(selection: $vm.expiryDate, in: vm.estimateDate..., displayedComponents: .date) {
+                                        datePickerLabel("Valid until")
+                                    }
                                         .font(.scaled(14))
                                         .padding(14)
                                 }

@@ -62,6 +62,13 @@ struct EstimateListView: View {
         .fullScreenCover(isPresented: $showCreateEstimate) {
             NavigationStack { CreateEstimateView() }
         }
+        #if DEBUG
+        .onAppear {
+            if UserDefaults.standard.string(forKey: "startScreen") == "newestimate" {
+                showCreateEstimate = true
+            }
+        }
+        #endif
         .task { await vm.fetchEstimates() }
     }
 

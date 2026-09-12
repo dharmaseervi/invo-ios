@@ -8,6 +8,9 @@
 import SwiftUI
 
 struct ExpenseView: View {
+    #if DEBUG
+    @State private var debugExpenseForm = false
+    #endif
 
     @StateObject private var vm = ExpenseViewModel()
     @State private var showDeleteAlert = false
@@ -117,6 +120,12 @@ struct ExpenseView: View {
                 }
             }
             .navigationTitle("Expenses")
+            #if DEBUG
+            .navigationDestination(isPresented: $debugExpenseForm) { ExpenseFormView() }
+            .onAppear {
+                if UserDefaults.standard.string(forKey: "startScreen") == "expenseform" { debugExpenseForm = true }
+            }
+            #endif
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

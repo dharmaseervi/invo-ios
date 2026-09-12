@@ -102,9 +102,18 @@ struct ItemDetailsSection: View {
                         .cornerRadius(8)
                 }
 
-                HStack(spacing: 10) {
-                    UnitPicker(selectedUnit: $vm.unit)
-                    CategoryPicker(vm: vm)
+                // Side by side while they fit, stacked when they do not: at a large
+                // text size Unit wrapped to two lines while Category truncated to
+                // "Select c…", so the pair behaved two different ways in one row.
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 10) {
+                        UnitPicker(selectedUnit: $vm.unit)
+                        CategoryPicker(vm: vm)
+                    }
+                    VStack(spacing: 14) {
+                        UnitPicker(selectedUnit: $vm.unit)
+                        CategoryPicker(vm: vm)
+                    }
                 }
 
                 VStack(alignment: .leading, spacing: 6) {

@@ -2,6 +2,9 @@ import SwiftUI
 import Vision
 
 struct ItemsView: View {
+    #if DEBUG
+    @State private var debugItemForm = false
+    #endif
     @StateObject var vm = ItemViewModel()
     @State private var searchText = ""
     @State private var selectedItemForEdit: ItemResponse?
@@ -183,6 +186,12 @@ struct ItemsView: View {
                 }
             }
             .navigationTitle("Items")
+            #if DEBUG
+            .navigationDestination(isPresented: $debugItemForm) { ItemFormView() }
+            .onAppear {
+                if UserDefaults.standard.string(forKey: "startScreen") == "itemform" { debugItemForm = true }
+            }
+            #endif
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
