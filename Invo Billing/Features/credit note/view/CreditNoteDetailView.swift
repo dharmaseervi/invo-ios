@@ -229,27 +229,11 @@ private extension CreditNoteDetailView {
             .cornerRadius(6)
     }
     
+    /// One parser for every shape the API sends; the hand-rolled version here
+    /// fell through to returning the raw string, which is how a timestamp
+    /// like "2026-09-11T00:00:00Z" reached the screen.
     func formatDate(_ value: String) -> String {
-        let iso = ISO8601DateFormatter()
-        if let date = iso.date(from: value) {
-            let df = DateFormatter()
-            df.dateFormat = "dd MMM yyyy"
-            return df.string(from: date)
-        }
-        
-        let simple = DateFormatter()
-        simple.dateFormat = "yyyy-MM-dd"
-        // Pinned: an unpinned formatter follows the device calendar, so a phone set
-        // to the Indian National calendar sent 1948-06-21 for 12 September 2026.
-        simple.locale = Locale(identifier: "en_US_POSIX")
-        simple.calendar = Calendar(identifier: .gregorian)
-        if let date = simple.date(from: value) {
-            let df = DateFormatter()
-            df.dateFormat = "dd MMM yyyy"
-            return df.string(from: date)
-        }
-        
-        return value
+        AppDate.text(fromWire: value)
     }
 }
 

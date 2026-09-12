@@ -160,16 +160,24 @@ private struct EstimateRowCard: View {
                         .font(.scaled(14, weight: .medium))
                         .foregroundColor(.sForeground)
                         .lineLimit(1)
-                    HStack(spacing: 6) {
-                        Text(estimate.estimate_number)
-                        // The invoice row carries a date; this one did not, so the two
-                        // lists read as different kinds of record.
-                        Text("·")
-                        Text(AppDate.text(fromWire: estimate.estimate_date))
+                    // Side by side while they fit, stacked when they do not: at a large
+                    // text size both halves crushed to "EST… · Se…", which identifies
+                    // neither the estimate nor the date.
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: 6) {
+                            Text(estimate.estimate_number)
+                            Text("·")
+                            Text(AppDate.text(fromWire: estimate.estimate_date))
+                        }
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(estimate.estimate_number)
+                            Text(AppDate.text(fromWire: estimate.estimate_date))
+                        }
                     }
                     .font(.scaled(12))
                     .foregroundColor(.sMutedFG)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                 }
 
                 Spacer()

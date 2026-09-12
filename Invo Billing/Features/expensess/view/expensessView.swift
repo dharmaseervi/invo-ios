@@ -154,19 +154,11 @@ struct ExpenseView: View {
         }
     }
 
+    /// Parses whatever shape the API sends — this field comes back as a full
+    /// timestamp, which the old "yyyy-MM-dd"-only parser rejected, leaving
+    /// "2026-09-11T00:00:00Z" on screen.
     private func formatDate(_ raw: String) -> String {
-        let input = DateFormatter()
-        input.dateFormat = "yyyy-MM-dd"
-        // Pinned: an unpinned formatter follows the device calendar, so a phone set
-        // to the Indian National calendar sent 1948-06-21 for 12 September 2026.
-        input.locale = Locale(identifier: "en_US_POSIX")
-        input.calendar = Calendar(identifier: .gregorian)
-
-        guard let date = input.date(from: raw) else { return raw }
-
-        let output = DateFormatter()
-        output.dateFormat = "MMM dd"
-        return output.string(from: date)
+        AppDate.text(fromWire: raw)
     }
 }
 
@@ -224,18 +216,11 @@ struct ExpenseRowWithActions: View {
         .cornerRadius(10)
     }
 
+    /// Parses whatever shape the API sends — this field comes back as a full
+    /// timestamp, which the old "yyyy-MM-dd"-only parser rejected, leaving
+    /// "2026-09-11T00:00:00Z" on screen.
     private func formatDate(_ raw: String) -> String {
-        let input = DateFormatter()
-        input.dateFormat = "yyyy-MM-dd"
-        // Pinned: an unpinned formatter follows the device calendar, so a phone set
-        // to the Indian National calendar sent 1948-06-21 for 12 September 2026.
-        input.locale = Locale(identifier: "en_US_POSIX")
-        input.calendar = Calendar(identifier: .gregorian)
-        guard let date = input.date(from: raw) else { return raw }
-
-        let output = DateFormatter()
-        output.dateFormat = "MMM dd, yyyy"
-        return output.string(from: date)
+        AppDate.text(fromWire: raw)
     }
 }
 
@@ -258,6 +243,9 @@ struct ExpenseStatCard: View {
 
                 Text(value)
                     .font(.scaled(16, weight: .semibold))
+                    // These cards sit two to a row, so at a large text size the amount
+                    // truncated to "₹25,000…". Shrink rather than cut.
+                    .minimumScaleFactor(0.6)
                     .foregroundColor(.sForeground)
                     .lineLimit(1)
             }
