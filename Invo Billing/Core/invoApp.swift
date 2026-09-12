@@ -21,7 +21,9 @@ struct invoApp: App {
                 .tint(Color.sAccent)
                 .onChange(of: session.isAuthenticated) { isAuthenticated in
                     if isAuthenticated {
-                        PushNotificationManager.shared.requestAuthorization()
+                        // Not a permission prompt: only re-registers a token when the
+                        // person has already agreed. The ask lives in Settings.
+                        Task { await PushNotificationManager.shared.registerIfAlreadyAuthorized() }
                     }
                 }
         }

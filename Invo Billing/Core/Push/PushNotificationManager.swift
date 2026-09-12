@@ -50,14 +50,33 @@ final class PushNotificationManager {
         set { UserDefaults.standard.set(newValue, forKey: tokenDefaultsKey) }
     }
 
-    /// Call once the user is signed in — asks for permission (a no-op if already
-    /// answered) and, if granted, registers for a device token with APNs.
-    func requestAuthorization() {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
-            guard granted else { return }
-            Task { @MainActor in
-                UIApplication.shared.registerForRemoteNotifications()
-            }
+    /// Asks for permission and, if granted, registers for a device token.
+    ///
+    /// Called when someone turns notifications on in Settings, not at sign-in. Apple's
+    /// guidance is to "wait to request permission until people actually use an app
+    /// feature that requires access" (privacy.md), and asking the moment an account is
+    /// created — before there is a single invoice to be reminded about — is the prompt
+    /// people dismiss without reading.
+    @discardableResult
+    func requestAuthorization() async -> Bool {
+        let granted = (try? await UNUserNotificationCenter.current()
+            .requestAuthorization(options: [.alert, .sound, .badge])) ?? false
+        if granted {
+            UIApplication.shared.registerForRemoteNotifications()
+        }
+        return granted
+    }
+
+    /// Whether the person has already been asked, and what they said.
+    func authorizationStatus() async -> UNAuthorizationStatus {
+        await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
+    }
+
+    /// Re-registers for a token on launch when permission is already granted, so a
+    /// reinstall or a token rotation does not silently stop delivering.
+    func registerIfAlreadyAuthorized() async {
+        if await authorizationStatus() == .authorized {
+            UIApplication.shared.registerForRemoteNotifications()
         }
     }
 

@@ -1,6 +1,9 @@
 import SwiftUI
 
 struct MoreView: View {
+    @State private var notificationsOn = false
+    @State private var notificationsDenied = false
+
     #if DEBUG
     @State private var debugScreenOpen = false
     #endif
@@ -173,6 +176,15 @@ struct MoreView: View {
                                         value: defaultState.isEmpty ? "Not set" : defaultState
                                     )
                                 }
+
+                                rowDivider()
+
+                                // Apple requires an in-app way to change this choice:
+                                // "you must also provide an in-app settings screen that
+                                // lets people change their choice" (managing-notifications.md).
+                                // It is also where permission is now asked for, rather
+                                // than the moment an account is created.
+                                notificationRow
                             }
                             .padding(.horizontal, 14)
                             .background(Color.sCard)
@@ -452,6 +464,46 @@ struct MoreView: View {
     }
     #endif
 
+    /// Reminders about invoices that have become overdue. Off until asked for.
+    private var notificationRow: some View {
+        HStack {
+            MoreViewRow(icon: "bell.fill", label: "Overdue reminders", showsChevron: false)
+            Toggle("", isOn: Binding(
+                get: { notificationsOn },
+                set: { wanted in
+                    if wanted {
+                        Task {
+                            // Already refused once: iOS will not ask again, so the only
+                            // honest thing is to send them where they can change it.
+                            if notificationsDenied {
+                                openSystemSettings()
+                            } else {
+                                notificationsOn = await PushNotificationManager.shared.requestAuthorization()
+                                await refreshNotificationStatus()
+                            }
+                        }
+                    } else {
+                        // Turning them off is a system setting; the app cannot revoke it.
+                        openSystemSettings()
+                    }
+                }
+            ))
+            .labelsHidden()
+        }
+        .task { await refreshNotificationStatus() }
+    }
+
+    private func refreshNotificationStatus() async {
+        let status = await PushNotificationManager.shared.authorizationStatus()
+        notificationsOn = status == .authorized
+        notificationsDenied = status == .denied
+    }
+
+    private func openSystemSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(url)
+    }
+
     // MARK: - Helpers
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
@@ -474,6 +526,9 @@ struct MoreViewRow: View {
     let icon: String
     let label: String
     var value: String? = nil
+    /// A row that carries its own control — a toggle, say — is not tappable, so it must
+    /// not wear a disclosure chevron promising a screen that does not exist.
+    var showsChevron: Bool = true
 
     var body: some View {
         HStack(spacing: 14) {
@@ -494,9 +549,11 @@ struct MoreViewRow: View {
                     .foregroundColor(.sMutedFG)
             }
 
-            Image(systemName: "chevron.right")
-                .font(.scaled(12, weight: .semibold))
-                .foregroundColor(.sMutedFG)
+            if showsChevron {
+                Image(systemName: "chevron.right")
+                    .font(.scaled(12, weight: .semibold))
+                    .foregroundColor(.sMutedFG)
+            }
         }
         .padding(.vertical, 12)
     }
