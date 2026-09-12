@@ -405,20 +405,25 @@ struct InvoiceRowCard: View {
     }
 
     var daysInfo: String {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        // Pinned: an unpinned formatter follows the device calendar, so a phone set
-        // to the Indian National calendar sent 1948-06-21 for 12 September 2026.
-        f.locale = Locale(identifier: "en_US_POSIX")
-        f.calendar = Calendar(identifier: .gregorian)
-        guard let due = f.date(from: invoice.due_date) else { return "" }
-        let days = Calendar.current.dateComponents([.day], from: Date(), to: due).day ?? 0
-        if isOverdue { return "\(abs(days))d overdue" }
+        guard let due = AppDate.date(fromWire: invoice.due_date) else { return "" }
         if invoice.status == .paid { return "Paid" }
+
+        let days = Calendar.current.dateComponents(
+            [.day],
+            from: Calendar.current.startOfDay(for: Date()),
+            to: Calendar.current.startOfDay(for: due)
+        ).day ?? 0
+
+        // Counted in whole days from midnight, and "due today" is checked before
+        // "overdue": the overdue branch used to win for an invoice due today, so five
+        // rows on one screen read "0d overdue", which is not a thing.
         if days == 0 { return "Due today" }
         if days == 1 { return "Due tomorrow" }
-        if days < 0 { return "\(abs(days))d overdue" }
-        return "Due in \(days)d"
+        if days < 0 {
+            let late = abs(days)
+            return late == 1 ? "1 day overdue" : "\(late) days overdue"
+        }
+        return days == 1 ? "Due in 1 day" : "Due in \(days) days"
     }
 
     var body: some View {

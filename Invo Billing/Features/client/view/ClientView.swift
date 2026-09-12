@@ -199,18 +199,32 @@ struct ClientListRowView: View {
 }
 
 // MARK: - Minimal Avatar View
+/// The client initials shown beside a name, everywhere one appears.
+///
+/// There used to be two of these — a tinted circle with two initials on invoices, a
+/// solid violet square with one initial on estimates — for the same data on adjacent
+/// screens. This is the circle: lighter in a long list, and two letters tell "Sanjay"
+/// from "Sanya" where one cannot.
 struct MinimalAvatarView: View {
     let name: String
-    let size: CGFloat = 44
+    var size: CGFloat = 40
+
+    private var initials: String {
+        let parts = name.split(separator: " ").filter { !$0.isEmpty }
+        if parts.count >= 2 {
+            return String(parts[0].prefix(1) + parts[1].prefix(1)).uppercased()
+        }
+        return String(name.prefix(2)).uppercased()
+    }
 
     var body: some View {
-        let first = String(name.prefix(1)).uppercased()
-
-        Text(first)
-            .font(.scaled(14, weight: .semibold))
-            .foregroundColor(.sAccentFG)
-            .frame(width: size, height: size)
-            .background(Color.sAccent)
-            .cornerRadius(10)
+        ZStack {
+            Circle()
+                .fill(Color.sAccentMuted)
+                .frame(width: size, height: size)
+            Text(initials)
+                .font(.scaled(13, weight: .semibold))
+                .foregroundColor(.sAccent)
+        }
     }
 }

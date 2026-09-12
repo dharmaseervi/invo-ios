@@ -89,7 +89,7 @@ struct SummarySection: View {
                         Text("Total amount")
                             .font(.scaled(14, weight: .semibold))
                             .foregroundColor(.sForeground)
-                        Text("Amount due by invoice date")
+                        Text("Payable by the due date")
                             .font(.scaled(11))
                             .foregroundColor(.sMutedFG)
                     }

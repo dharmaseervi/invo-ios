@@ -293,7 +293,7 @@ struct MoreView: View {
                                 Text(appVersion)
                                     .font(.scaled(11))
                                     .foregroundColor(.sMutedFG)
-                                Text("© 2025 Invo Billing. All rights reserved.")
+                                Text("© \(Calendar.current.component(.year, from: Date())) Invo Billing. All rights reserved.")
                                     .font(.scaled(10))
                                     .foregroundColor(.sMutedFG)
                             }
@@ -303,7 +303,7 @@ struct MoreView: View {
                     }
                 }
             }
-            .navigationTitle("Settings")
+            .navigationTitle("More")
             .navigationBarTitleDisplayMode(.large)
             .task {
                 await vm.loadProfile()

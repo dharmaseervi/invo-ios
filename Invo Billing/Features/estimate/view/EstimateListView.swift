@@ -160,9 +160,16 @@ private struct EstimateRowCard: View {
                         .font(.scaled(14, weight: .medium))
                         .foregroundColor(.sForeground)
                         .lineLimit(1)
-                    Text(estimate.estimate_number)
-                        .font(.scaled(12))
-                        .foregroundColor(.sMutedFG)
+                    HStack(spacing: 6) {
+                        Text(estimate.estimate_number)
+                        // The invoice row carries a date; this one did not, so the two
+                        // lists read as different kinds of record.
+                        Text("·")
+                        Text(AppDate.text(fromWire: estimate.estimate_date))
+                    }
+                    .font(.scaled(12))
+                    .foregroundColor(.sMutedFG)
+                    .lineLimit(1)
                 }
 
                 Spacer()
