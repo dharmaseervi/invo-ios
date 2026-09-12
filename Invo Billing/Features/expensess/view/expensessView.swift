@@ -61,7 +61,7 @@ struct ExpenseView: View {
 
                                             ExpenseStatCard(
                                                 label: "Total amount",
-                                                value: "₹\(String(format: "%.0f", totalAmount))",
+                                                value: Money.text(totalAmount),
                                                 icon: "creditcard"
                                             )
                                         }
@@ -69,7 +69,7 @@ struct ExpenseView: View {
                                         HStack(spacing: 10) {
                                             ExpenseStatCard(
                                                 label: "Average",
-                                                value: "₹\(String(format: "%.0f", averageAmount))",
+                                                value: Money.text(averageAmount),
                                                 icon: "chart.bar"
                                             )
 
@@ -188,7 +188,7 @@ struct ExpenseRowWithActions: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: 4) {
-                Text("₹\(String(format: "%.2f", expense.amount))")
+                Text(Money.text(expense.amount))
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(.sForeground)
 

@@ -79,7 +79,7 @@ struct RecordPaymentView: View {
 
             if let due = vm.dueAmount {
                 VStack(alignment: .trailing, spacing: 2) {
-                    Text("₹\(String(format: "%.2f", due))")
+                    Text(Money.text(due))
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.sForeground)
                     Text("Due")
@@ -135,7 +135,7 @@ struct RecordPaymentView: View {
     private func quickAmountChip(label: String, amount: Double) -> some View {
         let isSelected = Double(vm.amount) == amount
         return Button {
-            vm.amount = String(format: "%.2f", amount)
+            vm.amount = Money.editable(amount)
         } label: {
             Text(label)
                 .font(.system(size: 12, weight: .medium))
@@ -254,7 +254,7 @@ struct RecordPaymentView: View {
                             .font(.system(size: 13))
                             .foregroundColor(.sForeground)
                         Spacer()
-                        Text("₹\(invoice.remainingAmount, specifier: "%.2f")")
+                        Text(Money.text(invoice.remainingAmount))
                             .font(.system(size: 13, weight: .medium))
                             .foregroundColor(.sForeground)
                     }

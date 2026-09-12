@@ -131,7 +131,7 @@ struct EditEstimateView: View {
                         Text("Total")
                             .font(.system(size: 11))
                             .foregroundColor(.sMutedFG)
-                        Text("₹\(String(format: "%.2f", vm.total))")
+                        Text(Money.text(vm.total))
                             .font(.system(size: 17, weight: .semibold))
                             .foregroundColor(.sForeground)
                     }

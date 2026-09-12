@@ -66,12 +66,6 @@ struct InvoiceView: View {
         }
     }
     
-    private func formatCompact(_ value: Double) -> String {
-        if value >= 100000 { return String(format: "%.1fL", value / 100000) }
-        if value >= 1000 { return String(format: "%.0fK", value / 1000) }
-        return String(format: "%.0f", value)
-    }
-    
     var body: some View {
         NavigationStack {
             ZStack {
@@ -225,7 +219,7 @@ struct InvoiceView: View {
                     Text("Outstanding")
                         .font(.system(size: 13))
                         .foregroundColor(.sMutedFG)
-                    Text("₹\(formatCompact(outstandingAmount))")
+                    Text(Money.compact(outstandingAmount))
                         .font(.system(size: 28, weight: .bold))
                         .foregroundColor(.sForeground)
                 }
@@ -250,7 +244,7 @@ struct InvoiceView: View {
             Rectangle().fill(Color.sBorder).frame(height: 0.5)
 
             HStack(spacing: 0) {
-                summaryStat(label: "Invoiced", value: "₹\(formatCompact(totalAmount))")
+                summaryStat(label: "Invoiced", value: Money.compact(totalAmount))
                 Rectangle().fill(Color.sBorder).frame(width: 0.5, height: 30)
                 summaryStat(label: "Paid", value: "\(paidCount)")
                 Rectangle().fill(Color.sBorder).frame(width: 0.5, height: 30)
@@ -457,7 +451,7 @@ struct InvoiceRowCard: View {
                 Spacer()
 
                 VStack(alignment: .trailing, spacing: 5) {
-                    Text("₹\(String(format: "%.0f", invoice.total))")
+                    Text(Money.text(invoice.total))
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.sForeground)
                     Text(statusConfig.label)

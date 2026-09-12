@@ -54,7 +54,7 @@ final class RecordPaymentViewModel: ObservableObject {
 
         // Auto-fill amount for invoice flow
         if case let .invoice(_, remaining) = context {
-            self.amount = String(format: "%.2f", remaining)
+            self.amount = Money.editable(remaining)
         }
 
     }

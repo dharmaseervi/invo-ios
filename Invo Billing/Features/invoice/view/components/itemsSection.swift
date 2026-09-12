@@ -65,7 +65,7 @@ struct ItemsSection: View {
                             .font(.system(size: 12))
                             .foregroundColor(.sMutedFG)
                         Spacer()
-                        Text("₹\(String(format: "%.2f", totalAmount))")
+                        Text(Money.text(totalAmount))
                             .font(.system(size: 13))
                             .foregroundColor(.sForeground)
                     }
@@ -189,14 +189,14 @@ struct ItemRowZara: View {
                         .foregroundColor(.sMutedFG)
                     Text("•")
                         .foregroundColor(.sMutedFG)
-                    Text("₹\(String(format: "%.2f", item.rate))")
+                    Text(Money.text(item.rate))
                         .font(.system(size: 11))
                         .foregroundColor(.sMutedFG)
 
                     if item.discount > 0 {
                         Text("•")
                             .foregroundColor(.sMutedFG)
-                        Text("Disc: ₹\(String(format: "%.2f", item.discount))")
+                        Text("Disc: \(Money.text(item.discount))")
                             .font(.system(size: 11))
                             .foregroundColor(.sMutedFG)
                     }
@@ -206,7 +206,7 @@ struct ItemRowZara: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: 8) {
-                Text("₹\(String(format: "%.2f", item.total))")
+                Text(Money.text(item.total))
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(.sForeground)
 
@@ -521,7 +521,7 @@ struct SummaryLineZara: View {
 
             Spacer()
 
-            Text("₹\(String(format: "%.2f", value))")
+            Text(Money.text(value))
                 .font(.system(size: isTotal ? 14 : 12, weight: isTotal ? .semibold : .regular))
                 .foregroundColor(.sForeground)
         }

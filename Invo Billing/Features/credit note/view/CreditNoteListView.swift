@@ -418,13 +418,10 @@ struct CreditNoteListView: View {
     }
 
     // MARK: - Helper
+    /// The second local money formatter this app grew. Both are gone; ``Money`` is the
+    /// only one, so a figure reads the same here as on every other screen.
     private func formatAmount(_ value: Double) -> String {
-        if value >= 100000 {
-            return "₹\(String(format: "%.1fL", value / 100000))"
-        } else if value >= 1000 {
-            return "₹\(String(format: "%.1fK", value / 1000))"
-        }
-        return "₹\(String(format: "%.0f", value))"
+        Money.compact(value)
     }
 }
 
@@ -504,7 +501,7 @@ struct CNRowView: View {
 
             // Right Content - Amount
             VStack(alignment: .trailing, spacing: 8) {
-                Text("₹\(String(format: "%.2f", cn.total))")
+                Text(Money.text(cn.total))
                     .font(.system(size: 16, weight: .light))
                     .tracking(0.5)
                     .foregroundColor(.sForeground)

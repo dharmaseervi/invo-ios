@@ -111,7 +111,7 @@ struct LedgerSummaryView: View {
 
             Spacer()
 
-            Text("₹\(value, specifier: "%.2f")")
+            Text(Money.text(value))
                 .font(.system(
                     size: isBold ? 15 : 13,
                     weight: isBold ? .semibold : .regular
@@ -137,9 +137,9 @@ struct LedgerRowView: View {
 
     private var amountText: String {
         if entry.debit > 0 {
-            return "+₹\(String(format: "%.2f", entry.debit))"
+            return "+\(Money.text(entry.debit))"
         } else {
-            return "-₹\(String(format: "%.2f", entry.credit))"
+            return Money.text(-entry.credit)
         }
     }
 
@@ -183,7 +183,7 @@ struct LedgerRowView: View {
                     .foregroundColor(amountColor)
                     .font(.system(size: 13, weight: .medium))
 
-                Text("Bal ₹\(entry.balance, specifier: "%.2f")")
+                Text("Bal \(Money.text(entry.balance))")
                     .font(.system(size: 11))
                     .foregroundColor(.sMutedFG)
             }

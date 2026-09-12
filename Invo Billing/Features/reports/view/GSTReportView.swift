@@ -89,7 +89,7 @@ struct GSTReportView: View {
                 Text("Taxable value")
                     .font(.system(size: 13))
                     .foregroundColor(.sMutedFG)
-                Text("₹\(String(format: "%.2f", report.summary.taxable_value))")
+                Text(Money.text(report.summary.taxable_value))
                     .font(.system(size: 26, weight: .bold))
                     .foregroundColor(.sForeground)
                 Text("\(report.summary.invoice_count) invoice\(report.summary.invoice_count == 1 ? "" : "s") · \(report.company_state.isEmpty ? "State not set" : report.company_state)")
@@ -118,7 +118,7 @@ struct GSTReportView: View {
 
     private func taxStat(label: String, value: Double, isTotal: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text("₹\(String(format: value >= 1000 ? "%.0f" : "%.2f", value))")
+            Text(Money.text(value))
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(isTotal ? .sAccent : .sForeground)
             Text(label)
@@ -149,7 +149,7 @@ struct GSTReportView: View {
                                 .foregroundColor(.sMutedFG)
                         }
                         Spacer()
-                        Text("₹\(String(format: "%.2f", row.total_value))")
+                        Text(Money.text(row.total_value))
                             .font(.system(size: 13, weight: .semibold))
                             .foregroundColor(.sForeground)
                     }
@@ -189,7 +189,7 @@ struct GSTReportView: View {
                         }
                         Spacer()
                         VStack(alignment: .trailing, spacing: 2) {
-                            Text("₹\(String(format: "%.2f", row.total))")
+                            Text(Money.text(row.total))
                                 .font(.system(size: 13, weight: .semibold))
                                 .foregroundColor(.sForeground)
                             Text(row.igst > 0 ? "IGST" : "CGST+SGST")

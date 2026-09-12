@@ -136,7 +136,7 @@ struct HomeView: View {
                     .foregroundColor(.sMutedFG)
                 Spacer()
                 if peak > 0 {
-                    Text("Best day ₹\(formattedAmount(peak))")
+                    Text("Best day \(Money.text(peak))")
                         .font(.system(size: 12))
                         .foregroundColor(.sMutedFG)
                 }
@@ -168,7 +168,7 @@ struct HomeView: View {
                             .foregroundColor(isToday ? .sForeground : .sMutedFG)
                     }
                     .accessibilityElement(children: .ignore)
-                    .accessibilityLabel("\(day.date), ₹\(formattedAmount(day.total))")
+                    .accessibilityLabel("\(day.date), \(Money.text(day.total))")
                 }
             }
             .overlay(alignment: .bottom) {
@@ -189,7 +189,7 @@ struct HomeView: View {
                     Text("Total revenue")
                         .font(.system(size: 13))
                         .foregroundColor(.sMutedFG)
-                    Text("₹\(formattedAmount(viewModel.dashboard?.revenue.total ?? 0))")
+                    Text(Money.compact(viewModel.dashboard?.revenue.total ?? 0))
                         .font(.system(size: 30, weight: .semibold))
                         .foregroundColor(.sForeground)
                 }
@@ -248,11 +248,6 @@ struct HomeView: View {
         .offset(y: appeared ? 0 : 8)
     }
     
-    func formattedAmount(_ value: Double) -> String {
-        if value >= 100000 { return String(format: "%.1fL", value / 100000) }
-        if value >= 1000 { return String(format: "%.0fK", value / 1000) }
-        return "\(Int(value))"
-    }
     
     // MARK: - Stats Row
     var statsRow: some View {
@@ -352,7 +347,7 @@ struct HomeView: View {
                         initials: String(invoice.clientName.prefix(2).uppercased()),
                         name: invoice.clientName,
                         number: invoice.invoiceNumber,
-                        amount: "₹\(Int(invoice.total))",
+                        amount: Money.text(invoice.total),
                         status: invoice.status.capitalized
                     )
                     if idx < invoices.count - 1 {

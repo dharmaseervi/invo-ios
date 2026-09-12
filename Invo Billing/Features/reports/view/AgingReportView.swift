@@ -49,7 +49,7 @@ struct AgingReportView: View {
                 Text("Total outstanding")
                     .font(.system(size: 13))
                     .foregroundColor(.sMutedFG)
-                Text("₹\(String(format: "%.2f", report.grand_total))")
+                Text(Money.text(report.grand_total))
                     .font(.system(size: 26, weight: .bold))
                     .foregroundColor(.sForeground)
                 Text("Across \(report.clients.count) client\(report.clients.count == 1 ? "" : "s") · as of \(report.as_of)")
@@ -66,7 +66,7 @@ struct AgingReportView: View {
             HStack(spacing: 0) {
                 ForEach(0..<5, id: \.self) { i in
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("₹\(String(format: values[i] >= 1000 ? "%.0f" : "%.2f", values[i]))")
+                        Text(Money.text(values[i]))
                             .font(.system(size: 12.5, weight: .semibold))
                             .foregroundColor(values[i] > 0 ? bucketColors[i] : .sMutedFG)
                         Text(bucketLabels[i])
@@ -163,7 +163,7 @@ private struct AgingClientRow: View {
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.sForeground)
                 Spacer()
-                Text("₹\(String(format: "%.2f", row.total))")
+                Text(Money.text(row.total))
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(worstColor)
             }

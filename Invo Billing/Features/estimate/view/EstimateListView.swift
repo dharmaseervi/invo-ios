@@ -168,7 +168,7 @@ private struct EstimateRowCard: View {
                 Spacer()
 
                 VStack(alignment: .trailing, spacing: 5) {
-                    Text("₹\(String(format: "%.0f", estimate.total))")
+                    Text(Money.text(estimate.total))
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.sForeground)
                     Text(statusConfig.label)

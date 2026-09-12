@@ -152,7 +152,7 @@ struct ExpenseEditView: View {
 
     private func loadExpenseData() {
         name = expense.name
-        amount = String(format: "%.2f", expense.amount)
+        amount = Money.editable(expense.amount)
         description = expense.description ?? ""
 
         let formatter = DateFormatter()

@@ -314,7 +314,7 @@ struct ItemLookupResultSheet: View {
 
             HStack(spacing: 0) {
                 VStack(spacing: 4) {
-                    Text("₹\(String(format: "%.2f", item.price))")
+                    Text(Money.text(item.price))
                         .font(.system(size: 22, weight: .bold))
                         .foregroundColor(.sForeground)
                     Text("Price")
@@ -400,7 +400,7 @@ struct ItemListRowView: View {
                         }
 
                         HStack(spacing: 8) {
-                            Text("₹\(String(format: "%.2f", item.price))")
+                            Text(Money.text(item.price))
                                 .font(.system(size: 12))
                                 .foregroundColor(.sForeground)
 

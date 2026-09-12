@@ -79,7 +79,7 @@ struct BulkPrintLabelsScreen: View {
                                 .font(.system(size: 13, weight: .medium))
                                 .foregroundColor(.sForeground)
                                 .lineLimit(1)
-                            Text("₹\(String(format: "%.2f", item.price))")
+                            Text(Money.text(item.price))
                                 .font(.system(size: 11))
                                 .foregroundColor(.sMutedFG)
                         }

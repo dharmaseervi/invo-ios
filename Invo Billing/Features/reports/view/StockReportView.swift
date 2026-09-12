@@ -347,7 +347,7 @@ struct StockReportView: View {
     }
 
     private func currency(_ value: Double) -> String {
-        "₹\(String(format: "%.2f", value))"
+        Money.text(value)
     }
 }
 
@@ -367,7 +367,7 @@ private struct CategoryBreakdownRow: View {
                     .foregroundColor(.sForeground)
                     .lineLimit(1)
                 Spacer()
-                Text("₹\(String(format: "%.2f", category.cost_value))")
+                Text(Money.text(category.cost_value))
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(.sForeground)
             }
@@ -405,10 +405,10 @@ private struct CategoryBreakdownRow: View {
             .lineLimit(1)
 
             HStack {
-                Text("Retail ₹\(String(format: "%.2f", category.retail_value))")
+                Text("Retail \(Money.text(category.retail_value))")
                     .foregroundColor(.sMutedFG)
                 Spacer()
-                Text("Profit ₹\(String(format: "%.2f", category.potential_profit))")
+                Text("Profit \(Money.text(category.potential_profit))")
                     .foregroundColor(profitColor)
             }
             .font(.system(size: 11, weight: .medium))
@@ -458,7 +458,7 @@ private struct StockReportRow: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: 4) {
-                Text("₹\(String(format: "%.2f", item.stock_value))")
+                Text(Money.text(item.stock_value))
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(.sForeground)
                 Text("\(item.quantity)\(item.unit.map { $0.isEmpty ? "" : " \($0)" } ?? "") in stock")
@@ -477,7 +477,7 @@ private struct StockReportRow: View {
         var parts: [String] = []
         if let sku = item.sku, !sku.isEmpty { parts.append(sku) }
         parts.append(item.categoryLabel)
-        parts.append("₹\(String(format: "%.2f", item.price)) each")
+        parts.append("\(Money.text(item.price)) each")
         return parts.joined(separator: " · ")
     }
 }

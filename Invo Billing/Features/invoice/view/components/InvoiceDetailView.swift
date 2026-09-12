@@ -153,7 +153,7 @@ struct InvoiceDetailView: View {
                                         Text("Total amount")
                                             .font(.system(size: 11))
                                             .foregroundColor(.sMutedFG)
-                                        Text("₹\(String(format: "%.2f", detail.total))")
+                                        Text(Money.text(detail.total))
                                             .font(.system(size: 22, weight: .bold))
                                             .foregroundColor(.sForeground)
                                     }
@@ -163,7 +163,7 @@ struct InvoiceDetailView: View {
                                             Text("Remaining")
                                                 .font(.system(size: 11))
                                                 .foregroundColor(.sMutedFG)
-                                            Text("₹\(String(format: "%.2f", detail.remaining_amount))")
+                                            Text(Money.text(detail.remaining_amount))
                                                 .font(.system(size: 15, weight: .semibold))
                                                 .foregroundColor(Color(red: 0.722, green: 0.494, blue: 0.051))
                                         }
@@ -180,7 +180,7 @@ struct InvoiceDetailView: View {
                                         }
                                     }
                                     .frame(height: 6)
-                                    Text("₹\(String(format: "%.2f", detail.paid_amount)) paid so far")
+                                    Text("\(Money.text(detail.paid_amount)) paid so far")
                                         .font(.system(size: 11))
                                         .foregroundColor(.sMutedFG)
                                 }
@@ -543,11 +543,11 @@ struct ItemRowCardZara: View {
                 Spacer()
 
                 VStack(alignment: .trailing, spacing: 4) {
-                    Text("₹\(String(format: "%.2f", item.total))")
+                    Text(Money.text(item.total))
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(.sForeground)
 
-                    Text("₹\(String(format: "%.2f", item.rate)) each")
+                    Text("\(Money.text(item.rate)) each")
                         .font(.system(size: 11))
                         .foregroundColor(.sMutedFG)
                 }
@@ -581,7 +581,7 @@ struct ItemRowCardZara: View {
                 .font(.system(size: 11))
                 .foregroundColor(.sMutedFG)
             Spacer()
-            Text("₹\(String(format: "%.2f", value))")
+            Text(Money.text(value))
                 .font(.system(size: 11))
                 .foregroundColor(.sMutedFG)
         }
@@ -602,7 +602,7 @@ struct SummaryRowItemZara: View {
 
             Spacer()
 
-            Text("\(value < 0 ? "-" : "")₹\(String(format: "%.2f", abs(value)))")
+            Text(Money.text(value))
                 .font(.system(size: isTotal ? 15 : 13, weight: isTotal ? .semibold : .regular))
                 .foregroundColor(.sForeground)
         }

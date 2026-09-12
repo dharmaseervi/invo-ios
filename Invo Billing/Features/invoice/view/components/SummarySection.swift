@@ -38,7 +38,7 @@ struct SummarySection: View {
 
                     Spacer()
 
-                    Text("₹\(String(format: "%.2f", tax))")
+                    Text(Money.text(tax))
                         .font(.system(size: 13))
                         .foregroundColor(.sForeground)
                 }
@@ -74,11 +74,11 @@ struct SummarySection: View {
                 .padding(.horizontal, 14)
                 .padding(.vertical, 12)
                 .onAppear {
-                    discountText = discount > 0 ? String(format: "%.2f", discount) : ""
+                    discountText = discount > 0 ? Money.editable(discount) : ""
                 }
                 .onChange(of: discountFocused) { focused in
                     if !focused {
-                        discountText = discount > 0 ? String(format: "%.2f", discount) : ""
+                        discountText = discount > 0 ? Money.editable(discount) : ""
                     }
                 }
 
@@ -96,7 +96,7 @@ struct SummarySection: View {
 
                     Spacer()
 
-                    Text("₹\(String(format: "%.2f", total))")
+                    Text(Money.text(total))
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(.sForeground)
                 }
@@ -129,7 +129,7 @@ struct SummaryRowZara: View {
 
             Spacer()
 
-            Text("₹\(String(format: "%.2f", value))")
+            Text(Money.text(value))
                 .font(.system(size: isTotal ? 15 : 13, weight: isTotal ? .semibold : .regular))
                 .foregroundColor(.sForeground)
         }

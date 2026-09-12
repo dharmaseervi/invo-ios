@@ -116,7 +116,7 @@ private extension CreditNoteDetailView {
                             .font(.system(size: 14, weight: .light))
                         
                         Text(
-                            "Qty \(item.qty, specifier: "%.0f") × ₹\(item.rate, specifier: "%.2f")"
+                            "Qty \(item.qty, specifier: "%.0f") × \(Money.text(item.rate))"
                         )
                         .font(.system(size: 10))
                         .foregroundColor(.sMutedFG)
@@ -124,7 +124,7 @@ private extension CreditNoteDetailView {
                     
                     Spacer()
                     
-                    Text("₹\(item.total, specifier: "%.2f")")
+                    Text(Money.text(item.total))
                         .font(.system(size: 14, weight: .light))
                 }
                 
@@ -204,7 +204,7 @@ private extension CreditNoteDetailView {
             
             Spacer()
             
-            Text("₹\(value, specifier: "%.2f")")
+            Text(Money.text(value))
                 .font(.system(size: 13, weight: bold ? .medium : .light))
         }
     }

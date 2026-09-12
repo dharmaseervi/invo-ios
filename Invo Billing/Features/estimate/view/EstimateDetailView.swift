@@ -69,7 +69,7 @@ struct EstimateDetailView: View {
                                 Text("Total amount")
                                     .font(.system(size: 11))
                                     .foregroundColor(.sMutedFG)
-                                Text("₹\(String(format: "%.2f", detail.total))")
+                                Text(Money.text(detail.total))
                                     .font(.system(size: 22, weight: .bold))
                                     .foregroundColor(.sForeground)
                             }
@@ -111,7 +111,7 @@ struct EstimateDetailView: View {
                                                 .foregroundColor(.sMutedFG)
                                         }
                                         Spacer()
-                                        Text("₹\(String(format: "%.2f", item.total))")
+                                        Text(Money.text(item.total))
                                             .font(.system(size: 13, weight: .semibold))
                                             .foregroundColor(.sForeground)
                                     }
@@ -286,7 +286,7 @@ struct EstimateDetailView: View {
                 .font(.system(size: isTotal ? 14 : 13, weight: isTotal ? .semibold : .regular))
                 .foregroundColor(.sForeground)
             Spacer()
-            Text("\(value < 0 ? "-" : "")₹\(String(format: "%.2f", abs(value)))")
+            Text(Money.text(value))
                 .font(.system(size: isTotal ? 15 : 13, weight: isTotal ? .semibold : .regular))
                 .foregroundColor(.sForeground)
         }
