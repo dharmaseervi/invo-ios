@@ -113,6 +113,13 @@ struct CreateInvoiceView: View {
         }
         .navigationTitle("New invoice")
         .navigationBarTitleDisplayMode(.inline)
+        // Presented as a full-screen cover, so there is no back chevron: without this
+        // there is no way out of a half-written invoice.
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button("Cancel") { dismiss() }
+            }
+        }
         .sheet(isPresented: $showClientPicker) {
             ClientPickerView(selectedClient: $vm.selectedClient)
         }

@@ -158,6 +158,12 @@ struct CreateEstimateView: View {
             }
         }
         .navigationTitle("New estimate")
+        // Presented as a full-screen cover, so there is no back chevron to leave by.
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button("Cancel") { dismiss() }
+            }
+        }
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showClientPicker) {
             ClientPickerView(selectedClient: $vm.selectedClient)

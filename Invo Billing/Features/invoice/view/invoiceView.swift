@@ -2,9 +2,7 @@ import SwiftUI
 import Combine
 
 struct InvoiceView: View {
-    #if DEBUG
-    @State private var debugFormOpen = false
-    #endif
+    @State private var showCreateInvoice = false
     @StateObject private var vm = InvoiceViewModel()
     @State private var searchText = ""
     @State private var selectedFilter: InvoiceFilter = .all
@@ -109,7 +107,7 @@ struct InvoiceView: View {
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    NavigationLink(destination: CreateInvoiceView()) {
+                    Button { showCreateInvoice = true } label: {
                         Image(systemName: "plus")
                     }
                 }
@@ -118,13 +116,20 @@ struct InvoiceView: View {
                 Task { await vm.fetchInvoices() }
                 withAnimation(.easeOut(duration: 0.3)) { appearAnimation = true }
             }
+            // Creating an invoice is a multistep task, and Apple's guidance is that
+            // those belong in a full-screen modal rather than pushed inside a tab
+            // (sheets.md › "For complex or prolonged user flows"). Pushed, the sticky
+            // action bar and the tab bar stacked up and ate a quarter of the screen at
+            // a large text size — and the tab bar let someone wander off mid-invoice.
+            .fullScreenCover(isPresented: $showCreateInvoice) {
+                NavigationStack { CreateInvoiceView() }
+            }
             // Debug builds accept -startScreen newinvoice so the creation form can be
             // opened directly for a screenshot pass. Compiled out of release.
             #if DEBUG
-            .navigationDestination(isPresented: $debugFormOpen) { CreateInvoiceView() }
             .onAppear {
                 if UserDefaults.standard.string(forKey: "startScreen") == "newinvoice" {
-                    debugFormOpen = true
+                    showCreateInvoice = true
                 }
             }
             #endif
@@ -350,7 +355,7 @@ struct InvoiceView: View {
             .foregroundColor(.sMutedFG)
             .multilineTextAlignment(.center)
             if searchText.isEmpty && selectedFilter == .all {
-                NavigationLink(destination: CreateInvoiceView()) {
+                Button { showCreateInvoice = true } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "plus")
                             .font(.scaled(13, weight: .medium))

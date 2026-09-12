@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct EstimateListView: View {
+    @State private var showCreateEstimate = false
     @StateObject private var vm = EstimateViewModel()
     @State private var searchText = ""
 
@@ -51,10 +52,15 @@ struct EstimateListView: View {
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink(destination: CreateEstimateView()) {
+                Button { showCreateEstimate = true } label: {
                     Image(systemName: "plus")
                 }
             }
+        }
+        // Modal for the same reason invoice creation is: a multistep task, and with the
+        // tab bar present someone could wander off mid-estimate.
+        .fullScreenCover(isPresented: $showCreateEstimate) {
+            NavigationStack { CreateEstimateView() }
         }
         .task { await vm.fetchEstimates() }
     }
@@ -101,7 +107,7 @@ struct EstimateListView: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
             }
-            NavigationLink(destination: CreateEstimateView()) {
+            Button { showCreateEstimate = true } label: {
                 Text("Create estimate")
                     .font(.scaled(13, weight: .semibold))
                     .foregroundColor(.sAccentFG)
