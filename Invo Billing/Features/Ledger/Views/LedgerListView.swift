@@ -111,7 +111,7 @@ struct LedgerSummaryView: View {
 
             Spacer()
 
-            Text(Money.text(value))
+            Text(Money.text(value)).moneyLine()
                 .font(.system(
                     size: isBold ? 15 : 13,
                     weight: isBold ? .semibold : .regular

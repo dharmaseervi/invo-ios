@@ -175,7 +175,7 @@ private struct EstimateRowCard: View {
                 Spacer()
 
                 VStack(alignment: .trailing, spacing: 5) {
-                    Text(Money.text(estimate.total))
+                    Text(Money.text(estimate.total)).moneyLine()
                         .font(.scaled(14, weight: .semibold))
                         .foregroundColor(.sForeground)
                     Text(statusConfig.label)

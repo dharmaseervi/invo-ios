@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import SwiftUI
 
 /// Every rupee figure in the app goes through here.
 ///
@@ -88,5 +89,13 @@ enum Money {
         return rounded == rounded.rounded()
             ? String(Int(rounded))
             : String(format: "%.1f", rounded)
+    }
+}
+
+extension View {
+    /// Money never wraps. A total broken across two lines reads as a different number —
+    /// at a large text size the items list showed "₹750.0" above a lone "0".
+    func moneyLine() -> some View {
+        self.lineLimit(1).minimumScaleFactor(0.6)
     }
 }

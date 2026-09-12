@@ -111,7 +111,7 @@ struct ClientDetailedView: View {
                                             .font(.scaled(13))
                                             .foregroundColor(.sForeground)
                                         Spacer()
-                                        Text(Money.text(invoice.total))
+                                        Text(Money.text(invoice.total)).moneyLine()
                                             .font(.scaled(13, weight: .semibold))
                                             .foregroundColor(.sForeground)
                                     }

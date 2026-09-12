@@ -252,7 +252,7 @@ struct SelectItemRow: View {
                 Spacer()
 
                 VStack(alignment: .trailing, spacing: 4) {
-                    Text(Money.text(item.price))
+                    Text(Money.text(item.price)).moneyLine()
                         .font(.scaled(13, weight: .semibold))
                         .foregroundColor(.sForeground)
 

@@ -192,7 +192,7 @@ struct ExpenseRowWithActions: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: 4) {
-                Text(Money.text(expense.amount))
+                Text(Money.text(expense.amount)).moneyLine()
                     .font(.scaled(15, weight: .semibold))
                     .foregroundColor(.sForeground)
 

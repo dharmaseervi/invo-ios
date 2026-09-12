@@ -74,7 +74,7 @@ struct CreateInvoiceView: View {
                         Text("Total")
                             .font(.scaled(11))
                             .foregroundColor(.sMutedFG)
-                        Text(Money.text(vm.total))
+                        Text(Money.text(vm.total)).moneyLine()
                             .font(.scaled(17, weight: .semibold))
                             .foregroundColor(.sForeground)
                     }

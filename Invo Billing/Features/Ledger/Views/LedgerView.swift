@@ -92,7 +92,7 @@ struct LedgerView: View {
             Text("Total receivable")
                 .font(.scaled(13))
                 .foregroundColor(.sMutedFG)
-            Text(Money.text(vm.totalReceivable))
+            Text(Money.text(vm.totalReceivable)).moneyLine()
                 .font(.scaled(26, weight: .bold))
                 .foregroundColor(vm.totalReceivable > 0 ? .sDestructive : Color(red: 0.086, green: 0.639, blue: 0.341))
             Text("Across \(vm.clients.count) client\(vm.clients.count == 1 ? "" : "s")")
@@ -190,7 +190,7 @@ struct LedgerRow: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: 3) {
-                Text(Money.text(abs(client.balance)))
+                Text(Money.text(abs(client.balance))).moneyLine()
                     .font(.scaled(14, weight: .semibold))
                     .foregroundColor(client.balance == 0 ? .sForeground : balanceColor)
                 Image(systemName: "chevron.right")

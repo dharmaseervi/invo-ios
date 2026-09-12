@@ -367,7 +367,7 @@ private struct CategoryBreakdownRow: View {
                     .foregroundColor(.sForeground)
                     .lineLimit(1)
                 Spacer()
-                Text(Money.text(category.cost_value))
+                Text(Money.text(category.cost_value)).moneyLine()
                     .font(.scaled(13, weight: .semibold))
                     .foregroundColor(.sForeground)
             }
@@ -458,7 +458,7 @@ private struct StockReportRow: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: 4) {
-                Text(Money.text(item.stock_value))
+                Text(Money.text(item.stock_value)).moneyLine()
                     .font(.scaled(13, weight: .semibold))
                     .foregroundColor(.sForeground)
                 Text("\(item.quantity)\(item.unit.map { $0.isEmpty ? "" : " \($0)" } ?? "") in stock")

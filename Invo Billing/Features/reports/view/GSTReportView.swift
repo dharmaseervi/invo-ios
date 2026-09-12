@@ -89,7 +89,7 @@ struct GSTReportView: View {
                 Text("Taxable value")
                     .font(.scaled(13))
                     .foregroundColor(.sMutedFG)
-                Text(Money.text(report.summary.taxable_value))
+                Text(Money.text(report.summary.taxable_value)).moneyLine()
                     .font(.scaled(26, weight: .bold))
                     .foregroundColor(.sForeground)
                 Text("\(report.summary.invoice_count) invoice\(report.summary.invoice_count == 1 ? "" : "s") · \(report.company_state.isEmpty ? "State not set" : report.company_state)")
@@ -118,7 +118,7 @@ struct GSTReportView: View {
 
     private func taxStat(label: String, value: Double, isTotal: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(Money.text(value))
+            Text(Money.text(value)).moneyLine()
                 .font(.scaled(13, weight: .semibold))
                 .foregroundColor(isTotal ? .sAccent : .sForeground)
             Text(label)
@@ -149,7 +149,7 @@ struct GSTReportView: View {
                                 .foregroundColor(.sMutedFG)
                         }
                         Spacer()
-                        Text(Money.text(row.total_value))
+                        Text(Money.text(row.total_value)).moneyLine()
                             .font(.scaled(13, weight: .semibold))
                             .foregroundColor(.sForeground)
                     }
@@ -189,7 +189,7 @@ struct GSTReportView: View {
                         }
                         Spacer()
                         VStack(alignment: .trailing, spacing: 2) {
-                            Text(Money.text(row.total))
+                            Text(Money.text(row.total)).moneyLine()
                                 .font(.scaled(13, weight: .semibold))
                                 .foregroundColor(.sForeground)
                             Text(row.igst > 0 ? "IGST" : "CGST+SGST")

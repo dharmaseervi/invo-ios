@@ -79,7 +79,7 @@ struct RecordPaymentView: View {
 
             if let due = vm.dueAmount {
                 VStack(alignment: .trailing, spacing: 2) {
-                    Text(Money.text(due))
+                    Text(Money.text(due)).moneyLine()
                         .font(.scaled(14, weight: .semibold))
                         .foregroundColor(.sForeground)
                     Text("Due")
@@ -254,7 +254,7 @@ struct RecordPaymentView: View {
                             .font(.scaled(13))
                             .foregroundColor(.sForeground)
                         Spacer()
-                        Text(Money.text(invoice.remainingAmount))
+                        Text(Money.text(invoice.remainingAmount)).moneyLine()
                             .font(.scaled(13, weight: .medium))
                             .foregroundColor(.sForeground)
                     }

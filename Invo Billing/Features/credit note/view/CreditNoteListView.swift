@@ -501,7 +501,7 @@ struct CNRowView: View {
 
             // Right Content - Amount
             VStack(alignment: .trailing, spacing: 8) {
-                Text(Money.text(cn.total))
+                Text(Money.text(cn.total)).moneyLine()
                     .font(.scaled(16, weight: .light))
                     .tracking(0.5)
                     .foregroundColor(.sForeground)

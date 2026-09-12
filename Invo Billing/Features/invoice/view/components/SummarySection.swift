@@ -38,7 +38,7 @@ struct SummarySection: View {
 
                     Spacer()
 
-                    Text(Money.text(tax))
+                    Text(Money.text(tax)).moneyLine()
                         .font(.scaled(13))
                         .foregroundColor(.sForeground)
                 }
@@ -96,7 +96,7 @@ struct SummarySection: View {
 
                     Spacer()
 
-                    Text(Money.text(total))
+                    Text(Money.text(total)).moneyLine()
                         .font(.scaled(16, weight: .semibold))
                         .foregroundColor(.sForeground)
                 }
@@ -129,7 +129,7 @@ struct SummaryRowZara: View {
 
             Spacer()
 
-            Text(Money.text(value))
+            Text(Money.text(value)).moneyLine()
                 .font(.scaled(isTotal ? 15 : 13, weight: isTotal ? .semibold : .regular))
                 .foregroundColor(.sForeground)
         }

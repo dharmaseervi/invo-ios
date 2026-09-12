@@ -153,7 +153,7 @@ struct InvoiceDetailView: View {
                                         Text("Total amount")
                                             .font(.scaled(11))
                                             .foregroundColor(.sMutedFG)
-                                        Text(Money.text(detail.total))
+                                        Text(Money.text(detail.total)).moneyLine()
                                             .font(.scaled(22, weight: .bold))
                                             .foregroundColor(.sForeground)
                                     }
@@ -163,7 +163,7 @@ struct InvoiceDetailView: View {
                                             Text("Remaining")
                                                 .font(.scaled(11))
                                                 .foregroundColor(.sMutedFG)
-                                            Text(Money.text(detail.remaining_amount))
+                                            Text(Money.text(detail.remaining_amount)).moneyLine()
                                                 .font(.scaled(15, weight: .semibold))
                                                 .foregroundColor(Color(red: 0.722, green: 0.494, blue: 0.051))
                                         }
@@ -543,7 +543,7 @@ struct ItemRowCardZara: View {
                 Spacer()
 
                 VStack(alignment: .trailing, spacing: 4) {
-                    Text(Money.text(item.total))
+                    Text(Money.text(item.total)).moneyLine()
                         .font(.scaled(13, weight: .semibold))
                         .foregroundColor(.sForeground)
 
@@ -581,7 +581,7 @@ struct ItemRowCardZara: View {
                 .font(.scaled(11))
                 .foregroundColor(.sMutedFG)
             Spacer()
-            Text(Money.text(value))
+            Text(Money.text(value)).moneyLine()
                 .font(.scaled(11))
                 .foregroundColor(.sMutedFG)
         }
@@ -602,7 +602,7 @@ struct SummaryRowItemZara: View {
 
             Spacer()
 
-            Text(Money.text(value))
+            Text(Money.text(value)).moneyLine()
                 .font(.scaled(isTotal ? 15 : 13, weight: isTotal ? .semibold : .regular))
                 .foregroundColor(.sForeground)
         }

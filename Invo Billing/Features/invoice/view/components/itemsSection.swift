@@ -65,7 +65,7 @@ struct ItemsSection: View {
                             .font(.scaled(12))
                             .foregroundColor(.sMutedFG)
                         Spacer()
-                        Text(Money.text(totalAmount))
+                        Text(Money.text(totalAmount)).moneyLine()
                             .font(.scaled(13))
                             .foregroundColor(.sForeground)
                     }
@@ -189,7 +189,7 @@ struct ItemRowZara: View {
                         .foregroundColor(.sMutedFG)
                     Text("•")
                         .foregroundColor(.sMutedFG)
-                    Text(Money.text(item.rate))
+                    Text(Money.text(item.rate)).moneyLine()
                         .font(.scaled(11))
                         .foregroundColor(.sMutedFG)
 
@@ -206,7 +206,7 @@ struct ItemRowZara: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: 8) {
-                Text(Money.text(item.total))
+                Text(Money.text(item.total)).moneyLine()
                     .font(.scaled(13, weight: .semibold))
                     .foregroundColor(.sForeground)
 
@@ -521,7 +521,7 @@ struct SummaryLineZara: View {
 
             Spacer()
 
-            Text(Money.text(value))
+            Text(Money.text(value)).moneyLine()
                 .font(.scaled(isTotal ? 14 : 12, weight: isTotal ? .semibold : .regular))
                 .foregroundColor(.sForeground)
         }

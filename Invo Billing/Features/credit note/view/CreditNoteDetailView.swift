@@ -124,7 +124,7 @@ private extension CreditNoteDetailView {
                     
                     Spacer()
                     
-                    Text(Money.text(item.total))
+                    Text(Money.text(item.total)).moneyLine()
                         .font(.scaled(14, weight: .light))
                 }
                 
@@ -204,7 +204,7 @@ private extension CreditNoteDetailView {
             
             Spacer()
             
-            Text(Money.text(value))
+            Text(Money.text(value)).moneyLine()
                 .font(.scaled(13, weight: bold ? .medium : .light))
         }
     }

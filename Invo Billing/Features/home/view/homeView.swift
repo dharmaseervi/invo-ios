@@ -177,7 +177,7 @@ struct HomeView: View {
                     Text("Total revenue")
                         .font(.scaled(13))
                         .foregroundColor(.sMutedFG)
-                    Text(Money.compact(viewModel.dashboard?.revenue.total ?? 0))
+                    Text(Money.compact(viewModel.dashboard?.revenue.total ?? 0)).moneyLine()
                         .font(.scaled(30, weight: .semibold))
                         .foregroundColor(.sForeground)
                 }

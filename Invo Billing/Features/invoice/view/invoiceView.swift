@@ -48,15 +48,18 @@ struct InvoiceView: View {
     var partialCount: Int { vm.invoices.filter { $0.status == .partial && !isOverdue($0) }.count }
     var issuedCount: Int { vm.invoices.filter { $0.status == .issued }.count }
     
+    /// Overdue means the due date has *passed*, not that it has arrived.
+    ///
+    /// This compared `Date() > due`, and `due` parses to midnight, so every invoice
+    /// became overdue at 00:00 on the day it was due — a full day early. It drove the
+    /// red badge, the "6 overdue" count and the Overdue filter, so customers were being
+    /// chased a day before they were late, and the row could read "Due today" beside an
+    /// Overdue badge.
     private func isOverdue(_ invoice: InvoiceResponse) -> Bool {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        // Pinned: an unpinned formatter follows the device calendar, so a phone set
-        // to the Indian National calendar sent 1948-06-21 for 12 September 2026.
-        f.locale = Locale(identifier: "en_US_POSIX")
-        f.calendar = Calendar(identifier: .gregorian)
-        guard let due = f.date(from: invoice.due_date) else { return false }
-        return Date() > due && invoice.status != .paid
+        guard invoice.status != .paid,
+              let due = AppDate.date(fromWire: invoice.due_date) else { return false }
+        let calendar = Calendar.current
+        return calendar.startOfDay(for: due) < calendar.startOfDay(for: Date())
     }
     
     private func countFor(_ filter: InvoiceFilter) -> Int {
@@ -223,7 +226,7 @@ struct InvoiceView: View {
                     Text("Outstanding")
                         .font(.scaled(13))
                         .foregroundColor(.sMutedFG)
-                    Text(Money.compact(outstandingAmount))
+                    Text(Money.compact(outstandingAmount)).moneyLine()
                         .font(.scaled(28, weight: .bold))
                         .foregroundColor(.sForeground)
                 }
@@ -404,6 +407,22 @@ struct InvoiceRowCard: View {
         }
     }
 
+    private var invoiceNumberText: some View {
+        Text(invoice.invoice_number)
+            .font(.scaled(12))
+            .foregroundColor(.sMutedFG)
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+    }
+
+    private var dueText: some View {
+        Text(daysInfo)
+            .font(.scaled(12))
+            .foregroundColor(isOverdue ? .sDestructive : .sMutedFG)
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+    }
+
     var daysInfo: String {
         guard let due = AppDate.date(fromWire: invoice.due_date) else { return "" }
         if invoice.status == .paid { return "Paid" }
@@ -448,23 +467,27 @@ struct InvoiceRowCard: View {
                         .font(.scaled(14, weight: .medium))
                         .foregroundColor(.sForeground)
                         .lineLimit(1)
-                    HStack(spacing: 6) {
-                        Text(invoice.invoice_number)
-                            .font(.scaled(12))
-                            .foregroundColor(.sMutedFG)
-                        Text("·")
-                            .font(.scaled(12))
-                            .foregroundColor(.sMutedFG)
-                        Text(daysInfo)
-                            .font(.scaled(12))
-                            .foregroundColor(isOverdue ? Color(red: 0.863, green: 0.149, blue: 0.149) : .sMutedFG)
+                    // Side by side at normal sizes; stacked once the text is large,
+                    // because the two together no longer fit a row and the number was
+                    // breaking mid-token into "INV/ FY26- 27/00 08".
+                    let meta = ViewThatFits(in: .horizontal) {
+                        HStack(spacing: 6) {
+                            invoiceNumberText
+                            Text("·").font(.scaled(12)).foregroundColor(.sMutedFG)
+                            dueText
+                        }
+                        VStack(alignment: .leading, spacing: 2) {
+                            invoiceNumberText
+                            dueText
+                        }
                     }
+                    meta
                 }
 
                 Spacer()
 
                 VStack(alignment: .trailing, spacing: 5) {
-                    Text(Money.text(invoice.total))
+                    Text(Money.text(invoice.total)).moneyLine()
                         .font(.scaled(14, weight: .semibold))
                         .foregroundColor(.sForeground)
                     Text(statusConfig.label)

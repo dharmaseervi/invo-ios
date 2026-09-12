@@ -1,7 +1,19 @@
 import SwiftUI
 
 struct TabViewMain: View {
-    @State private var selectedTab: Int = 0
+    @State private var selectedTab: Int = TabViewMain.initialTab
+
+    /// Debug builds accept `-startTab N` so a screen can be opened directly for a
+    /// screenshot pass — checking every tab at an accessibility text size otherwise
+    /// means driving the UI by hand. Compiled out of release entirely.
+    private static var initialTab: Int {
+        #if DEBUG
+        let requested = UserDefaults.standard.integer(forKey: "startTab")
+        return (0...4).contains(requested) ? requested : 0
+        #else
+        return 0
+        #endif
+    }
     @EnvironmentObject var session: SessionManager
     
     var body: some View {
