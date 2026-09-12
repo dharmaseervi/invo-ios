@@ -105,6 +105,10 @@ final class EstimateViewModel: ObservableObject {
 
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
+        // Pinned: an unpinned formatter follows the device calendar, so a phone set
+        // to the Indian National calendar sent 1948-06-21 for 12 September 2026.
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
 
         let payload = EstimateRequestDTO(
             company_id: SessionManager.shared.selectedCompanyId ?? 0,
@@ -151,6 +155,10 @@ final class EstimateViewModel: ObservableObject {
 
             let formatter = DateFormatter()
             formatter.dateFormat = "yyyy-MM-dd"
+            // Pinned: an unpinned formatter follows the device calendar, so a phone set
+            // to the Indian National calendar sent 1948-06-21 for 12 September 2026.
+            formatter.locale = Locale(identifier: "en_US_POSIX")
+            formatter.calendar = Calendar(identifier: .gregorian)
             if let date = formatter.date(from: detail.estimate_date) {
                 estimateDate = date
             }
@@ -198,6 +206,10 @@ final class EstimateViewModel: ObservableObject {
 
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
+        // Pinned: an unpinned formatter follows the device calendar, so a phone set
+        // to the Indian National calendar sent 1948-06-21 for 12 September 2026.
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
 
         let payload = UpdateEstimateRequestDTO(
             client_id: client.id,

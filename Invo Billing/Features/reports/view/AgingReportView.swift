@@ -52,7 +52,7 @@ struct AgingReportView: View {
                 Text(Money.text(report.grand_total))
                     .font(.system(size: 26, weight: .bold))
                     .foregroundColor(.sForeground)
-                Text("Across \(report.clients.count) client\(report.clients.count == 1 ? "" : "s") · as of \(report.as_of)")
+                Text("Across \(report.clients.count) client\(report.clients.count == 1 ? "" : "s") · as of \(AppDate.text(fromWire: report.as_of))")
                     .font(.system(size: 12))
                     .foregroundColor(.sMutedFG)
             }

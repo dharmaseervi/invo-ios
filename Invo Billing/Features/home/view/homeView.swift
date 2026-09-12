@@ -104,18 +104,6 @@ struct HomeView: View {
     
     private var revenueTrend: [DailyRevenue]? { viewModel.dashboard?.revenue.trend }
 
-    /// Weekday initial for a "YYYY-MM-DD" day from the trend, in the user's own locale.
-    private func weekdayLabel(_ isoDay: String) -> String {
-        let parser = DateFormatter()
-        parser.dateFormat = "yyyy-MM-dd"
-        parser.timeZone = .current
-        guard let date = parser.date(from: isoDay) else { return "" }
-        let day = DateFormatter()
-        day.locale = .current
-        day.setLocalizedDateFormatFromTemplate("EEEEE")   // single-letter weekday
-        return day.string(from: date)
-    }
-
     /// Seven days of revenue as a small column chart.
     ///
     /// The bars sit on a drawn baseline and carry weekday labels, because a bare row of
@@ -163,7 +151,7 @@ struct HomeView: View {
                         }
                         .frame(maxWidth: .infinity)
 
-                        Text(weekdayLabel(day.date))
+                        Text(AppDate.weekdayInitial(fromWire: day.date))
                             .font(.system(size: 11, weight: isToday ? .semibold : .regular))
                             .foregroundColor(isToday ? .sForeground : .sMutedFG)
                     }

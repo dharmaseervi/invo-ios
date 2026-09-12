@@ -239,6 +239,10 @@ private extension CreditNoteDetailView {
         
         let simple = DateFormatter()
         simple.dateFormat = "yyyy-MM-dd"
+        // Pinned: an unpinned formatter follows the device calendar, so a phone set
+        // to the Indian National calendar sent 1948-06-21 for 12 September 2026.
+        simple.locale = Locale(identifier: "en_US_POSIX")
+        simple.calendar = Calendar(identifier: .gregorian)
         if let date = simple.date(from: value) {
             let df = DateFormatter()
             df.dateFormat = "dd MMM yyyy"

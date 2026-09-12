@@ -51,6 +51,10 @@ struct InvoiceView: View {
     private func isOverdue(_ invoice: InvoiceResponse) -> Bool {
         let f = DateFormatter()
         f.dateFormat = "yyyy-MM-dd"
+        // Pinned: an unpinned formatter follows the device calendar, so a phone set
+        // to the Indian National calendar sent 1948-06-21 for 12 September 2026.
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.calendar = Calendar(identifier: .gregorian)
         guard let due = f.date(from: invoice.due_date) else { return false }
         return Date() > due && invoice.status != .paid
     }
@@ -403,6 +407,10 @@ struct InvoiceRowCard: View {
     var daysInfo: String {
         let f = DateFormatter()
         f.dateFormat = "yyyy-MM-dd"
+        // Pinned: an unpinned formatter follows the device calendar, so a phone set
+        // to the Indian National calendar sent 1948-06-21 for 12 September 2026.
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.calendar = Calendar(identifier: .gregorian)
         guard let due = f.date(from: invoice.due_date) else { return "" }
         let days = Calendar.current.dateComponents([.day], from: Date(), to: due).day ?? 0
         if isOverdue { return "\(abs(days))d overdue" }

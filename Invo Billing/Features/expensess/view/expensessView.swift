@@ -157,6 +157,10 @@ struct ExpenseView: View {
     private func formatDate(_ raw: String) -> String {
         let input = DateFormatter()
         input.dateFormat = "yyyy-MM-dd"
+        // Pinned: an unpinned formatter follows the device calendar, so a phone set
+        // to the Indian National calendar sent 1948-06-21 for 12 September 2026.
+        input.locale = Locale(identifier: "en_US_POSIX")
+        input.calendar = Calendar(identifier: .gregorian)
 
         guard let date = input.date(from: raw) else { return raw }
 
@@ -223,6 +227,10 @@ struct ExpenseRowWithActions: View {
     private func formatDate(_ raw: String) -> String {
         let input = DateFormatter()
         input.dateFormat = "yyyy-MM-dd"
+        // Pinned: an unpinned formatter follows the device calendar, so a phone set
+        // to the Indian National calendar sent 1948-06-21 for 12 September 2026.
+        input.locale = Locale(identifier: "en_US_POSIX")
+        input.calendar = Calendar(identifier: .gregorian)
         guard let date = input.date(from: raw) else { return raw }
 
         let output = DateFormatter()

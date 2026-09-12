@@ -87,7 +87,7 @@ struct StockReportView: View {
                     .font(.system(size: 26, weight: .bold))
                     .foregroundColor(.sForeground)
 
-                Text("\(totals.itemCount) items · \(totals.units) units · as of \(vm.report?.as_of ?? "")")
+                Text("\(totals.itemCount) items · \(totals.units) units · as of \(AppDate.text(fromWire: vm.report?.as_of ?? ""))")
                     .font(.system(size: 12))
                     .foregroundColor(.sMutedFG)
             }

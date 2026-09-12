@@ -89,6 +89,10 @@ final class CreateCreditNoteViewModel: ObservableObject {
         
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
+        // Pinned: an unpinned formatter follows the device calendar, so a phone set
+        // to the Indian National calendar sent 1948-06-21 for 12 September 2026.
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
         
         let itemDTOs: [CreateCreditNoteItemDTO]? =
         creditType == .returnItems

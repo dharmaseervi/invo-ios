@@ -538,6 +538,10 @@ struct CNRowView: View {
         // Try simple date format
         let simpleFormatter = DateFormatter()
         simpleFormatter.dateFormat = "yyyy-MM-dd"
+        // Pinned: an unpinned formatter follows the device calendar, so a phone set
+        // to the Indian National calendar sent 1948-06-21 for 12 September 2026.
+        simpleFormatter.locale = Locale(identifier: "en_US_POSIX")
+        simpleFormatter.calendar = Calendar(identifier: .gregorian)
         if let date = simpleFormatter.date(from: dateString) {
             let formatter = DateFormatter()
             formatter.dateFormat = "MMM dd"
