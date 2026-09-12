@@ -106,7 +106,7 @@ struct InvoiceDetailView: View {
                         ProgressView()
                             .tint(.sAccent)
                         Text("Loading details...")
-                            .font(.system(size: 13))
+                            .font(.scaled(13))
                             .foregroundColor(.sMutedFG)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -122,16 +122,16 @@ struct InvoiceDetailView: View {
                                             .fill(Color.sAccentMuted)
                                             .frame(width: 48, height: 48)
                                         Text(initials(for: detail.client.name))
-                                            .font(.system(size: 15, weight: .semibold))
+                                            .font(.scaled(15, weight: .semibold))
                                             .foregroundColor(.sAccent)
                                     }
 
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text(detail.client.name)
-                                            .font(.system(size: 16, weight: .semibold))
+                                            .font(.scaled(16, weight: .semibold))
                                             .foregroundColor(.sForeground)
                                         Text(detail.invoice_number)
-                                            .font(.system(size: 13))
+                                            .font(.scaled(13))
                                             .foregroundColor(.sMutedFG)
                                     }
 
@@ -139,7 +139,7 @@ struct InvoiceDetailView: View {
 
                                     let config = statusConfig(for: detail)
                                     Text(config.label)
-                                        .font(.system(size: 11, weight: .medium))
+                                        .font(.scaled(11, weight: .medium))
                                         .foregroundColor(config.color)
                                         .padding(.horizontal, 9)
                                         .padding(.vertical, 4)
@@ -151,20 +151,20 @@ struct InvoiceDetailView: View {
                                 HStack(alignment: .firstTextBaseline) {
                                     VStack(alignment: .leading, spacing: 3) {
                                         Text("Total amount")
-                                            .font(.system(size: 11))
+                                            .font(.scaled(11))
                                             .foregroundColor(.sMutedFG)
                                         Text(Money.text(detail.total))
-                                            .font(.system(size: 22, weight: .bold))
+                                            .font(.scaled(22, weight: .bold))
                                             .foregroundColor(.sForeground)
                                     }
                                     Spacer()
                                     if detail.paid_amount > 0 && detail.status != .paid {
                                         VStack(alignment: .trailing, spacing: 3) {
                                             Text("Remaining")
-                                                .font(.system(size: 11))
+                                                .font(.scaled(11))
                                                 .foregroundColor(.sMutedFG)
                                             Text(Money.text(detail.remaining_amount))
-                                                .font(.system(size: 15, weight: .semibold))
+                                                .font(.scaled(15, weight: .semibold))
                                                 .foregroundColor(Color(red: 0.722, green: 0.494, blue: 0.051))
                                         }
                                     }
@@ -181,7 +181,7 @@ struct InvoiceDetailView: View {
                                     }
                                     .frame(height: 6)
                                     Text("\(Money.text(detail.paid_amount)) paid so far")
-                                        .font(.system(size: 11))
+                                        .font(.scaled(11))
                                         .foregroundColor(.sMutedFG)
                                 }
                             }
@@ -203,7 +203,7 @@ struct InvoiceDetailView: View {
                                             Image(systemName: "pencil")
                                             Text("Edit invoice")
                                         }
-                                        .font(.system(size: 14, weight: .semibold))
+                                        .font(.scaled(14, weight: .semibold))
                                         .frame(maxWidth: .infinity)
                                         .padding(.vertical, 14)
                                         .background(Color.sPrimary)
@@ -220,7 +220,7 @@ struct InvoiceDetailView: View {
                                             Image(systemName: "paperplane.fill")
                                             Text("Issue invoice")
                                         }
-                                        .font(.system(size: 14, weight: .semibold))
+                                        .font(.scaled(14, weight: .semibold))
                                         .frame(maxWidth: .infinity)
                                         .padding(.vertical, 14)
                                         .foregroundColor(.sForeground)
@@ -239,7 +239,7 @@ struct InvoiceDetailView: View {
                                             Image(systemName: "trash")
                                             Text("Delete")
                                         }
-                                        .font(.system(size: 14, weight: .semibold))
+                                        .font(.scaled(14, weight: .semibold))
                                         .frame(maxWidth: .infinity)
                                         .padding(.vertical, 14)
                                         .foregroundColor(.sDestructive)
@@ -260,7 +260,7 @@ struct InvoiceDetailView: View {
                                             Image(systemName: "creditcard")
                                             Text("Record payment")
                                         }
-                                        .font(.system(size: 14, weight: .semibold))
+                                        .font(.scaled(14, weight: .semibold))
                                         .frame(maxWidth: .infinity)
                                         .padding(.vertical, 14)
                                         .background(Color.sPrimary)
@@ -275,7 +275,7 @@ struct InvoiceDetailView: View {
                             // MARK: - Dates Section
                             VStack(alignment: .leading, spacing: 0) {
                                 Text("Dates")
-                                    .font(.system(size: 13, weight: .medium))
+                                    .font(.scaled(13, weight: .medium))
                                     .foregroundColor(.sMutedFG)
                                     .padding(.horizontal, 20)
                                     .padding(.bottom, 10)
@@ -295,7 +295,7 @@ struct InvoiceDetailView: View {
                             // MARK: - Line Items Section
                             VStack(alignment: .leading, spacing: 0) {
                                 Text("Line items")
-                                    .font(.system(size: 13, weight: .medium))
+                                    .font(.scaled(13, weight: .medium))
                                     .foregroundColor(.sMutedFG)
                                     .padding(.horizontal, 20)
                                     .padding(.bottom, 10)
@@ -315,7 +315,7 @@ struct InvoiceDetailView: View {
                             // MARK: - Summary Section
                             VStack(alignment: .leading, spacing: 0) {
                                 Text("Summary")
-                                    .font(.system(size: 13, weight: .medium))
+                                    .font(.scaled(13, weight: .medium))
                                     .foregroundColor(.sMutedFG)
                                     .padding(.horizontal, 20)
                                     .padding(.bottom, 10)
@@ -347,15 +347,15 @@ struct InvoiceDetailView: View {
                 } else if let error = vm.errorMessage {
                     VStack(spacing: 12) {
                         Image(systemName: "exclamationmark.triangle")
-                            .font(.system(size: 28))
+                            .font(.scaled(28))
                             .foregroundColor(.sDestructive)
 
                         Text("Error loading invoice")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.scaled(14, weight: .semibold))
                             .foregroundColor(.sForeground)
 
                         Text(error)
-                            .font(.system(size: 12))
+                            .font(.scaled(12))
                             .foregroundColor(.sMutedFG)
                             .multilineTextAlignment(.center)
                     }
@@ -376,7 +376,7 @@ struct InvoiceDetailView: View {
                             .tint(.sAccent)
 
                         Text("Loading details...")
-                            .font(.system(size: 13))
+                            .font(.scaled(13))
                             .foregroundColor(.sForeground)
                     }
                     .padding(32)
@@ -510,10 +510,10 @@ struct DateInfoCardZara: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(label)
-                .font(.system(size: 11))
+                .font(.scaled(11))
                 .foregroundColor(.sMutedFG)
             Text(value)
-                .font(.system(size: 13, weight: .medium))
+                .font(.scaled(13, weight: .medium))
                 .foregroundColor(.sForeground)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -532,11 +532,11 @@ struct ItemRowCardZara: View {
             HStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(itemName ?? "Item #\(item.item_id)")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.scaled(13, weight: .semibold))
                         .foregroundColor(.sForeground)
 
                     Text("Qty: \(item.qty)")
-                        .font(.system(size: 11))
+                        .font(.scaled(11))
                         .foregroundColor(.sMutedFG)
                 }
 
@@ -544,11 +544,11 @@ struct ItemRowCardZara: View {
 
                 VStack(alignment: .trailing, spacing: 4) {
                     Text(Money.text(item.total))
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.scaled(13, weight: .semibold))
                         .foregroundColor(.sForeground)
 
                     Text("\(Money.text(item.rate)) each")
-                        .font(.system(size: 11))
+                        .font(.scaled(11))
                         .foregroundColor(.sMutedFG)
                 }
             }
@@ -578,11 +578,11 @@ struct ItemRowCardZara: View {
     private func summaryRow(label: String, value: Double) -> some View {
         HStack {
             Text(label)
-                .font(.system(size: 11))
+                .font(.scaled(11))
                 .foregroundColor(.sMutedFG)
             Spacer()
             Text(Money.text(value))
-                .font(.system(size: 11))
+                .font(.scaled(11))
                 .foregroundColor(.sMutedFG)
         }
     }
@@ -597,13 +597,13 @@ struct SummaryRowItemZara: View {
     var body: some View {
         HStack(spacing: 0) {
             Text(label)
-                .font(.system(size: isTotal ? 14 : 13, weight: isTotal ? .semibold : .regular))
+                .font(.scaled(isTotal ? 14 : 13, weight: isTotal ? .semibold : .regular))
                 .foregroundColor(.sForeground)
 
             Spacer()
 
             Text(Money.text(value))
-                .font(.system(size: isTotal ? 15 : 13, weight: isTotal ? .semibold : .regular))
+                .font(.scaled(isTotal ? 15 : 13, weight: isTotal ? .semibold : .regular))
                 .foregroundColor(.sForeground)
         }
         .padding(.horizontal, 14)

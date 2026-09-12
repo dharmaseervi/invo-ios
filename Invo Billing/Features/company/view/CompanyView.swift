@@ -19,7 +19,7 @@ struct CompanyView: View {
                                 ProgressView()
                                     .tint(.sAccent)
                                 Text("Loading companies...")
-                                    .font(.system(size: 13))
+                                    .font(.scaled(13))
                                     .foregroundColor(.sMutedFG)
                             }
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -27,11 +27,11 @@ struct CompanyView: View {
                         else if let error = vm.errorMessage {
                             VStack(spacing: 10) {
                                 Image(systemName: "exclamationmark.triangle")
-                                    .font(.system(size: 28))
+                                    .font(.scaled(28))
                                     .foregroundColor(.sDestructive)
 
                                 Text(error)
-                                    .font(.system(size: 13))
+                                    .font(.scaled(13))
                                     .foregroundColor(.sMutedFG)
                                     .multilineTextAlignment(.center)
                             }
@@ -60,23 +60,23 @@ struct CompanyView: View {
                         else {
                             VStack(spacing: 16) {
                                 Image(systemName: "building.2")
-                                    .font(.system(size: 40))
+                                    .font(.scaled(40))
                                     .foregroundColor(.sMutedFG)
 
                                 VStack(spacing: 4) {
                                     Text("No companies")
-                                        .font(.system(size: 15, weight: .semibold))
+                                        .font(.scaled(15, weight: .semibold))
                                         .foregroundColor(.sForeground)
 
                                     Text("Add your first company to get started")
-                                        .font(.system(size: 13))
+                                        .font(.scaled(13))
                                         .foregroundColor(.sMutedFG)
                                         .multilineTextAlignment(.center)
                                 }
 
                                 NavigationLink(destination: companyForm()) {
                                     Text("Add company")
-                                        .font(.system(size: 13, weight: .semibold))
+                                        .font(.scaled(13, weight: .semibold))
                                         .foregroundColor(.sAccentFG)
                                         .padding(.horizontal, 20)
                                         .padding(.vertical, 10)
@@ -119,7 +119,7 @@ struct CompanyRowZara: View {
             Button(action: onSelect) {
                 HStack(spacing: 14) {
                     Text(String(company.name.prefix(1)).uppercased())
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.scaled(14, weight: .semibold))
                         .foregroundColor(.sAccentFG)
                         .frame(width: 44, height: 44)
                         .background(Color.sAccent)
@@ -127,11 +127,11 @@ struct CompanyRowZara: View {
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text(company.name)
-                            .font(.system(size: 13, weight: .medium))
+                            .font(.scaled(13, weight: .medium))
                             .foregroundColor(.sForeground)
 
                         Text("\(company.city), \(company.state)")
-                            .font(.system(size: 11))
+                            .font(.scaled(11))
                             .foregroundColor(.sMutedFG)
                     }
 

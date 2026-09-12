@@ -62,18 +62,18 @@ struct GSTReportView: View {
         HStack {
             Button { vm.goToPreviousMonth() } label: {
                 Image(systemName: "chevron.left")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.scaled(14, weight: .semibold))
                     .foregroundColor(.sForeground)
                     .frame(width: 32, height: 32)
             }
             Spacer()
             Text(vm.monthLabel)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.scaled(15, weight: .semibold))
                 .foregroundColor(.sForeground)
             Spacer()
             Button { vm.goToNextMonth() } label: {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.scaled(14, weight: .semibold))
                     .foregroundColor(.sForeground)
                     .frame(width: 32, height: 32)
             }
@@ -87,13 +87,13 @@ struct GSTReportView: View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Taxable value")
-                    .font(.system(size: 13))
+                    .font(.scaled(13))
                     .foregroundColor(.sMutedFG)
                 Text(Money.text(report.summary.taxable_value))
-                    .font(.system(size: 26, weight: .bold))
+                    .font(.scaled(26, weight: .bold))
                     .foregroundColor(.sForeground)
                 Text("\(report.summary.invoice_count) invoice\(report.summary.invoice_count == 1 ? "" : "s") · \(report.company_state.isEmpty ? "State not set" : report.company_state)")
-                    .font(.system(size: 12))
+                    .font(.scaled(12))
                     .foregroundColor(.sMutedFG)
             }
 
@@ -119,10 +119,10 @@ struct GSTReportView: View {
     private func taxStat(label: String, value: Double, isTotal: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(Money.text(value))
-                .font(.system(size: 13, weight: .semibold))
+                .font(.scaled(13, weight: .semibold))
                 .foregroundColor(isTotal ? .sAccent : .sForeground)
             Text(label)
-                .font(.system(size: 10.5))
+                .font(.scaled(10.5))
                 .foregroundColor(.sMutedFG)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -133,7 +133,7 @@ struct GSTReportView: View {
     private func hsnSection(_ report: GSTReportResponse) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("HSN summary")
-                .font(.system(size: 13, weight: .medium))
+                .font(.scaled(13, weight: .medium))
                 .foregroundColor(.sMutedFG)
                 .padding(.horizontal, 20)
 
@@ -142,15 +142,15 @@ struct GSTReportView: View {
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(row.hsn_code.isEmpty ? "No HSN" : row.hsn_code)
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.scaled(13, weight: .medium))
                                 .foregroundColor(.sForeground)
                             Text("\(String(format: "%.0f", row.total_qty)) units · \(String(format: "%.0f", row.tax_rate))% GST")
-                                .font(.system(size: 11))
+                                .font(.scaled(11))
                                 .foregroundColor(.sMutedFG)
                         }
                         Spacer()
                         Text(Money.text(row.total_value))
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(.scaled(13, weight: .semibold))
                             .foregroundColor(.sForeground)
                     }
                     .padding(.horizontal, 14)
@@ -172,7 +172,7 @@ struct GSTReportView: View {
     private func invoiceSection(_ report: GSTReportResponse) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Invoice-wise")
-                .font(.system(size: 13, weight: .medium))
+                .font(.scaled(13, weight: .medium))
                 .foregroundColor(.sMutedFG)
                 .padding(.horizontal, 20)
 
@@ -181,19 +181,19 @@ struct GSTReportView: View {
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(row.invoice_number)
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.scaled(13, weight: .medium))
                                 .foregroundColor(.sForeground)
                             Text(row.client_name)
-                                .font(.system(size: 11))
+                                .font(.scaled(11))
                                 .foregroundColor(.sMutedFG)
                         }
                         Spacer()
                         VStack(alignment: .trailing, spacing: 2) {
                             Text(Money.text(row.total))
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(.scaled(13, weight: .semibold))
                                 .foregroundColor(.sForeground)
                             Text(row.igst > 0 ? "IGST" : "CGST+SGST")
-                                .font(.system(size: 10))
+                                .font(.scaled(10))
                                 .foregroundColor(.sMutedFG)
                         }
                     }
@@ -217,13 +217,13 @@ struct GSTReportView: View {
         VStack(spacing: 12) {
             Spacer()
             Image(systemName: "doc.text.magnifyingglass")
-                .font(.system(size: 32))
+                .font(.scaled(32))
                 .foregroundColor(.sMutedFG)
             Text("No GST activity in \(vm.monthLabel)")
-                .font(.system(size: 15, weight: .medium))
+                .font(.scaled(15, weight: .medium))
                 .foregroundColor(.sForeground)
             Text("Issued invoices for this month will show up here")
-                .font(.system(size: 13))
+                .font(.scaled(13))
                 .foregroundColor(.sMutedFG)
             Spacer()
         }

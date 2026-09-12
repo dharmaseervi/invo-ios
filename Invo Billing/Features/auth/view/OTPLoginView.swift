@@ -19,20 +19,20 @@ struct OTPLoginView: View {
                                 .fill(Color.sAccent)
                                 .frame(width: 44, height: 44)
                             Image(systemName: viewModel.otpSent ? "envelope.badge.fill" : "iphone")
-                                .font(.system(size: 20, weight: .medium))
+                                .font(.scaled(20, weight: .medium))
                                 .foregroundColor(.sAccentFG)
                         }
                         
                         VStack(spacing: 4) {
                             Text(viewModel.otpSent ? "Check your email" : "Login with OTP")
-                                .font(.system(size: 20, weight: .semibold))
+                                .font(.scaled(20, weight: .semibold))
                                 .foregroundColor(.sForeground)
                             
                             Text(viewModel.otpSent
                                  ? "Enter the 6-digit code sent to\n\(viewModel.otpEmail)"
                                  : "We'll send a login code to your email"
                             )
-                            .font(.system(size: 13))
+                            .font(.scaled(13))
                             .foregroundColor(.sMutedFG)
                             .multilineTextAlignment(.center)
                         }
@@ -55,12 +55,12 @@ struct OTPLoginView: View {
                             // OTP code input
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("Verification code")
-                                    .font(.system(size: 13, weight: .medium))
+                                    .font(.scaled(13, weight: .medium))
                                     .foregroundColor(.sForeground)
                                 
                                 TextField("000000", text: $viewModel.otpCode)
                                     .keyboardType(.numberPad)
-                                    .font(.system(size: 28, weight: .bold))
+                                    .font(.scaled(28, weight: .bold))
                                     .tracking(14)
                                     .multilineTextAlignment(.center)
                                     .foregroundColor(.sForeground)
@@ -97,10 +97,10 @@ struct OTPLoginView: View {
                             // Info banner
                             HStack(spacing: 8) {
                                 Image(systemName: "clock")
-                                    .font(.system(size: 13))
+                                    .font(.scaled(13))
                                     .foregroundColor(.sMutedFG)
                                 Text("Code expires in 10 minutes")
-                                    .font(.system(size: 13))
+                                    .font(.scaled(13))
                                     .foregroundColor(.sMutedFG)
                                 Spacer()
                             }
@@ -117,10 +117,10 @@ struct OTPLoginView: View {
                         if let error = viewModel.errorMessage {
                             HStack(spacing: 8) {
                                 Image(systemName: "exclamationmark.circle")
-                                    .font(.system(size: 13))
+                                    .font(.scaled(13))
                                     .foregroundColor(.sDestructive)
                                 Text(error)
-                                    .font(.system(size: 13))
+                                    .font(.scaled(13))
                                     .foregroundColor(.sDestructive)
                                 Spacer()
                             }
@@ -153,7 +153,7 @@ struct OTPLoginView: View {
                                         .scaleEffect(0.85)
                                 } else {
                                     Text(viewModel.otpSent ? "Verify code" : "Send code")
-                                        .font(.system(size: 15, weight: .semibold))
+                                        .font(.scaled(15, weight: .semibold))
                                         .foregroundColor(.sAccentFG)
                                 }
                             }
@@ -179,7 +179,7 @@ struct OTPLoginView: View {
                                     }
                                 } label: {
                                     Text("Change email")
-                                        .font(.system(size: 13))
+                                        .font(.scaled(13))
                                         .foregroundColor(.sMutedFG)
                                 }
                                 
@@ -191,7 +191,7 @@ struct OTPLoginView: View {
                                     Task { await viewModel.sendOTP() }
                                 } label: {
                                     Text("Resend code")
-                                        .font(.system(size: 13, weight: .medium))
+                                        .font(.scaled(13, weight: .medium))
                                         .foregroundColor(.sAccent)
                                 }
                             }
@@ -221,9 +221,9 @@ struct OTPLoginView: View {
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: "chevron.left")
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(.scaled(12, weight: .semibold))
                             Text("Back to login")
-                                .font(.system(size: 13))
+                                .font(.scaled(13))
                         }
                         .foregroundColor(.sMutedFG)
                     }

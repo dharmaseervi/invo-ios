@@ -68,12 +68,12 @@ struct InvoiceAddressFormView: View {
                                 HStack(spacing: 12) {
                                     VStack(spacing: 8) {
                                         Label("City", systemImage: "building.2.fill")
-                                            .font(.system(size: 12, weight: .semibold))
+                                            .font(.scaled(12, weight: .semibold))
                                             .foregroundColor(.sMutedFG)
                                             .frame(maxWidth: .infinity, alignment: .leading)
                                         
                                         TextField("City", text: $draft.city)
-                                            .font(.system(size: 14, weight: .regular))
+                                            .font(.scaled(14, weight: .regular))
                                             .focused($focusedField, equals: .city)
                                             .textFieldStyle(.plain)
                                             .padding(.vertical, 10)
@@ -91,7 +91,7 @@ struct InvoiceAddressFormView: View {
                                     
                                     VStack(spacing: 8) {
                                         Label("State", systemImage: "map.fill")
-                                            .font(.system(size: 12, weight: .semibold))
+                                            .font(.scaled(12, weight: .semibold))
                                             .foregroundColor(.sMutedFG)
                                             .frame(maxWidth: .infinity, alignment: .leading)
                                         
@@ -110,11 +110,11 @@ struct InvoiceAddressFormView: View {
                                         } label: {
                                             HStack {
                                                 Text(draft.state.isEmpty ? "Select state" : draft.state)
-                                                    .font(.system(size: 14, weight: .regular))
+                                                    .font(.scaled(14, weight: .regular))
                                                     .foregroundColor(draft.state.isEmpty ? .sMutedFG : .sForeground)
                                                 Spacer()
                                                 Image(systemName: "chevron.up.chevron.down")
-                                                    .font(.system(size: 11, weight: .semibold))
+                                                    .font(.scaled(11, weight: .semibold))
                                                     .foregroundColor(.sMutedFG)
                                             }
                                         }
@@ -131,12 +131,12 @@ struct InvoiceAddressFormView: View {
                                 HStack(spacing: 12) {
                                     VStack(spacing: 8) {
                                         Label("Postal Code", systemImage: "mailbox.fill")
-                                            .font(.system(size: 12, weight: .semibold))
+                                            .font(.scaled(12, weight: .semibold))
                                             .foregroundColor(.sMutedFG)
                                             .frame(maxWidth: .infinity, alignment: .leading)
                                         
                                         TextField("Postal Code", text: $draft.postalCode)
-                                            .font(.system(size: 14, weight: .regular))
+                                            .font(.scaled(14, weight: .regular))
                                             .focused($focusedField, equals: .postalCode)
                                             .textFieldStyle(.plain)
                                             .padding(.vertical, 10)
@@ -154,12 +154,12 @@ struct InvoiceAddressFormView: View {
                                     
                                     VStack(spacing: 8) {
                                         Label("Country", systemImage: "globe")
-                                            .font(.system(size: 12, weight: .semibold))
+                                            .font(.scaled(12, weight: .semibold))
                                             .foregroundColor(.sMutedFG)
                                             .frame(maxWidth: .infinity, alignment: .leading)
                                         
                                         TextField("Country", text: $draft.country)
-                                            .font(.system(size: 14, weight: .regular))
+                                            .font(.scaled(14, weight: .regular))
                                             .focused($focusedField, equals: .country)
                                             .textFieldStyle(.plain)
                                             .padding(.vertical, 10)
@@ -219,9 +219,9 @@ struct InvoiceAddressFormView: View {
                             }) {
                                 HStack(spacing: 10) {
                                     Image(systemName: "checkmark.circle.fill")
-                                        .font(.system(size: 14, weight: .semibold))
+                                        .font(.scaled(14, weight: .semibold))
                                     Text("Save address")
-                                        .font(.system(size: 15, weight: .semibold))
+                                        .font(.scaled(15, weight: .semibold))
                                 }
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 14)
@@ -256,11 +256,11 @@ struct InvoiceAddressFormView: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 8) {
                 Image(systemName: icon)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.scaled(13, weight: .semibold))
                     .foregroundColor(.sAccent)
 
                 Text(title.capitalized)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.scaled(13, weight: .medium))
                     .foregroundColor(.sMutedFG)
 
                 Spacer()
@@ -292,7 +292,7 @@ struct InvoiceAddressFormView: View {
         VStack(spacing: 8) {
             HStack(spacing: 8) {
                 Label(label, systemImage: icon)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.scaled(12, weight: .semibold))
                     .foregroundColor(.sMutedFG)
 
                 if isRequired {
@@ -305,7 +305,7 @@ struct InvoiceAddressFormView: View {
             }
 
             TextField(placeholder, text: text)
-                .font(.system(size: 14, weight: .regular))
+                .font(.scaled(14, weight: .regular))
                 .focused($focusedField, equals: field)
                 .textFieldStyle(.plain)
                 .padding(.vertical, 10)
@@ -322,7 +322,7 @@ struct InvoiceAddressFormView: View {
 
             if let errorMessage {
                 Text(errorMessage)
-                    .font(.system(size: 11))
+                    .font(.scaled(11))
                     .foregroundColor(.sDestructive)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }

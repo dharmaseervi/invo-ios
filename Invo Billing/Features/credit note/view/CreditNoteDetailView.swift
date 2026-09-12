@@ -67,12 +67,12 @@ private extension CreditNoteDetailView {
     func creditInfoSection(_ cn: CreditNoteDetailModel) -> some View {
         VStack(spacing: 10) {
             Text(cn.credit_number)
-                .font(.system(size: 22, weight: .light))
+                .font(.scaled(22, weight: .light))
                 .tracking(1)
                 .foregroundColor(.sForeground)
             
             Text(cn.client_name)
-                .font(.system(size: 13))
+                .font(.scaled(13))
                 .foregroundColor(.sMutedFG)
             
             HStack(spacing: 8) {
@@ -106,26 +106,26 @@ private extension CreditNoteDetailView {
         VStack(alignment: .leading, spacing: 20) {
             
             Text("Items")
-                .font(.system(size: 13, weight: .medium))
+                .font(.scaled(13, weight: .medium))
                 .foregroundColor(.sMutedFG)
             
             ForEach(items) { item in
                 HStack {
                     VStack(alignment: .leading, spacing: 6) {
                         Text(item.item_name)
-                            .font(.system(size: 14, weight: .light))
+                            .font(.scaled(14, weight: .light))
                         
                         Text(
                             "Qty \(item.qty, specifier: "%.0f") × \(Money.text(item.rate))"
                         )
-                        .font(.system(size: 10))
+                        .font(.scaled(10))
                         .foregroundColor(.sMutedFG)
                     }
                     
                     Spacer()
                     
                     Text(Money.text(item.total))
-                        .font(.system(size: 14, weight: .light))
+                        .font(.scaled(14, weight: .light))
                 }
                 
                 Rectangle()
@@ -187,31 +187,31 @@ private extension CreditNoteDetailView {
     func detailRow(_ title: String, _ value: String) -> some View {
         HStack {
             Text(title)
-                .font(.system(size: 12))
+                .font(.scaled(12))
                 .foregroundColor(.sMutedFG)
             
             Spacer()
             
             Text(value)
-                .font(.system(size: 12))
+                .font(.scaled(12))
         }
     }
     
     func amountRow(_ title: String, _ value: Double, bold: Bool = false) -> some View {
         HStack {
             Text(title)
-                .font(.system(size: 13))
+                .font(.scaled(13))
             
             Spacer()
             
             Text(Money.text(value))
-                .font(.system(size: 13, weight: bold ? .medium : .light))
+                .font(.scaled(13, weight: bold ? .medium : .light))
         }
     }
     
     func statusBadge(_ status: String) -> some View {
         Text(status.capitalized)
-            .font(.system(size: 11, weight: .medium))
+            .font(.scaled(11, weight: .medium))
             .foregroundColor(.cnSuccess)
             .padding(.horizontal, 10)
             .padding(.vertical, 4)
@@ -221,7 +221,7 @@ private extension CreditNoteDetailView {
 
     func typeBadge(_ type: String) -> some View {
         Text(type.capitalized)
-            .font(.system(size: 11, weight: .medium))
+            .font(.scaled(11, weight: .medium))
             .foregroundColor(.sForeground)
             .padding(.horizontal, 10)
             .padding(.vertical, 4)
@@ -260,7 +260,7 @@ private extension CreditNoteDetailView {
         VStack(spacing: 16) {
             ProgressView()
             Text("Loading credit note...")
-                .font(.system(size: 12))
+                .font(.scaled(12))
                 .foregroundColor(.sMutedFG)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -271,7 +271,7 @@ private extension CreditNoteDetailView {
 struct PrimaryCNButton: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 14, weight: .semibold))
+            .font(.scaled(14, weight: .semibold))
             .foregroundColor(.sAccentFG)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
@@ -284,7 +284,7 @@ struct PrimaryCNButton: ButtonStyle {
 struct OutlineCNButton: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 14, weight: .semibold))
+            .font(.scaled(14, weight: .semibold))
             .foregroundColor(.sForeground)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)

@@ -17,10 +17,10 @@ struct LoginView: View {
                         AuthLogo()
                         VStack(spacing: 5) {
                             Text("Invo Billing")
-                                .font(.system(size: 24, weight: .bold))
+                                .font(.scaled(24, weight: .bold))
                                 .foregroundColor(AuthTheme.foreground)
                             Text("GST invoicing for Indian businesses")
-                                .font(.system(size: 13))
+                                .font(.scaled(13))
                                 .foregroundColor(AuthTheme.muted)
                         }
                     }
@@ -39,7 +39,7 @@ struct LoginView: View {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
                                 Text("Password")
-                                    .font(.system(size: 12.5, weight: .medium))
+                                    .font(.scaled(12.5, weight: .medium))
                                     .foregroundColor(AuthTheme.muted)
                                 Spacer()
                                 Button {
@@ -47,7 +47,7 @@ struct LoginView: View {
                                     viewModel.showForgotPassword = true
                                 } label: {
                                     Text("Forgot password?")
-                                        .font(.system(size: 12.5))
+                                        .font(.scaled(12.5))
                                         .foregroundColor(AuthTheme.accentBright)
                                 }
                             }
@@ -60,7 +60,7 @@ struct LoginView: View {
                                         SecureField("Enter your password", text: $viewModel.password)
                                     }
                                 }
-                                .font(.system(size: 14))
+                                .font(.scaled(14))
                                 .foregroundColor(AuthTheme.foreground)
                                 .tint(AuthTheme.accentBright)
                                 .textInputAutocapitalization(.never)
@@ -70,7 +70,7 @@ struct LoginView: View {
                                     showPassword.toggle()
                                 } label: {
                                     Image(systemName: showPassword ? "eye.slash" : "eye")
-                                        .font(.system(size: 14))
+                                        .font(.scaled(14))
                                         .foregroundColor(AuthTheme.muted)
                                 }
                             }
@@ -94,7 +94,7 @@ struct LoginView: View {
                         HStack(spacing: 10) {
                             Rectangle().fill(AuthTheme.border).frame(height: 1)
                             Text("or continue with")
-                                .font(.system(size: 12))
+                                .font(.scaled(12))
                                 .foregroundColor(AuthTheme.muted)
                                 .fixedSize()
                             Rectangle().fill(AuthTheme.border).frame(height: 1)
@@ -105,9 +105,9 @@ struct LoginView: View {
                         } label: {
                             HStack(spacing: 8) {
                                 Image(systemName: "iphone")
-                                    .font(.system(size: 14))
+                                    .font(.scaled(14))
                                 Text("Login with OTP")
-                                    .font(.system(size: 14, weight: .medium))
+                                    .font(.scaled(14, weight: .medium))
                             }
                             .foregroundColor(AuthTheme.foreground)
                             .frame(maxWidth: .infinity)
@@ -122,13 +122,13 @@ struct LoginView: View {
                     // Sign up
                     HStack(spacing: 4) {
                         Text("Don't have an account?")
-                            .font(.system(size: 13))
+                            .font(.scaled(13))
                             .foregroundColor(AuthTheme.muted)
                         NavigationLink {
                             SignupView().environmentObject(viewModel)
                         } label: {
                             Text("Sign up")
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(.scaled(13, weight: .semibold))
                                 .foregroundColor(AuthTheme.accentBright)
                         }
                     }

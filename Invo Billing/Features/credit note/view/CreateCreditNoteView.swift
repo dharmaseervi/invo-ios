@@ -30,7 +30,7 @@ struct CreateCreditNoteView: View {
                             // Credit Type
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Credit type")
-                                    .font(.system(size: 13, weight: .medium))
+                                    .font(.scaled(13, weight: .medium))
                                     .foregroundColor(.sMutedFG)
 
                                 Picker("", selection: $vm.creditType) {
@@ -65,7 +65,7 @@ struct CreateCreditNoteView: View {
                             // Credit Date
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Credit date")
-                                    .font(.system(size: 13, weight: .medium))
+                                    .font(.scaled(13, weight: .medium))
                                     .foregroundColor(.sMutedFG)
 
                                 DatePicker(
@@ -95,12 +95,12 @@ struct CreateCreditNoteView: View {
                                 // VALUE ADJUSTMENT UI
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text("Credit amount")
-                                        .font(.system(size: 13, weight: .medium))
+                                        .font(.scaled(13, weight: .medium))
                                         .foregroundColor(.sMutedFG)
 
                                     TextField("₹0.00", text: $vm.amount)
                                         .keyboardType(.decimalPad)
-                                        .font(.system(size: 18, weight: .semibold))
+                                        .font(.scaled(18, weight: .semibold))
                                         .foregroundColor(.sForeground)
                                         .tint(.sAccent)
                                         .multilineTextAlignment(.leading)
@@ -138,7 +138,7 @@ struct CreateCreditNoteView: View {
                                 .scaleEffect(0.85)
                         } else {
                             Text("Save credit note")
-                                .font(.system(size: 15, weight: .semibold))
+                                .font(.scaled(15, weight: .semibold))
                         }
                     }
                     .frame(maxWidth: .infinity)

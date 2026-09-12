@@ -28,7 +28,7 @@ struct ForgotPasswordView: View {
                             Image(systemName: viewModel.resetCodeSent
                                   ? "lock.rotation"
                                   : "key.fill")
-                            .font(.system(size: 20, weight: .medium))
+                            .font(.scaled(20, weight: .medium))
                             .foregroundColor(.sAccentFG)
                         }
                         
@@ -36,13 +36,13 @@ struct ForgotPasswordView: View {
                             Text(viewModel.resetCodeSent
                                  ? "Reset your password"
                                  : "Forgot password")
-                            .font(.system(size: 20, weight: .semibold))
+                            .font(.scaled(20, weight: .semibold))
                             .foregroundColor(.sForeground)
                             
                             Text(viewModel.resetCodeSent
                                  ? "Enter the code sent to\n\(viewModel.resetEmail)"
                                  : "Enter your email to receive a reset code")
-                            .font(.system(size: 13))
+                            .font(.scaled(13))
                             .foregroundColor(.sMutedFG)
                             .multilineTextAlignment(.center)
                         }
@@ -68,12 +68,12 @@ struct ForgotPasswordView: View {
                             // Reset code
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("Reset code")
-                                    .font(.system(size: 13, weight: .medium))
+                                    .font(.scaled(13, weight: .medium))
                                     .foregroundColor(.sForeground)
                                 
                                 TextField("000000", text: $viewModel.resetCode)
                                     .keyboardType(.numberPad)
-                                    .font(.system(size: 28, weight: .bold))
+                                    .font(.scaled(28, weight: .bold))
                                     .tracking(14)
                                     .multilineTextAlignment(.center)
                                     .foregroundColor(.sForeground)
@@ -109,7 +109,7 @@ struct ForgotPasswordView: View {
                             // New password
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("New password")
-                                    .font(.system(size: 13, weight: .medium))
+                                    .font(.scaled(13, weight: .medium))
                                     .foregroundColor(.sForeground)
                                 
                                 HStack(spacing: 10) {
@@ -120,7 +120,7 @@ struct ForgotPasswordView: View {
                                             SecureField("Create new password", text: $viewModel.resetNewPassword)
                                         }
                                     }
-                                    .font(.system(size: 14))
+                                    .font(.scaled(14))
                                     .foregroundColor(.sForeground)
                                     .tint(.sAccent)
                                     .textInputAutocapitalization(.never)
@@ -130,7 +130,7 @@ struct ForgotPasswordView: View {
                                         showPassword.toggle()
                                     } label: {
                                         Image(systemName: showPassword ? "eye.slash" : "eye")
-                                            .font(.system(size: 14))
+                                            .font(.scaled(14))
                                             .foregroundColor(.sMutedFG)
                                     }
                                 }
@@ -147,7 +147,7 @@ struct ForgotPasswordView: View {
                             // Confirm password
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("Confirm password")
-                                    .font(.system(size: 13, weight: .medium))
+                                    .font(.scaled(13, weight: .medium))
                                     .foregroundColor(.sForeground)
                                 
                                 HStack(spacing: 10) {
@@ -158,7 +158,7 @@ struct ForgotPasswordView: View {
                                             SecureField("Repeat new password", text: $viewModel.resetConfirmPassword)
                                         }
                                     }
-                                    .font(.system(size: 14))
+                                    .font(.scaled(14))
                                     .foregroundColor(.sForeground)
                                     .tint(.sAccent)
                                     .textInputAutocapitalization(.never)
@@ -168,7 +168,7 @@ struct ForgotPasswordView: View {
                                         Image(systemName: passwordsMatch
                                               ? "checkmark.circle.fill"
                                               : "xmark.circle.fill")
-                                        .font(.system(size: 15))
+                                        .font(.scaled(15))
                                         .foregroundColor(passwordsMatch
                                                          ? Color(red: 0.086, green: 0.639, blue: 0.341)
                                                          : .sDestructive)
@@ -177,7 +177,7 @@ struct ForgotPasswordView: View {
                                             showConfirm.toggle()
                                         } label: {
                                             Image(systemName: showConfirm ? "eye.slash" : "eye")
-                                                .font(.system(size: 14))
+                                                .font(.scaled(14))
                                                 .foregroundColor(.sMutedFG)
                                         }
                                     }
@@ -200,10 +200,10 @@ struct ForgotPasswordView: View {
                             // Info banner
                             HStack(spacing: 8) {
                                 Image(systemName: "clock")
-                                    .font(.system(size: 13))
+                                    .font(.scaled(13))
                                     .foregroundColor(.sMutedFG)
                                 Text("Code expires in 10 minutes")
-                                    .font(.system(size: 13))
+                                    .font(.scaled(13))
                                     .foregroundColor(.sMutedFG)
                                 Spacer()
                             }
@@ -220,10 +220,10 @@ struct ForgotPasswordView: View {
                         if let error = viewModel.errorMessage {
                             HStack(spacing: 8) {
                                 Image(systemName: "exclamationmark.circle")
-                                    .font(.system(size: 13))
+                                    .font(.scaled(13))
                                     .foregroundColor(.sDestructive)
                                 Text(error)
-                                    .font(.system(size: 13))
+                                    .font(.scaled(13))
                                     .foregroundColor(.sDestructive)
                                 Spacer()
                             }
@@ -264,7 +264,7 @@ struct ForgotPasswordView: View {
                                     Text(viewModel.resetCodeSent
                                          ? "Reset password"
                                          : "Send code")
-                                    .font(.system(size: 15, weight: .semibold))
+                                    .font(.scaled(15, weight: .semibold))
                                     .foregroundColor(.sAccentFG)
                                 }
                             }
@@ -286,7 +286,7 @@ struct ForgotPasswordView: View {
                                     }
                                 } label: {
                                     Text("Change email")
-                                        .font(.system(size: 13))
+                                        .font(.scaled(13))
                                         .foregroundColor(.sMutedFG)
                                 }
                                 
@@ -298,7 +298,7 @@ struct ForgotPasswordView: View {
                                     Task { await viewModel.forgotPassword() }
                                 } label: {
                                     Text("Resend code")
-                                        .font(.system(size: 13, weight: .medium))
+                                        .font(.scaled(13, weight: .medium))
                                         .foregroundColor(.sAccent)
                                 }
                             }
@@ -327,9 +327,9 @@ struct ForgotPasswordView: View {
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: "chevron.left")
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(.scaled(12, weight: .semibold))
                             Text("Back to login")
-                                .font(.system(size: 13))
+                                .font(.scaled(13))
                         }
                         .foregroundColor(.sMutedFG)
                     }

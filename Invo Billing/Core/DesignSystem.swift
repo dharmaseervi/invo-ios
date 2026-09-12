@@ -66,7 +66,14 @@ extension Color {
         ? UIColor(red: 0.671, green: 0.475, blue: 0.984, alpha: 1)
         : UIColor(red: 0.486, green: 0.227, blue: 0.929, alpha: 1)
     })
-    static let sDestructive = Color(red: 0.863, green: 0.149, blue: 0.149) // #DC2626
+    // The one token that had no dark variant. #DC2626 on the dark card measures 3.81:1,
+    // under the 4.5:1 needed for body text — and it is the colour every overdue amount
+    // and every delete action is drawn in. The dark value is lifted to clear it.
+    static let sDestructive = Color(UIColor { t in
+        t.userInterfaceStyle == .dark
+        ? UIColor(red: 0.973, green: 0.443, blue: 0.443, alpha: 1) // #F87171 — 6.4:1 on #141417
+        : UIColor(red: 0.863, green: 0.149, blue: 0.149, alpha: 1) // #DC2626 — 4.83:1 on white
+    })
     
     // Primary is now violet — not black
     static let sPrimary = Color(UIColor { t in

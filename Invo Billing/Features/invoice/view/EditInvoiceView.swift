@@ -37,30 +37,30 @@ struct EditInvoiceView: View {
                     ProgressView()
                         .tint(.sAccent)
                     Text("Loading invoice...")
-                        .font(.system(size: 13))
+                        .font(.scaled(13))
                         .foregroundColor(.sMutedFG)
                 }
             } else if !vm.canEdit && !vm.invoiceStatus.isEmpty {
                 // Non-editable state for non-draft invoices
                 VStack(spacing: 18) {
                     Image(systemName: "lock.fill")
-                        .font(.system(size: 40))
+                        .font(.scaled(40))
                         .foregroundColor(.sMutedFG)
 
                     VStack(spacing: 6) {
                         Text("Invoice cannot be edited")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(.scaled(16, weight: .semibold))
                             .foregroundColor(.sForeground)
 
                         Text("Only draft invoices can be edited.\nThis invoice status is: \(vm.invoiceStatus.uppercased())")
-                            .font(.system(size: 13))
+                            .font(.scaled(13))
                             .foregroundColor(.sMutedFG)
                             .multilineTextAlignment(.center)
                     }
 
                     Button(action: { dismiss() }) {
                         Text("Go back")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.scaled(14, weight: .semibold))
                             .foregroundColor(.sAccentFG)
                             .padding(.horizontal, 28)
                             .padding(.vertical, 12)
@@ -77,7 +77,7 @@ struct EditInvoiceView: View {
                     // Invoice Number Badge (Read-only)
                     HStack {
                         Text("Invoice: \(vm.invoiceNumber)")
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.scaled(12, weight: .medium))
                             .foregroundColor(.sAccentFG)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
@@ -87,7 +87,7 @@ struct EditInvoiceView: View {
                         Spacer()
 
                         Text("DRAFT")
-                            .font(.system(size: 10, weight: .semibold))
+                            .font(.scaled(10, weight: .semibold))
                             .tracking(0.5)
                             .foregroundColor(.orange)
                             .padding(.horizontal, 10)
@@ -157,9 +157,9 @@ struct EditInvoiceView: View {
                                                 .scaleEffect(0.85)
                                         } else {
                                             Image(systemName: "checkmark.circle.fill")
-                                                .font(.system(size: 13, weight: .semibold))
+                                                .font(.scaled(13, weight: .semibold))
                                             Text("Save changes")
-                                                .font(.system(size: 15, weight: .semibold))
+                                                .font(.scaled(15, weight: .semibold))
                                         }
                                     }
                                     .foregroundColor(.sAccentFG)
@@ -172,7 +172,7 @@ struct EditInvoiceView: View {
 
                                 Button(action: { dismiss() }) {
                                     Text("Cancel")
-                                        .font(.system(size: 14, weight: .medium))
+                                        .font(.scaled(14, weight: .medium))
                                         .frame(maxWidth: .infinity)
                                         .padding(.vertical, 14)
                                         .foregroundColor(.sForeground)

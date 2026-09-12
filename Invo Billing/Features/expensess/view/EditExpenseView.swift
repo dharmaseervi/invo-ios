@@ -43,7 +43,7 @@ struct ExpenseEditView: View {
                         // MARK: - Expense Details Section
                         VStack(alignment: .leading, spacing: 14) {
                             Text("Expense details")
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.scaled(13, weight: .medium))
                                 .foregroundColor(.sMutedFG)
 
                             FormFieldView(
@@ -55,16 +55,16 @@ struct ExpenseEditView: View {
                             // Amount Field
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("Amount")
-                                    .font(.system(size: 13, weight: .medium))
+                                    .font(.scaled(13, weight: .medium))
                                     .foregroundColor(.sForeground)
 
                                 HStack(spacing: 8) {
                                     Text("₹")
-                                        .font(.system(size: 15, weight: .semibold))
+                                        .font(.scaled(15, weight: .semibold))
                                         .foregroundColor(.sMutedFG)
 
                                     TextField("0.00", text: $amount)
-                                        .font(.system(size: 15))
+                                        .font(.scaled(15))
                                         .foregroundColor(.sForeground)
                                         .tint(.sAccent)
                                         .keyboardType(.decimalPad)
@@ -82,7 +82,7 @@ struct ExpenseEditView: View {
                             // Date Field
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("Date")
-                                    .font(.system(size: 13, weight: .medium))
+                                    .font(.scaled(13, weight: .medium))
                                     .foregroundColor(.sForeground)
 
                                 DatePicker(
@@ -107,11 +107,11 @@ struct ExpenseEditView: View {
                         // MARK: - Description Section
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Description (optional)")
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.scaled(13, weight: .medium))
                                 .foregroundColor(.sMutedFG)
 
                             TextEditor(text: $description)
-                                .font(.system(size: 15))
+                                .font(.scaled(15))
                                 .foregroundColor(.sForeground)
                                 .frame(minHeight: 100)
                                 .padding(10)
@@ -216,11 +216,11 @@ struct FormFieldView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(label)
-                .font(.system(size: 13, weight: .medium))
+                .font(.scaled(13, weight: .medium))
                 .foregroundColor(.sForeground)
 
             TextField(placeholder, text: $text)
-                .font(.system(size: 15))
+                .font(.scaled(15))
                 .foregroundColor(.sForeground)
                 .tint(.sAccent)
                 .padding(.horizontal, 12)

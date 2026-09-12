@@ -72,10 +72,10 @@ struct CreateInvoiceView: View {
                 HStack(spacing: 14) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Total")
-                            .font(.system(size: 11))
+                            .font(.scaled(11))
                             .foregroundColor(.sMutedFG)
                         Text(Money.text(vm.total))
-                            .font(.system(size: 17, weight: .semibold))
+                            .font(.scaled(17, weight: .semibold))
                             .foregroundColor(.sForeground)
                     }
                     Spacer()
@@ -95,7 +95,7 @@ struct CreateInvoiceView: View {
                                     .scaleEffect(0.85)
                             } else {
                                 Text("Create invoice")
-                                    .font(.system(size: 15, weight: .semibold))
+                                    .font(.scaled(15, weight: .semibold))
                             }
                         }
                         .foregroundColor(.sAccentFG)

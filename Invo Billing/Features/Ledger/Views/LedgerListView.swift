@@ -35,13 +35,13 @@ struct LedgerListView: View {
                     Spacer()
                     VStack(spacing: 10) {
                         Image(systemName: "book")
-                            .font(.system(size: 22))
+                            .font(.scaled(22))
                             .foregroundColor(.sMutedFG)
                         Text("No transactions yet")
-                            .font(.system(size: 14, weight: .medium))
+                            .font(.scaled(14, weight: .medium))
                             .foregroundColor(.sForeground)
                         Text("Invoices, payments, and credit notes for this client will appear here")
-                            .font(.system(size: 12))
+                            .font(.scaled(12))
                             .foregroundColor(.sMutedFG)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 40)
@@ -106,7 +106,7 @@ struct LedgerSummaryView: View {
 
         HStack {
             Text(title)
-                .font(.system(size: 13))
+                .font(.scaled(13))
                 .foregroundColor(.sMutedFG)
 
             Spacer()
@@ -160,16 +160,16 @@ struct LedgerRowView: View {
             VStack(alignment: .leading, spacing: 4) {
 
                 Text(titleText)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.scaled(13, weight: .semibold))
                     .foregroundColor(.sForeground)
 
                 Text(formattedDate)
-                    .font(.system(size: 11))
+                    .font(.scaled(11))
                     .foregroundColor(.sMutedFG)
 
                 if let desc = entry.description, !desc.isEmpty {
                     Text(desc)
-                        .font(.system(size: 11))
+                        .font(.scaled(11))
                         .foregroundColor(.sMutedFG)
                 }
             }
@@ -181,10 +181,10 @@ struct LedgerRowView: View {
 
                 Text(amountText)
                     .foregroundColor(amountColor)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.scaled(13, weight: .medium))
 
                 Text("Bal \(Money.text(entry.balance))")
-                    .font(.system(size: 11))
+                    .font(.scaled(11))
                     .foregroundColor(.sMutedFG)
             }
         }

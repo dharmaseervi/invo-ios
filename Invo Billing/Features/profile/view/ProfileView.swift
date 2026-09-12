@@ -20,7 +20,7 @@ struct ProfileView: View {
                                 // MARK: - Avatar Section
                                 VStack(spacing: 20) {
                                     Text(String(profile.email.prefix(1)).uppercased())
-                                        .font(.system(size: 30, weight: .semibold))
+                                        .font(.scaled(30, weight: .semibold))
                                         .foregroundColor(.sAccentFG)
                                         .frame(width: 76, height: 76)
                                         .background(Color.sAccent)
@@ -28,11 +28,11 @@ struct ProfileView: View {
 
                                     VStack(spacing: 4) {
                                         Text(profile.email)
-                                            .font(.system(size: 14, weight: .semibold))
+                                            .font(.scaled(14, weight: .semibold))
                                             .foregroundColor(.sForeground)
 
                                         Text("User Account")
-                                            .font(.system(size: 12))
+                                            .font(.scaled(12))
                                             .foregroundColor(.sMutedFG)
                                     }
                                 }
@@ -42,7 +42,7 @@ struct ProfileView: View {
                                 // MARK: - Account Information Section
                                 VStack(alignment: .leading, spacing: 10) {
                                     Text("Account information")
-                                        .font(.system(size: 13, weight: .medium))
+                                        .font(.scaled(13, weight: .medium))
                                         .foregroundColor(.sMutedFG)
 
                                     VStack(spacing: 0) {
@@ -61,12 +61,12 @@ struct ProfileView: View {
                                 // MARK: - Account Status Section
                                 VStack(alignment: .leading, spacing: 10) {
                                     Text("Account status")
-                                        .font(.system(size: 13, weight: .medium))
+                                        .font(.scaled(13, weight: .medium))
                                         .foregroundColor(.sMutedFG)
 
                                     HStack {
                                         Text("Status")
-                                            .font(.system(size: 13))
+                                            .font(.scaled(13))
                                             .foregroundColor(.sForeground)
 
                                         Spacer()
@@ -77,7 +77,7 @@ struct ProfileView: View {
                                                 .frame(width: 6, height: 6)
 
                                             Text("Active")
-                                                .font(.system(size: 13))
+                                                .font(.scaled(13))
                                                 .foregroundColor(.sForeground)
                                         }
                                     }
@@ -95,7 +95,7 @@ struct ProfileView: View {
                                         SessionManager.shared.logout()
                                     } label: {
                                         Text("Log out")
-                                            .font(.system(size: 14, weight: .semibold))
+                                            .font(.scaled(14, weight: .semibold))
                                             .frame(maxWidth: .infinity)
                                             .padding(.vertical, 14)
                                             .foregroundColor(.sDestructive)
@@ -107,7 +107,7 @@ struct ProfileView: View {
 
                                     Button(action: { dismiss() }) {
                                         Text("Close")
-                                            .font(.system(size: 14, weight: .semibold))
+                                            .font(.scaled(14, weight: .semibold))
                                             .frame(maxWidth: .infinity)
                                             .padding(.vertical, 14)
                                             .background(Color.sPrimary)
@@ -121,11 +121,11 @@ struct ProfileView: View {
                             } else if let error = vm.errorMessage {
                                 VStack(spacing: 10) {
                                     Image(systemName: "exclamationmark.triangle")
-                                        .font(.system(size: 28))
+                                        .font(.scaled(28))
                                         .foregroundColor(.sDestructive)
 
                                     Text(error)
-                                        .font(.system(size: 13))
+                                        .font(.scaled(13))
                                         .foregroundColor(.sMutedFG)
                                         .multilineTextAlignment(.center)
                                 }
@@ -136,7 +136,7 @@ struct ProfileView: View {
                                     ProgressView()
                                         .tint(.sAccent)
                                     Text("Loading profile...")
-                                        .font(.system(size: 13))
+                                        .font(.scaled(13))
                                         .foregroundColor(.sMutedFG)
                                 }
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -160,13 +160,13 @@ struct ProfileRowZara: View {
     var body: some View {
         HStack(spacing: 0) {
             Text(label)
-                .font(.system(size: 13))
+                .font(.scaled(13))
                 .foregroundColor(.sMutedFG)
 
             Spacer()
 
             Text(value)
-                .font(.system(size: 13, weight: .medium))
+                .font(.scaled(13, weight: .medium))
                 .foregroundColor(.sForeground)
                 .lineLimit(1)
         }

@@ -67,12 +67,12 @@ struct HomeView: View {
                     } label: {
                         HStack(spacing: 4) {
                             Image(systemName: "building.2")
-                                .font(.system(size: 12))
+                                .font(.scaled(12))
                             Text(selectedCompanyName)
-                                .font(.system(size: 14, weight: .medium))
+                                .font(.scaled(14, weight: .medium))
                                 .lineLimit(1)
                             Image(systemName: "chevron.down")
-                                .font(.system(size: 10, weight: .semibold))
+                                .font(.scaled(10, weight: .semibold))
                         }
                         .foregroundColor(.sForeground)
                     }
@@ -86,9 +86,9 @@ struct HomeView: View {
                         HStack(spacing: 4) {
                             Text(selectedPeriod)
                             Image(systemName: "chevron.down")
-                                .font(.system(size: 11, weight: .semibold))
+                                .font(.scaled(11, weight: .semibold))
                         }
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.scaled(14, weight: .medium))
                     }
                 }
             }
@@ -120,12 +120,12 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("Last 7 days")
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.scaled(12, weight: .medium))
                     .foregroundColor(.sMutedFG)
                 Spacer()
                 if peak > 0 {
                     Text("Best day \(Money.text(peak))")
-                        .font(.system(size: 12))
+                        .font(.scaled(12))
                         .foregroundColor(.sMutedFG)
                 }
             }
@@ -152,7 +152,7 @@ struct HomeView: View {
                         .frame(maxWidth: .infinity)
 
                         Text(AppDate.weekdayInitial(fromWire: day.date))
-                            .font(.system(size: 11, weight: isToday ? .semibold : .regular))
+                            .font(.scaled(11, weight: isToday ? .semibold : .regular))
                             .foregroundColor(isToday ? .sForeground : .sMutedFG)
                     }
                     .accessibilityElement(children: .ignore)
@@ -175,10 +175,10 @@ struct HomeView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Total revenue")
-                        .font(.system(size: 13))
+                        .font(.scaled(13))
                         .foregroundColor(.sMutedFG)
                     Text(Money.compact(viewModel.dashboard?.revenue.total ?? 0))
-                        .font(.system(size: 30, weight: .semibold))
+                        .font(.scaled(30, weight: .semibold))
                         .foregroundColor(.sForeground)
                 }
                 Spacer()
@@ -186,9 +186,9 @@ struct HomeView: View {
                 let change = viewModel.dashboard?.revenue.changePercent ?? 0
                 HStack(spacing: 4) {
                     Image(systemName: change >= 0 ? "arrow.up.right" : "arrow.down.right")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.scaled(11, weight: .semibold))
                     Text("\(String(format: "%.1f", abs(change)))%")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.scaled(12, weight: .medium))
                 }
                 .foregroundColor(change >= 0
                                  ? Color(red: 0.086, green: 0.639, blue: 0.341)
@@ -218,7 +218,7 @@ struct HomeView: View {
                 revenueChart(trend)
             } else {
                 Text("No sales recorded in the last 7 days")
-                    .font(.system(size: 13))
+                    .font(.scaled(13))
                     .foregroundColor(.sMutedFG)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.vertical, 18)
@@ -265,7 +265,7 @@ struct HomeView: View {
     var quickActionsCard: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Quick actions")
-                .font(.system(size: 13, weight: .medium))
+                .font(.scaled(13, weight: .medium))
                 .foregroundColor(.sMutedFG)
                 .padding(.horizontal, 16)
                 .padding(.top, 14)
@@ -314,12 +314,12 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Text("Recent activity")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.scaled(13, weight: .medium))
                     .foregroundColor(.sMutedFG)
                 Spacer()
                 NavigationLink(destination: InvoiceView()) {
                     Text("View all")
-                        .font(.system(size: 13))
+                        .font(.scaled(13))
                         .foregroundColor(.sAccent)
                 }
             }
@@ -350,10 +350,10 @@ struct HomeView: View {
                     Spacer()
                     VStack(spacing: 6) {
                         Image(systemName: "doc.text")
-                            .font(.system(size: 22))
+                            .font(.scaled(22))
                             .foregroundColor(.sMutedFG)
                         Text("No recent activity")
-                            .font(.system(size: 13))
+                            .font(.scaled(13))
                             .foregroundColor(.sMutedFG)
                     }
                     Spacer()
@@ -376,17 +376,17 @@ struct HomeView: View {
     func errorView(_ message: String) -> some View {
         VStack(spacing: 12) {
             Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 24))
+                .font(.scaled(24))
                 .foregroundColor(.sMutedFG)
             Text(message)
-                .font(.system(size: 13))
+                .font(.scaled(13))
                 .foregroundColor(.sMutedFG)
                 .multilineTextAlignment(.center)
             Button {
                 fetch()
             } label: {
                 Text("Retry")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.scaled(13, weight: .medium))
                     .foregroundColor(.sAccent)
             }
         }
@@ -422,15 +422,20 @@ struct HomeStatCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: 14))
+                .font(.scaled(14))
                 .foregroundColor(.sMutedFG)
             VStack(alignment: .leading, spacing: 2) {
                 Text(value)
-                    .font(.system(size: 22, weight: .semibold))
+                    .font(.scaled(22, weight: .semibold))
                     .foregroundColor(.sForeground)
                 Text(label)
-                    .font(.system(size: 12))
+                    .font(.scaled(12))
                     .foregroundColor(.sMutedFG)
+                    // Three of these sit side by side, so at large text sizes the
+                    // column is narrower than the word: "Invoices" broke as "Invoic /
+                    // es". Shrink a little before wrapping, and never break a word.
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -446,6 +451,10 @@ struct HomeStatCard: View {
 
 // MARK: - Action Row
 struct HomeActionRow: View {
+    /// The icon inside this container scales with the reader's text size, so the
+    /// container has to as well or the glyph outgrows its own tile.
+    @ScaledMetric(relativeTo: .body) private var tile: CGFloat = 36
+
     let icon: String
     let title: String
     let subtitle: String
@@ -461,22 +470,22 @@ struct HomeActionRow: View {
                             RoundedRectangle(cornerRadius: 8)
                                 .stroke(Color.sBorder, lineWidth: 0.5)
                         )
-                        .frame(width: 36, height: 36)
+                        .frame(width: tile, height: tile)
                     Image(systemName: icon)
-                        .font(.system(size: 14))
+                        .font(.scaled(14))
                         .foregroundColor(.sForeground)
                 }
                 VStack(alignment: .leading, spacing: 1) {
                     Text(title)
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.scaled(14, weight: .medium))
                         .foregroundColor(.sForeground)
                     Text(subtitle)
-                        .font(.system(size: 12))
+                        .font(.scaled(12))
                         .foregroundColor(.sMutedFG)
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 12))
+                    .font(.scaled(12))
                     .foregroundColor(.sMutedFG)
             }
             .padding(.horizontal, 16)
@@ -510,24 +519,24 @@ struct HomeActivityRow: View {
                     .overlay(Circle().stroke(Color.sBorder, lineWidth: 0.5))
                     .frame(width: 36, height: 36)
                 Text(initials)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.scaled(12, weight: .semibold))
                     .foregroundColor(.sForeground)
             }
             VStack(alignment: .leading, spacing: 1) {
                 Text(name)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.scaled(14, weight: .medium))
                     .foregroundColor(.sForeground)
                 Text(number)
-                    .font(.system(size: 12))
+                    .font(.scaled(12))
                     .foregroundColor(.sMutedFG)
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 3) {
                 Text(amount)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.scaled(14, weight: .semibold))
                     .foregroundColor(.sForeground)
                 Text(status)
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.scaled(11, weight: .medium))
                     .foregroundColor(statusColor)
                     .padding(.horizontal, 7)
                     .padding(.vertical, 2)

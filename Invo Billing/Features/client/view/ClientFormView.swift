@@ -22,7 +22,7 @@ struct ClientFormView: View {
                     // MARK: - Contact Information Section
                     VStack(alignment: .leading, spacing: 14) {
                         Text("Contact information")
-                            .font(.system(size: 13, weight: .medium))
+                            .font(.scaled(13, weight: .medium))
                             .foregroundColor(.sMutedFG)
 
                         VStack(spacing: 12) {
@@ -55,7 +55,7 @@ struct ClientFormView: View {
                     // MARK: - Address Section
                     VStack(alignment: .leading, spacing: 14) {
                         Text("Address")
-                            .font(.system(size: 13, weight: .medium))
+                            .font(.scaled(13, weight: .medium))
                             .foregroundColor(.sMutedFG)
 
                         VStack(spacing: 12) {
@@ -106,7 +106,7 @@ struct ClientFormView: View {
                                         .scaleEffect(0.85)
                                 } else {
                                     Text("Save client")
-                                        .font(.system(size: 15, weight: .semibold))
+                                        .font(.scaled(15, weight: .semibold))
                                         .foregroundColor(.sAccentFG)
                                 }
                             }
@@ -121,7 +121,7 @@ struct ClientFormView: View {
                             vm.resetForm()
                         } label: {
                             Text("Clear")
-                                .font(.system(size: 14, weight: .medium))
+                                .font(.scaled(14, weight: .medium))
                                 .foregroundColor(.sForeground)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 14)
@@ -165,18 +165,18 @@ struct ClientField: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text(label)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.scaled(13, weight: .medium))
                     .foregroundColor(.sForeground)
                 if error != nil {
                     Image(systemName: "exclamationmark.circle")
-                        .font(.system(size: 12))
+                        .font(.scaled(12))
                         .foregroundColor(.sDestructive)
                 }
             }
 
             TextField(placeholder, text: $text)
                 .keyboardType(keyboard)
-                .font(.system(size: 14))
+                .font(.scaled(14))
                 .foregroundColor(.sForeground)
                 .tint(.sAccent)
                 .textInputAutocapitalization(.never)
@@ -192,7 +192,7 @@ struct ClientField: View {
 
             if let error = error {
                 Text(error)
-                    .font(.system(size: 11))
+                    .font(.scaled(11))
                     .foregroundColor(.sDestructive)
             }
         }

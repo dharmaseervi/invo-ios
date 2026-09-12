@@ -56,7 +56,7 @@ struct ExpenseFormView: View {
                             // Date Picker
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("Date")
-                                    .font(.system(size: 13, weight: .medium))
+                                    .font(.scaled(13, weight: .medium))
                                     .foregroundColor(.sForeground)
 
                                 DatePicker(
@@ -73,11 +73,11 @@ struct ExpenseFormView: View {
                             // Description
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("Description")
-                                    .font(.system(size: 13, weight: .medium))
+                                    .font(.scaled(13, weight: .medium))
                                     .foregroundColor(.sForeground)
 
                                 TextEditor(text: $description)
-                                    .font(.system(size: 14))
+                                    .font(.scaled(14))
                                     .foregroundColor(.sForeground)
                                     .scrollContentBackground(.hidden)
                                     .frame(height: 100)
@@ -117,7 +117,7 @@ struct ExpenseFormView: View {
                                         .scaleEffect(0.85)
                                 } else {
                                     Text("Save expense")
-                                        .font(.system(size: 15, weight: .semibold))
+                                        .font(.scaled(15, weight: .semibold))
                                 }
                             }
                             .foregroundColor(.sAccentFG)
@@ -132,7 +132,7 @@ struct ExpenseFormView: View {
                             resetForm()
                         } label: {
                             Text("Clear")
-                                .font(.system(size: 14, weight: .medium))
+                                .font(.scaled(14, weight: .medium))
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 14)
                                 .foregroundColor(.sForeground)
@@ -179,12 +179,12 @@ struct EditorialField: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(label)
-                .font(.system(size: 13, weight: .medium))
+                .font(.scaled(13, weight: .medium))
                 .foregroundColor(.sForeground)
 
             TextField(placeholder, text: $text)
                 .keyboardType(keyboard)
-                .font(.system(size: 14))
+                .font(.scaled(14))
                 .foregroundColor(.sForeground)
                 .tint(.sAccent)
                 .padding(.horizontal, 12)

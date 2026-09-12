@@ -24,18 +24,18 @@ struct CompanyBankListView: View {
             else if vm.banks.isEmpty {
                 VStack(spacing: 16) {
                     Image(systemName: "building.columns")
-                        .font(.system(size: 36))
+                        .font(.scaled(36))
                         .foregroundColor(.sMutedFG)
 
                     Text("No bank accounts")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.scaled(15, weight: .semibold))
                         .foregroundColor(.sForeground)
 
                     Button {
                         showForm = true
                     } label: {
                         Text("Add bank")
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(.scaled(13, weight: .semibold))
                             .foregroundColor(.sAccentFG)
                             .padding(.horizontal, 20)
                             .padding(.vertical, 10)
@@ -54,11 +54,11 @@ struct CompanyBankListView: View {
                             HStack {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(bank.bank_name)
-                                        .font(.system(size: 14, weight: .medium))
+                                        .font(.scaled(14, weight: .medium))
                                         .foregroundColor(.sForeground)
 
                                     Text("A/C: \(bank.account_number)")
-                                        .font(.system(size: 12))
+                                        .font(.scaled(12))
                                         .foregroundColor(.sMutedFG)
                                 }
 
@@ -66,7 +66,7 @@ struct CompanyBankListView: View {
 
                                 if bank.is_default {
                                     Text("Default")
-                                        .font(.system(size: 11, weight: .medium))
+                                        .font(.scaled(11, weight: .medium))
                                         .foregroundColor(.sAccent)
                                         .padding(.horizontal, 8)
                                         .padding(.vertical, 4)

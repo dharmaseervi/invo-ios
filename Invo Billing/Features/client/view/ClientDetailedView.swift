@@ -19,14 +19,14 @@ struct ClientDetailedView: View {
                     // MARK: - Profile Header
                     VStack(spacing: 14) {
                         Text(avatarLetter)
-                            .font(.system(size: 32, weight: .semibold))
+                            .font(.scaled(32, weight: .semibold))
                             .foregroundColor(.sAccentFG)
                             .frame(width: 72, height: 72)
                             .background(Color.sAccent)
                             .cornerRadius(16)
 
                         Text(client.name)
-                            .font(.system(size: 20, weight: .semibold))
+                            .font(.scaled(20, weight: .semibold))
                             .foregroundColor(.sForeground)
                     }
                     .padding(.top, 20)
@@ -34,7 +34,7 @@ struct ClientDetailedView: View {
                     // MARK: - Contact Information Section
                     VStack(alignment: .leading, spacing: 0) {
                         Text("Contact information")
-                            .font(.system(size: 13, weight: .medium))
+                            .font(.scaled(13, weight: .medium))
                             .foregroundColor(.sMutedFG)
                             .padding(.horizontal, 16)
                             .padding(.top, 14)
@@ -53,7 +53,7 @@ struct ClientDetailedView: View {
                     // MARK: - Address Section
                     VStack(alignment: .leading, spacing: 0) {
                         Text("Address")
-                            .font(.system(size: 13, weight: .medium))
+                            .font(.scaled(13, weight: .medium))
                             .foregroundColor(.sMutedFG)
                             .padding(.horizontal, 16)
                             .padding(.top, 14)
@@ -79,11 +79,11 @@ struct ClientDetailedView: View {
                     VStack(alignment: .leading, spacing: 0) {
                         HStack {
                             Text("Invoices")
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.scaled(13, weight: .medium))
                                 .foregroundColor(.sMutedFG)
                             Spacer()
                             Text("View all")
-                                .font(.system(size: 13))
+                                .font(.scaled(13))
                                 .foregroundColor(.sAccent)
                         }
                         .padding(.horizontal, 16)
@@ -95,10 +95,10 @@ struct ClientDetailedView: View {
                         if vm.invoices.isEmpty {
                             VStack(spacing: 8) {
                                 Image(systemName: "doc.text")
-                                    .font(.system(size: 22))
+                                    .font(.scaled(22))
                                     .foregroundColor(.sMutedFG)
                                 Text("No invoices yet")
-                                    .font(.system(size: 13))
+                                    .font(.scaled(13))
                                     .foregroundColor(.sMutedFG)
                             }
                             .frame(maxWidth: .infinity)
@@ -108,11 +108,11 @@ struct ClientDetailedView: View {
                                 ForEach(Array(vm.invoices.prefix(3).enumerated()), id: \.element.id) { idx, invoice in
                                     HStack {
                                         Text(invoice.invoice_number)
-                                            .font(.system(size: 13))
+                                            .font(.scaled(13))
                                             .foregroundColor(.sForeground)
                                         Spacer()
                                         Text(Money.text(invoice.total))
-                                            .font(.system(size: 13, weight: .semibold))
+                                            .font(.scaled(13, weight: .semibold))
                                             .foregroundColor(.sForeground)
                                     }
                                     .padding(.horizontal, 16)
@@ -136,9 +136,9 @@ struct ClientDetailedView: View {
                         } label: {
                             HStack {
                                 Image(systemName: "book")
-                                    .font(.system(size: 13, weight: .semibold))
+                                    .font(.scaled(13, weight: .semibold))
                                 Text("View ledger")
-                                    .font(.system(size: 14, weight: .semibold))
+                                    .font(.scaled(14, weight: .semibold))
                             }
                             .foregroundColor(.sAccentFG)
                             .frame(maxWidth: .infinity)
@@ -159,9 +159,9 @@ struct ClientDetailedView: View {
                         } label: {
                             HStack {
                                 Image(systemName: "creditcard")
-                                    .font(.system(size: 13, weight: .semibold))
+                                    .font(.scaled(13, weight: .semibold))
                                 Text("Record payment")
-                                    .font(.system(size: 14, weight: .semibold))
+                                    .font(.scaled(14, weight: .semibold))
                             }
                             .foregroundColor(.sForeground)
                             .frame(maxWidth: .infinity)
@@ -194,16 +194,16 @@ private struct DetailInfoRow: View {
         if !value.isEmpty {
             HStack(alignment: .center, spacing: 12) {
                 Image(systemName: icon)
-                    .font(.system(size: 13))
+                    .font(.scaled(13))
                     .foregroundColor(.sMutedFG)
                     .frame(width: 16)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.system(size: 11))
+                        .font(.scaled(11))
                         .foregroundColor(.sMutedFG)
                     Text(value)
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.scaled(13, weight: .medium))
                         .foregroundColor(.sForeground)
                         .lineLimit(1)
                 }

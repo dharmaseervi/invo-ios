@@ -70,11 +70,11 @@ struct StockReportView: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 8) {
                     Text("Stock value (at cost)")
-                        .font(.system(size: 13))
+                        .font(.scaled(13))
                         .foregroundColor(.sMutedFG)
                     if vm.isFiltered {
                         Text("FILTERED")
-                            .font(.system(size: 9, weight: .bold))
+                            .font(.scaled(9, weight: .bold))
                             .foregroundColor(.sAccentFG)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
@@ -84,11 +84,11 @@ struct StockReportView: View {
                 }
 
                 Text(currency(totals.costValue))
-                    .font(.system(size: 26, weight: .bold))
+                    .font(.scaled(26, weight: .bold))
                     .foregroundColor(.sForeground)
 
                 Text("\(totals.itemCount) items · \(totals.units) units · as of \(AppDate.text(fromWire: vm.report?.as_of ?? ""))")
-                    .font(.system(size: 12))
+                    .font(.scaled(12))
                     .foregroundColor(.sMutedFG)
             }
 
@@ -116,12 +116,12 @@ struct StockReportView: View {
     private func statColumn(label: String, value: String, color: Color) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(value)
-                .font(.system(size: 14, weight: .semibold))
+                .font(.scaled(14, weight: .semibold))
                 .foregroundColor(color)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
             Text(label)
-                .font(.system(size: 10))
+                .font(.scaled(10))
                 .foregroundColor(.sMutedFG)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -132,11 +132,11 @@ struct StockReportView: View {
     private var searchBar: some View {
         HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 14))
+                .font(.scaled(14))
                 .foregroundColor(.sMutedFG)
 
             TextField("Search name, SKU or category", text: $vm.searchText)
-                .font(.system(size: 14))
+                .font(.scaled(14))
                 .foregroundColor(.sForeground)
                 .tint(.sAccent)
                 .autocorrectionDisabled()
@@ -146,7 +146,7 @@ struct StockReportView: View {
                     vm.searchText = ""
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 14))
+                        .font(.scaled(14))
                         .foregroundColor(.sMutedFG)
                 }
             }
@@ -200,7 +200,7 @@ struct StockReportView: View {
                         Image(systemName: "arrow.up.arrow.down")
                         Text("Sort")
                     }
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.scaled(12, weight: .medium))
                     .foregroundColor(.sForeground)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 7)
@@ -219,7 +219,7 @@ struct StockReportView: View {
                         Image(systemName: "xmark.circle")
                         Text("Clear filters")
                     }
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.scaled(12, weight: .medium))
                     .foregroundColor(.sAccent)
                 }
                 .padding(.horizontal, 20)
@@ -230,7 +230,7 @@ struct StockReportView: View {
     private func chip(title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 12, weight: .medium))
+                .font(.scaled(12, weight: .medium))
                 .foregroundColor(isSelected ? .sAccentFG : .sForeground)
                 .lineLimit(1)
                 .padding(.horizontal, 12)
@@ -250,14 +250,14 @@ struct StockReportView: View {
             } label: {
                 HStack {
                     Text("By category")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.scaled(13, weight: .medium))
                         .foregroundColor(.sMutedFG)
                     Spacer()
                     Text("\(vm.categories.count)")
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.scaled(11, weight: .medium))
                         .foregroundColor(.sMutedFG)
                     Image(systemName: showBreakdown ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.scaled(11, weight: .semibold))
                         .foregroundColor(.sMutedFG)
                 }
                 .padding(.horizontal, 20)
@@ -293,11 +293,11 @@ struct StockReportView: View {
         return VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text(vm.selectedCategory ?? "All items")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.scaled(13, weight: .medium))
                     .foregroundColor(.sMutedFG)
                 Spacer()
                 Text("\(items.count)")
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.scaled(11, weight: .medium))
                     .foregroundColor(.sMutedFG)
             }
             .padding(.horizontal, 20)
@@ -305,10 +305,10 @@ struct StockReportView: View {
             if items.isEmpty {
                 VStack(spacing: 6) {
                     Text("No items match these filters")
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.scaled(14, weight: .medium))
                         .foregroundColor(.sForeground)
                     Button("Clear filters") { vm.clearFilters() }
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.scaled(13, weight: .medium))
                         .foregroundColor(.sAccent)
                 }
                 .frame(maxWidth: .infinity)
@@ -333,13 +333,13 @@ struct StockReportView: View {
     private var emptyState: some View {
         VStack(spacing: 10) {
             Image(systemName: "shippingbox")
-                .font(.system(size: 32))
+                .font(.scaled(32))
                 .foregroundColor(.sMutedFG)
             Text("No items yet")
-                .font(.system(size: 15, weight: .semibold))
+                .font(.scaled(15, weight: .semibold))
                 .foregroundColor(.sForeground)
             Text("Add items with a cost price to see what your stock is worth")
-                .font(.system(size: 13))
+                .font(.scaled(13))
                 .foregroundColor(.sMutedFG)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
@@ -363,12 +363,12 @@ private struct CategoryBreakdownRow: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text(category.category_name)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.scaled(14, weight: .semibold))
                     .foregroundColor(.sForeground)
                     .lineLimit(1)
                 Spacer()
                 Text(Money.text(category.cost_value))
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.scaled(13, weight: .semibold))
                     .foregroundColor(.sForeground)
             }
 
@@ -400,7 +400,7 @@ private struct CategoryBreakdownRow: View {
                         .foregroundColor(lowStockColor)
                 }
             }
-            .font(.system(size: 10))
+            .font(.scaled(10))
             .foregroundColor(.sMutedFG)
             .lineLimit(1)
 
@@ -411,7 +411,7 @@ private struct CategoryBreakdownRow: View {
                 Text("Profit \(Money.text(category.potential_profit))")
                     .foregroundColor(profitColor)
             }
-            .font(.system(size: 11, weight: .medium))
+            .font(.scaled(11, weight: .medium))
         }
         .padding(14)
         .background(Color.sCard)
@@ -445,12 +445,12 @@ private struct StockReportRow: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(item.name)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.scaled(14, weight: .medium))
                     .foregroundColor(.sForeground)
                     .lineLimit(1)
 
                 Text(subtitle)
-                    .font(.system(size: 11))
+                    .font(.scaled(11))
                     .foregroundColor(.sMutedFG)
                     .lineLimit(1)
             }
@@ -459,10 +459,10 @@ private struct StockReportRow: View {
 
             VStack(alignment: .trailing, spacing: 4) {
                 Text(Money.text(item.stock_value))
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.scaled(13, weight: .semibold))
                     .foregroundColor(.sForeground)
                 Text("\(item.quantity)\(item.unit.map { $0.isEmpty ? "" : " \($0)" } ?? "") in stock")
-                    .font(.system(size: 10))
+                    .font(.scaled(10))
                     .foregroundColor(statusColor)
                     .lineLimit(1)
             }

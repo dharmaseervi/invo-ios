@@ -149,17 +149,17 @@ struct InvoiceView: View {
     var searchBar: some View {
         HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 14))
+                .font(.scaled(14))
                 .foregroundColor(.sMutedFG)
             TextField("Search invoices...", text: $searchText)
-                .font(.system(size: 14))
+                .font(.scaled(14))
                 .foregroundColor(.sForeground)
                 .tint(.sAccent)
                 .autocorrectionDisabled()
             if !searchText.isEmpty {
                 Button { searchText = "" } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 14))
+                        .font(.scaled(14))
                         .foregroundColor(.sMutedFG)
                 }
             }
@@ -184,12 +184,12 @@ struct InvoiceView: View {
                     } label: {
                         HStack(spacing: 5) {
                             Text(filter.rawValue)
-                                .font(.system(size: 13, weight: selectedFilter == filter ? .medium : .regular))
+                                .font(.scaled(13, weight: selectedFilter == filter ? .medium : .regular))
                                 .foregroundColor(selectedFilter == filter ? .sForeground : .sMutedFG)
                             let count = countFor(filter)
                             if count > 0 {
                                 Text("\(count)")
-                                    .font(.system(size: 11))
+                                    .font(.scaled(11))
                                     .foregroundColor(.sMutedFG)
                             }
                         }
@@ -221,10 +221,10 @@ struct InvoiceView: View {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Outstanding")
-                        .font(.system(size: 13))
+                        .font(.scaled(13))
                         .foregroundColor(.sMutedFG)
                     Text(Money.compact(outstandingAmount))
-                        .font(.system(size: 28, weight: .bold))
+                        .font(.scaled(28, weight: .bold))
                         .foregroundColor(.sForeground)
                 }
                 Spacer()
@@ -234,7 +234,7 @@ struct InvoiceView: View {
                             .fill(Color(red: 0.863, green: 0.149, blue: 0.149))
                             .frame(width: 6, height: 6)
                         Text("\(overdueCount) overdue")
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.scaled(12, weight: .medium))
                     }
                     .foregroundColor(Color(red: 0.863, green: 0.149, blue: 0.149))
                     .padding(.horizontal, 10)
@@ -265,10 +265,10 @@ struct InvoiceView: View {
     private func summaryStat(label: String, value: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(value)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.scaled(15, weight: .semibold))
                 .foregroundColor(.sForeground)
             Text(label)
-                .font(.system(size: 11))
+                .font(.scaled(11))
                 .foregroundColor(.sMutedFG)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -280,11 +280,11 @@ struct InvoiceView: View {
         VStack(spacing: 0) {
             HStack {
                 Text(selectedFilter == .all ? "All invoices" : selectedFilter.rawValue)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.scaled(13, weight: .medium))
                     .foregroundColor(.sMutedFG)
                 Spacer()
                 Text("\(filteredInvoices.count) items")
-                    .font(.system(size: 13))
+                    .font(.scaled(13))
                     .foregroundColor(.sMutedFG)
             }
             .padding(.horizontal, 20)
@@ -321,25 +321,25 @@ struct InvoiceView: View {
                     .overlay(Circle().stroke(Color.sBorder, lineWidth: 0.5))
                     .frame(width: 60, height: 60)
                 Image(systemName: "doc.text")
-                    .font(.system(size: 22))
+                    .font(.scaled(22))
                     .foregroundColor(.sMutedFG)
             }
             Text(searchText.isEmpty && selectedFilter == .all ? "No invoices yet" : "No results")
-                .font(.system(size: 15, weight: .medium))
+                .font(.scaled(15, weight: .medium))
                 .foregroundColor(.sForeground)
             Text(searchText.isEmpty && selectedFilter == .all
                  ? "Create your first invoice to get started"
                  : "Try adjusting your search or filters")
-            .font(.system(size: 13))
+            .font(.scaled(13))
             .foregroundColor(.sMutedFG)
             .multilineTextAlignment(.center)
             if searchText.isEmpty && selectedFilter == .all {
                 NavigationLink(destination: CreateInvoiceView()) {
                     HStack(spacing: 6) {
                         Image(systemName: "plus")
-                            .font(.system(size: 13, weight: .medium))
+                            .font(.scaled(13, weight: .medium))
                         Text("Create invoice")
-                            .font(.system(size: 14, weight: .medium))
+                            .font(.scaled(14, weight: .medium))
                     }
                     .foregroundColor(.sAccentFG)
                     .padding(.horizontal, 20)
@@ -434,24 +434,24 @@ struct InvoiceRowCard: View {
                         .fill(Color.sAccentMuted)
                         .frame(width: 40, height: 40)
                     Text(initials)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.scaled(13, weight: .semibold))
                         .foregroundColor(.sAccent)
                 }
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(displayName)
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.scaled(14, weight: .medium))
                         .foregroundColor(.sForeground)
                         .lineLimit(1)
                     HStack(spacing: 6) {
                         Text(invoice.invoice_number)
-                            .font(.system(size: 12))
+                            .font(.scaled(12))
                             .foregroundColor(.sMutedFG)
                         Text("·")
-                            .font(.system(size: 12))
+                            .font(.scaled(12))
                             .foregroundColor(.sMutedFG)
                         Text(daysInfo)
-                            .font(.system(size: 12))
+                            .font(.scaled(12))
                             .foregroundColor(isOverdue ? Color(red: 0.863, green: 0.149, blue: 0.149) : .sMutedFG)
                     }
                 }
@@ -460,10 +460,10 @@ struct InvoiceRowCard: View {
 
                 VStack(alignment: .trailing, spacing: 5) {
                     Text(Money.text(invoice.total))
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.scaled(14, weight: .semibold))
                         .foregroundColor(.sForeground)
                     Text(statusConfig.label)
-                        .font(.system(size: 10, weight: .medium))
+                        .font(.scaled(10, weight: .medium))
                         .foregroundColor(statusConfig.color)
                         .padding(.horizontal, 7)
                         .padding(.vertical, 2)

@@ -25,11 +25,11 @@ struct LedgerView: View {
                                 // MARK: Search
                                 HStack(spacing: 10) {
                                     Image(systemName: "magnifyingglass")
-                                        .font(.system(size: 14))
+                                        .font(.scaled(14))
                                         .foregroundColor(.sMutedFG)
 
                                     TextField("Search clients", text: $vm.searchText)
-                                        .font(.system(size: 14))
+                                        .font(.scaled(14))
                                         .foregroundColor(.sForeground)
                                         .tint(.sAccent)
                                         .autocorrectionDisabled()
@@ -37,7 +37,7 @@ struct LedgerView: View {
                                     if !vm.searchText.isEmpty {
                                         Button { vm.searchText = "" } label: {
                                             Image(systemName: "xmark.circle.fill")
-                                                .font(.system(size: 14))
+                                                .font(.scaled(14))
                                                 .foregroundColor(.sMutedFG)
                                         }
                                     }
@@ -90,13 +90,13 @@ struct LedgerView: View {
     private var summaryCard: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Total receivable")
-                .font(.system(size: 13))
+                .font(.scaled(13))
                 .foregroundColor(.sMutedFG)
             Text(Money.text(vm.totalReceivable))
-                .font(.system(size: 26, weight: .bold))
+                .font(.scaled(26, weight: .bold))
                 .foregroundColor(vm.totalReceivable > 0 ? .sDestructive : Color(red: 0.086, green: 0.639, blue: 0.341))
             Text("Across \(vm.clients.count) client\(vm.clients.count == 1 ? "" : "s")")
-                .font(.system(size: 12))
+                .font(.scaled(12))
                 .foregroundColor(.sMutedFG)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -117,14 +117,14 @@ struct LedgerView: View {
                     .overlay(Circle().stroke(Color.sBorder, lineWidth: 0.5))
                     .frame(width: 60, height: 60)
                 Image(systemName: "book")
-                    .font(.system(size: 22))
+                    .font(.scaled(22))
                     .foregroundColor(.sMutedFG)
             }
             Text("No ledger activity yet")
-                .font(.system(size: 15, weight: .medium))
+                .font(.scaled(15, weight: .medium))
                 .foregroundColor(.sForeground)
             Text("Client balances will show up here once invoices or payments are recorded")
-                .font(.system(size: 13))
+                .font(.scaled(13))
                 .foregroundColor(.sMutedFG)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
@@ -136,10 +136,10 @@ struct LedgerView: View {
     private var noResultsState: some View {
         VStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 22))
+                .font(.scaled(22))
                 .foregroundColor(.sMutedFG)
             Text("No matching clients")
-                .font(.system(size: 14, weight: .medium))
+                .font(.scaled(14, weight: .medium))
                 .foregroundColor(.sForeground)
         }
         .frame(maxWidth: .infinity)
@@ -174,16 +174,16 @@ struct LedgerRow: View {
                     .fill(Color.sAccentMuted)
                     .frame(width: 40, height: 40)
                 Text(initials)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.scaled(13, weight: .semibold))
                     .foregroundColor(.sAccent)
             }
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(client.clientName)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.scaled(14, weight: .medium))
                     .foregroundColor(.sForeground)
                 Text(balanceLabel)
-                    .font(.system(size: 12))
+                    .font(.scaled(12))
                     .foregroundColor(.sMutedFG)
             }
 
@@ -191,10 +191,10 @@ struct LedgerRow: View {
 
             VStack(alignment: .trailing, spacing: 3) {
                 Text(Money.text(abs(client.balance)))
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.scaled(14, weight: .semibold))
                     .foregroundColor(client.balance == 0 ? .sForeground : balanceColor)
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.scaled(11, weight: .semibold))
                     .foregroundColor(.sMutedFG)
             }
         }

@@ -62,17 +62,17 @@ struct EstimateListView: View {
     private var searchBar: some View {
         HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 14))
+                .font(.scaled(14))
                 .foregroundColor(.sMutedFG)
             TextField("Search estimates...", text: $searchText)
-                .font(.system(size: 14))
+                .font(.scaled(14))
                 .foregroundColor(.sForeground)
                 .tint(.sAccent)
                 .autocorrectionDisabled()
             if !searchText.isEmpty {
                 Button { searchText = "" } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 14))
+                        .font(.scaled(14))
                         .foregroundColor(.sMutedFG)
                 }
             }
@@ -89,21 +89,21 @@ struct EstimateListView: View {
         VStack(spacing: 16) {
             Spacer()
             Image(systemName: "doc.badge.clock")
-                .font(.system(size: 40))
+                .font(.scaled(40))
                 .foregroundColor(.sMutedFG)
             VStack(spacing: 4) {
                 Text("No estimates yet")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.scaled(15, weight: .semibold))
                     .foregroundColor(.sForeground)
                 Text("Send a quote before you bill — create your first estimate")
-                    .font(.system(size: 13))
+                    .font(.scaled(13))
                     .foregroundColor(.sMutedFG)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
             }
             NavigationLink(destination: CreateEstimateView()) {
                 Text("Create estimate")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.scaled(13, weight: .semibold))
                     .foregroundColor(.sAccentFG)
                     .padding(.horizontal, 20)
                     .padding(.vertical, 10)
@@ -119,10 +119,10 @@ struct EstimateListView: View {
         VStack(spacing: 8) {
             Spacer()
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 22))
+                .font(.scaled(22))
                 .foregroundColor(.sMutedFG)
             Text("No matching estimates")
-                .font(.system(size: 14, weight: .medium))
+                .font(.scaled(14, weight: .medium))
                 .foregroundColor(.sForeground)
             Spacer()
         }
@@ -157,11 +157,11 @@ private struct EstimateRowCard: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(estimate.client_name ?? "Client")
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.scaled(14, weight: .medium))
                         .foregroundColor(.sForeground)
                         .lineLimit(1)
                     Text(estimate.estimate_number)
-                        .font(.system(size: 12))
+                        .font(.scaled(12))
                         .foregroundColor(.sMutedFG)
                 }
 
@@ -169,10 +169,10 @@ private struct EstimateRowCard: View {
 
                 VStack(alignment: .trailing, spacing: 5) {
                     Text(Money.text(estimate.total))
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.scaled(14, weight: .semibold))
                         .foregroundColor(.sForeground)
                     Text(statusConfig.label)
-                        .font(.system(size: 10, weight: .medium))
+                        .font(.scaled(10, weight: .medium))
                         .foregroundColor(statusConfig.color)
                         .padding(.horizontal, 7)
                         .padding(.vertical, 2)

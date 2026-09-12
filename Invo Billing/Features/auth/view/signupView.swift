@@ -55,10 +55,10 @@ struct SignupView: View {
                         AuthLogo()
                         VStack(spacing: 5) {
                             Text("Create account")
-                                .font(.system(size: 24, weight: .bold))
+                                .font(.scaled(24, weight: .bold))
                                 .foregroundColor(AuthTheme.foreground)
                             Text("Start managing your invoices")
-                                .font(.system(size: 13))
+                                .font(.scaled(13))
                                 .foregroundColor(AuthTheme.muted)
                         }
                     }
@@ -77,7 +77,7 @@ struct SignupView: View {
                         // Password
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Password")
-                                .font(.system(size: 12.5, weight: .medium))
+                                .font(.scaled(12.5, weight: .medium))
                                 .foregroundColor(AuthTheme.muted)
 
                             HStack(spacing: 10) {
@@ -88,7 +88,7 @@ struct SignupView: View {
                                         SecureField("Create a password", text: $viewModel.password)
                                     }
                                 }
-                                .font(.system(size: 14))
+                                .font(.scaled(14))
                                 .foregroundColor(AuthTheme.foreground)
                                 .tint(AuthTheme.accentBright)
                                 .textInputAutocapitalization(.never)
@@ -98,7 +98,7 @@ struct SignupView: View {
                                     showPassword.toggle()
                                 } label: {
                                     Image(systemName: showPassword ? "eye.slash" : "eye")
-                                        .font(.system(size: 14))
+                                        .font(.scaled(14))
                                         .foregroundColor(AuthTheme.muted)
                                 }
                             }
@@ -117,7 +117,7 @@ struct SignupView: View {
                                     }
                                 }
                                 Text(strengthLabel)
-                                    .font(.system(size: 11))
+                                    .font(.scaled(11))
                                     .foregroundColor(strengthColor(for: 0))
                             }
                         }
@@ -125,7 +125,7 @@ struct SignupView: View {
                         // Confirm password
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Confirm password")
-                                .font(.system(size: 12.5, weight: .medium))
+                                .font(.scaled(12.5, weight: .medium))
                                 .foregroundColor(AuthTheme.muted)
 
                             HStack(spacing: 10) {
@@ -136,7 +136,7 @@ struct SignupView: View {
                                         SecureField("Repeat your password", text: $viewModel.confirmPassword)
                                     }
                                 }
-                                .font(.system(size: 14))
+                                .font(.scaled(14))
                                 .foregroundColor(AuthTheme.foreground)
                                 .tint(AuthTheme.accentBright)
                                 .textInputAutocapitalization(.never)
@@ -144,7 +144,7 @@ struct SignupView: View {
 
                                 if !viewModel.confirmPassword.isEmpty {
                                     Image(systemName: passwordsMatch ? "checkmark.circle.fill" : "xmark.circle.fill")
-                                        .font(.system(size: 15))
+                                        .font(.scaled(15))
                                         .foregroundColor(passwordsMatch
                                                          ? Color(red: 0.196, green: 0.769, blue: 0.478)
                                                          : AuthTheme.destructive)
@@ -153,7 +153,7 @@ struct SignupView: View {
                                         showConfirm.toggle()
                                     } label: {
                                         Image(systemName: showConfirm ? "eye.slash" : "eye")
-                                            .font(.system(size: 14))
+                                            .font(.scaled(14))
                                             .foregroundColor(AuthTheme.muted)
                                     }
                                 }
@@ -188,7 +188,7 @@ struct SignupView: View {
                         .padding(.top, 4)
 
                         Text("By creating an account you agree to our [Terms of Service](https://invobilling.com/terms) and [Privacy Policy](https://invobilling.com/privacy).")
-                            .font(.system(size: 11))
+                            .font(.scaled(11))
                             .foregroundColor(AuthTheme.muted)
                             .tint(AuthTheme.accent)
                             .multilineTextAlignment(.center)
@@ -199,13 +199,13 @@ struct SignupView: View {
                     // Sign in link
                     HStack(spacing: 4) {
                         Text("Already have an account?")
-                            .font(.system(size: 13))
+                            .font(.scaled(13))
                             .foregroundColor(AuthTheme.muted)
                         Button {
                             presentationMode.wrappedValue.dismiss()
                         } label: {
                             Text("Sign in")
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(.scaled(13, weight: .semibold))
                                 .foregroundColor(AuthTheme.accentBright)
                         }
                     }

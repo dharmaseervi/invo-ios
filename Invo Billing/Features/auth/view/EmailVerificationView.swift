@@ -27,15 +27,15 @@ struct EmailVerificationView: View {
                                 .fill(Color.sAccent)
                                 .frame(width: 44, height: 44)
                             Image(systemName: "envelope.badge.fill")
-                                .font(.system(size: 20, weight: .medium))
+                                .font(.scaled(20, weight: .medium))
                                 .foregroundColor(.sAccentFG)
                         }
                         VStack(spacing: 4) {
                             Text("Verify your email")
-                                .font(.system(size: 20, weight: .semibold))
+                                .font(.scaled(20, weight: .semibold))
                                 .foregroundColor(.sForeground)
                             Text("Enter the 6-digit code sent to\n\(viewModel.verificationEmail)")
-                                .font(.system(size: 13))
+                                .font(.scaled(13))
                                 .foregroundColor(.sMutedFG)
                                 .multilineTextAlignment(.center)
                         }
@@ -47,12 +47,12 @@ struct EmailVerificationView: View {
 
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Verification code")
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.scaled(13, weight: .medium))
                                 .foregroundColor(.sForeground)
 
                             TextField("000000", text: $viewModel.verificationCode)
                                 .keyboardType(.numberPad)
-                                .font(.system(size: 28, weight: .bold))
+                                .font(.scaled(28, weight: .bold))
                                 .tracking(14)
                                 .multilineTextAlignment(.center)
                                 .foregroundColor(.sForeground)
@@ -89,10 +89,10 @@ struct EmailVerificationView: View {
                         // Info banner
                         HStack(spacing: 8) {
                             Image(systemName: "clock")
-                                .font(.system(size: 13))
+                                .font(.scaled(13))
                                 .foregroundColor(.sMutedFG)
                             Text("Code expires in 10 minutes")
-                                .font(.system(size: 13))
+                                .font(.scaled(13))
                                 .foregroundColor(.sMutedFG)
                             Spacer()
                         }
@@ -108,10 +108,10 @@ struct EmailVerificationView: View {
                         if let error = viewModel.errorMessage {
                             HStack(spacing: 8) {
                                 Image(systemName: "exclamationmark.circle")
-                                    .font(.system(size: 13))
+                                    .font(.scaled(13))
                                     .foregroundColor(.sDestructive)
                                 Text(error)
-                                    .font(.system(size: 13))
+                                    .font(.scaled(13))
                                     .foregroundColor(.sDestructive)
                                 Spacer()
                             }
@@ -137,7 +137,7 @@ struct EmailVerificationView: View {
                                         .scaleEffect(0.85)
                                 } else {
                                     Text("Verify account")
-                                        .font(.system(size: 15, weight: .semibold))
+                                        .font(.scaled(15, weight: .semibold))
                                         .foregroundColor(.sAccentFG)
                                 }
                             }
@@ -153,7 +153,7 @@ struct EmailVerificationView: View {
                             Task { await viewModel.resendVerification() }
                         } label: {
                             Text("Resend code")
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.scaled(13, weight: .medium))
                                 .foregroundColor(.sAccent)
                         }
                         .disabled(viewModel.isLoading)

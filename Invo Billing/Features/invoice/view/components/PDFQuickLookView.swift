@@ -36,7 +36,7 @@ struct PDFLookView: View {
                             Image(systemName: "chevron.left")
                             Text("Back")
                         }
-                        .font(.system(size: 14, weight: .light))
+                        .font(.scaled(14, weight: .light))
                         .foregroundColor(.white)
                     }
                     
@@ -47,7 +47,7 @@ struct PDFLookView: View {
                         sharePDF()
                     } label: {
                         Image(systemName: "square.and.arrow.up")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(.scaled(16, weight: .semibold))
                             .foregroundColor(.white)
                     }
                     
@@ -56,7 +56,7 @@ struct PDFLookView: View {
                         saveToFiles()
                     } label: {
                         Image(systemName: "arrow.down.doc")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(.scaled(16, weight: .semibold))
                             .foregroundColor(.white)
                     }
                     
@@ -65,7 +65,7 @@ struct PDFLookView: View {
                         printPDF()
                     } label: {
                         Image(systemName: "printer")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(.scaled(16, weight: .semibold))
                             .foregroundColor(.white)
                     }
                 }

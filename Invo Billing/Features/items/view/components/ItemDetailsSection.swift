@@ -21,7 +21,7 @@ struct ItemDetailsSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Item details")
-                .font(.system(size: 13, weight: .medium))
+                .font(.scaled(13, weight: .medium))
                 .foregroundColor(.sMutedFG)
                 .padding(.horizontal, 20)
 
@@ -37,12 +37,12 @@ struct ItemDetailsSection: View {
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text("SKU / Barcode")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.scaled(13, weight: .medium))
                         .foregroundColor(.sForeground)
 
                     HStack(spacing: 8) {
                         TextField("Product code", text: $vm.sku)
-                            .font(.system(size: 14))
+                            .font(.scaled(14))
                             .foregroundColor(.sForeground)
                             .tint(.sAccent)
                             .autocorrectionDisabled()
@@ -60,7 +60,7 @@ struct ItemDetailsSection: View {
                             vm.sku = ItemViewModel.generateSKU()
                         } label: {
                             Text("Generate")
-                                .font(.system(size: 12, weight: .medium))
+                                .font(.scaled(12, weight: .medium))
                                 .foregroundColor(.sAccent)
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 10)
@@ -74,11 +74,11 @@ struct ItemDetailsSection: View {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
                         Text("HSN code")
-                            .font(.system(size: 13, weight: .medium))
+                            .font(.scaled(13, weight: .medium))
                             .foregroundColor(.sForeground)
                         Spacer()
                         Text("GST")
-                            .font(.system(size: 10))
+                            .font(.scaled(10))
                             .foregroundColor(.sMutedFG)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 3)
@@ -87,7 +87,7 @@ struct ItemDetailsSection: View {
                     }
 
                     TextField("e.g. 1234", text: $vm.hsnCode)
-                        .font(.system(size: 14))
+                        .font(.scaled(14))
                         .foregroundColor(.sForeground)
                         .tint(.sAccent)
                         .keyboardType(.numberPad)
@@ -109,11 +109,11 @@ struct ItemDetailsSection: View {
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Description")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.scaled(13, weight: .medium))
                         .foregroundColor(.sForeground)
 
                     TextEditor(text: $vm.description)
-                        .font(.system(size: 14))
+                        .font(.scaled(14))
                         .foregroundColor(.sForeground)
                         .scrollContentBackground(.hidden)
                         .frame(height: 80)
@@ -145,7 +145,7 @@ struct UnitPicker: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Unit")
-                .font(.system(size: 13, weight: .medium))
+                .font(.scaled(13, weight: .medium))
                 .foregroundColor(.sForeground)
 
             Menu {
@@ -159,13 +159,13 @@ struct UnitPicker: View {
             } label: {
                 HStack {
                     Text(selectedUnit ?? "Select unit")
-                        .font(.system(size: 13))
+                        .font(.scaled(13))
                         .foregroundColor(selectedUnit == nil ? .sMutedFG : .sForeground)
 
                     Spacer()
 
                     Image(systemName: "chevron.down")
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.scaled(11, weight: .medium))
                         .foregroundColor(.sMutedFG)
                 }
                 .padding(.horizontal, 12)
@@ -190,7 +190,7 @@ struct CategoryPicker: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Category")
-                .font(.system(size: 13, weight: .medium))
+                .font(.scaled(13, weight: .medium))
                 .foregroundColor(.sForeground)
 
             Menu {
@@ -219,14 +219,14 @@ struct CategoryPicker: View {
                         })?.name ?? "Select category")
                         : "Select category"
                     )
-                    .font(.system(size: 13))
+                    .font(.scaled(13))
                     .foregroundColor(vm.selectedCategoryId == nil ? .sMutedFG : .sForeground)
                     .lineLimit(1)
 
                     Spacer()
 
                     Image(systemName: "chevron.down")
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.scaled(11, weight: .medium))
                         .foregroundColor(.sMutedFG)
                 }
                 .padding(.horizontal, 12)

@@ -36,11 +36,11 @@ struct IndianStatePicker: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text(label)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.scaled(13, weight: .medium))
                     .foregroundColor(.sForeground)
                 if error != nil {
                     Image(systemName: "exclamationmark.circle")
-                        .font(.system(size: 12))
+                        .font(.scaled(12))
                         .foregroundColor(.sDestructive)
                 }
             }
@@ -60,11 +60,11 @@ struct IndianStatePicker: View {
             } label: {
                 HStack {
                     Text(text.isEmpty ? "Select state" : text)
-                        .font(.system(size: 14))
+                        .font(.scaled(14))
                         .foregroundColor(text.isEmpty ? .sMutedFG : .sForeground)
                     Spacer()
                     Image(systemName: "chevron.up.chevron.down")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.scaled(11, weight: .semibold))
                         .foregroundColor(.sMutedFG)
                 }
                 .padding(.horizontal, 12)

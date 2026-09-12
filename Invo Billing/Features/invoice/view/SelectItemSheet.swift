@@ -24,14 +24,14 @@ struct SelectItemSheet: View {
                     // MARK: - Search Bar
                     HStack(spacing: 10) {
                         Image(systemName: "magnifyingglass")
-                            .font(.system(size: 14))
+                            .font(.scaled(14))
                             .foregroundColor(.sMutedFG)
 
                         TextField("Search name or SKU", text: $searchText)
                             .onChange(of: searchText) { _, query in
                                 vm.search(query)
                             }
-                            .font(.system(size: 14))
+                            .font(.scaled(14))
                             .foregroundColor(.sForeground)
                             .tint(.sAccent)
                             .autocorrectionDisabled()
@@ -41,7 +41,7 @@ struct SelectItemSheet: View {
                                 searchText = ""
                             } label: {
                                 Image(systemName: "xmark.circle.fill")
-                                    .font(.system(size: 14))
+                                    .font(.scaled(14))
                                     .foregroundColor(.sMutedFG)
                             }
                         }
@@ -69,24 +69,24 @@ struct SelectItemSheet: View {
                                     .frame(width: 40, height: 40)
 
                                 Image(systemName: "plus")
-                                    .font(.system(size: 16))
+                                    .font(.scaled(16))
                                     .foregroundColor(.sMutedFG)
                             }
 
                             VStack(alignment: .leading, spacing: 3) {
                                 Text("Add new item")
-                                    .font(.system(size: 13, weight: .medium))
+                                    .font(.scaled(13, weight: .medium))
                                     .foregroundColor(.sForeground)
 
                                 Text("Create a new product or service")
-                                    .font(.system(size: 11))
+                                    .font(.scaled(11))
                                     .foregroundColor(.sMutedFG)
                             }
 
                             Spacer()
 
                             Image(systemName: "chevron.right")
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(.scaled(12, weight: .semibold))
                                 .foregroundColor(.sMutedFG)
                         }
                         .padding(.horizontal, 20)
@@ -101,30 +101,30 @@ struct SelectItemSheet: View {
                             ProgressView()
                                 .tint(.sAccent)
                             Text("Loading items...")
-                                .font(.system(size: 13))
+                                .font(.scaled(13))
                                 .foregroundColor(.sMutedFG)
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else if filteredItems.isEmpty {
                         VStack(spacing: 14) {
                             Image(systemName: "shippingbox")
-                                .font(.system(size: 36))
+                                .font(.scaled(36))
                                 .foregroundColor(.sMutedFG)
 
                             VStack(spacing: 4) {
                                 Text(searchText.isEmpty ? "No items yet" : "No items found")
-                                    .font(.system(size: 14, weight: .semibold))
+                                    .font(.scaled(14, weight: .semibold))
                                     .foregroundColor(.sForeground)
 
                                 Text(searchText.isEmpty ? "Add your first item to get started" : "Try a different search")
-                                    .font(.system(size: 12))
+                                    .font(.scaled(12))
                                     .foregroundColor(.sMutedFG)
                             }
 
                             if searchText.isEmpty {
                                 Button(action: { showAddItem = true }) {
                                     Text("Add item")
-                                        .font(.system(size: 13, weight: .semibold))
+                                        .font(.scaled(13, weight: .semibold))
                                         .foregroundColor(.sAccentFG)
                                         .padding(.horizontal, 20)
                                         .padding(.vertical, 10)
@@ -138,13 +138,13 @@ struct SelectItemSheet: View {
                     } else {
                         HStack {
                             Text("Available items")
-                                .font(.system(size: 11, weight: .medium))
+                                .font(.scaled(11, weight: .medium))
                                 .foregroundColor(.sMutedFG)
 
                             Spacer()
 
                             Text("\(filteredItems.count)")
-                                .font(.system(size: 11, weight: .medium))
+                                .font(.scaled(11, weight: .medium))
                                 .foregroundColor(.sMutedFG)
                         }
                         .padding(.horizontal, 20)
@@ -223,7 +223,7 @@ struct SelectItemRow: View {
         Button(action: onSelect) {
             HStack(spacing: 14) {
                 Text(String(item.name.prefix(1)).uppercased())
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.scaled(12, weight: .semibold))
                     .foregroundColor(.sAccentFG)
                     .frame(width: 40, height: 40)
                     .background(Color.sAccent)
@@ -231,20 +231,20 @@ struct SelectItemRow: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(item.name)
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.scaled(13, weight: .medium))
                         .foregroundColor(.sForeground)
                         .lineLimit(1)
 
                     if let desc = item.description, !desc.isEmpty {
                         Text(desc)
-                            .font(.system(size: 11))
+                            .font(.scaled(11))
                             .foregroundColor(.sMutedFG)
                             .lineLimit(1)
                     }
 
                     if let unit = item.unit, !unit.isEmpty {
                         Text("Unit: \(unit)")
-                            .font(.system(size: 10))
+                            .font(.scaled(10))
                             .foregroundColor(.sMutedFG)
                     }
                 }
@@ -253,22 +253,22 @@ struct SelectItemRow: View {
 
                 VStack(alignment: .trailing, spacing: 4) {
                     Text(Money.text(item.price))
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.scaled(13, weight: .semibold))
                         .foregroundColor(.sForeground)
 
                     if let taxRate = item.tax_rate, taxRate > 0 {
                         Text("GST \(String(format: "%.0f", taxRate))%")
-                            .font(.system(size: 10))
+                            .font(.scaled(10))
                             .foregroundColor(.sMutedFG)
                     }
 
                     if isSelected {
                         Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.scaled(14, weight: .semibold))
                             .foregroundColor(.sAccent)
                     } else {
                         Image(systemName: "circle")
-                            .font(.system(size: 14))
+                            .font(.scaled(14))
                             .foregroundColor(.sBorder)
                     }
                 }

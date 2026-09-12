@@ -45,7 +45,7 @@ struct ExpenseView: View {
                                 // MARK: - Overview Cards
                                 VStack(alignment: .leading, spacing: 0) {
                                     Text("Overview")
-                                        .font(.system(size: 13, weight: .medium))
+                                        .font(.scaled(13, weight: .medium))
                                         .foregroundColor(.sMutedFG)
                                         .padding(.horizontal, 20)
                                         .padding(.top, 20)
@@ -87,7 +87,7 @@ struct ExpenseView: View {
                                 // MARK: - Expense List
                                 VStack(alignment: .leading, spacing: 0) {
                                     Text("Recent expenses")
-                                        .font(.system(size: 13, weight: .medium))
+                                        .font(.scaled(13, weight: .medium))
                                         .foregroundColor(.sMutedFG)
                                         .padding(.horizontal, 20)
                                         .padding(.bottom, 10)
@@ -180,12 +180,12 @@ struct ExpenseRowWithActions: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(expense.name)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.scaled(14, weight: .medium))
                     .foregroundColor(.sForeground)
                     .lineLimit(1)
 
                 Text(formatDate(expense.date))
-                    .font(.system(size: 11))
+                    .font(.scaled(11))
                     .foregroundColor(.sMutedFG)
             }
 
@@ -193,12 +193,12 @@ struct ExpenseRowWithActions: View {
 
             VStack(alignment: .trailing, spacing: 4) {
                 Text(Money.text(expense.amount))
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.scaled(15, weight: .semibold))
                     .foregroundColor(.sForeground)
 
                 if let description = expense.description, !description.isEmpty {
                     Text(description)
-                        .font(.system(size: 11))
+                        .font(.scaled(11))
                         .foregroundColor(.sMutedFG)
                         .lineLimit(1)
                 }
@@ -248,16 +248,16 @@ struct ExpenseStatCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: 13))
+                .font(.scaled(13))
                 .foregroundColor(.sMutedFG)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(label)
-                    .font(.system(size: 11))
+                    .font(.scaled(11))
                     .foregroundColor(.sMutedFG)
 
                 Text(value)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.scaled(16, weight: .semibold))
                     .foregroundColor(.sForeground)
                     .lineLimit(1)
             }
@@ -280,15 +280,15 @@ struct EmptyExpenseView: View {
             Spacer()
 
             Image(systemName: "tray")
-                .font(.system(size: 40))
+                .font(.scaled(40))
                 .foregroundColor(.sMutedFG)
 
             Text("No expenses")
-                .font(.system(size: 15, weight: .semibold))
+                .font(.scaled(15, weight: .semibold))
                 .foregroundColor(.sForeground)
 
             Text("Add your first expense to get started")
-                .font(.system(size: 13))
+                .font(.scaled(13))
                 .foregroundColor(.sMutedFG)
                 .multilineTextAlignment(.center)
 
@@ -296,7 +296,7 @@ struct EmptyExpenseView: View {
                 ExpenseFormView()
             } label: {
                 Text("Add expense")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.scaled(13, weight: .semibold))
                     .foregroundColor(.sAccentFG)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)

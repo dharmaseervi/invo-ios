@@ -25,12 +25,12 @@ struct SendEmailSheet: View {
                         // Info banner
                         HStack(spacing: 10) {
                             Image(systemName: "paperclip")
-                                .font(.system(size: 13))
+                                .font(.scaled(13))
                                 .foregroundColor(.sMutedFG)
                             Text(isReminder
                                  ? "A payment reminder with the invoice PDF attached will be sent"
                                  : "The invoice PDF will be attached automatically")
-                                .font(.system(size: 13))
+                                .font(.scaled(13))
                                 .foregroundColor(.sMutedFG)
                             Spacer()
                         }
@@ -45,11 +45,11 @@ struct SendEmailSheet: View {
                         // Name field
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Recipient name")
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.scaled(13, weight: .medium))
                                 .foregroundColor(.sForeground)
                             
                             TextField("John Doe", text: $toName)
-                                .font(.system(size: 14))
+                                .font(.scaled(14))
                                 .foregroundColor(.sForeground)
                                 .tint(.sAccent)
                                 .padding(.horizontal, 12)
@@ -65,12 +65,12 @@ struct SendEmailSheet: View {
                         // Email field
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Email address")
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.scaled(13, weight: .medium))
                                 .foregroundColor(.sForeground)
                             
                             HStack {
                                 TextField("client@example.com", text: $toEmail)
-                                    .font(.system(size: 14))
+                                    .font(.scaled(14))
                                     .foregroundColor(.sForeground)
                                     .keyboardType(.emailAddress)
                                     .textInputAutocapitalization(.never)
@@ -81,7 +81,7 @@ struct SendEmailSheet: View {
                                     Image(systemName: emailValid
                                           ? "checkmark.circle.fill"
                                           : "xmark.circle.fill")
-                                    .font(.system(size: 15))
+                                    .font(.scaled(15))
                                     .foregroundColor(emailValid
                                                      ? Color(red: 0.086, green: 0.639, blue: 0.341)
                                                      : .sDestructive)
@@ -127,14 +127,14 @@ struct SendEmailSheet: View {
                                         .tint(.sAccentFG)
                                         .scaleEffect(0.8)
                                     Text("Sending...")
-                                        .font(.system(size: 14, weight: .medium))
+                                        .font(.scaled(14, weight: .medium))
                                         .foregroundColor(.sAccentFG)
                                 } else {
                                     Image(systemName: "paperplane")
-                                        .font(.system(size: 13))
+                                        .font(.scaled(13))
                                         .foregroundColor(.sAccentFG)
                                     Text(isReminder ? "Send reminder" : "Send invoice")
-                                        .font(.system(size: 14, weight: .medium))
+                                        .font(.scaled(14, weight: .medium))
                                         .foregroundColor(.sAccentFG)
                                 }
                             }

@@ -68,7 +68,7 @@ struct BulkPrintLabelsScreen: View {
     private var itemsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Items")
-                .font(.system(size: 13, weight: .medium))
+                .font(.scaled(13, weight: .medium))
                 .foregroundColor(.sMutedFG)
 
             VStack(spacing: 8) {
@@ -76,11 +76,11 @@ struct BulkPrintLabelsScreen: View {
                     HStack(spacing: 12) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(item.name)
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.scaled(13, weight: .medium))
                                 .foregroundColor(.sForeground)
                                 .lineLimit(1)
                             Text(Money.text(item.price))
-                                .font(.system(size: 11))
+                                .font(.scaled(11))
                                 .foregroundColor(.sMutedFG)
                         }
 
@@ -92,7 +92,7 @@ struct BulkPrintLabelsScreen: View {
                                 if current > 1 { quantities[item.id] = current - 1 }
                             }
                             Text("\(quantities[item.id] ?? 1)")
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(.scaled(14, weight: .semibold))
                                 .foregroundColor(.sForeground)
                                 .frame(minWidth: 28)
                             quantityButton(systemImage: "plus") {
@@ -116,7 +116,7 @@ struct BulkPrintLabelsScreen: View {
     private func quantityButton(systemImage: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: systemImage)
-                .font(.system(size: 11, weight: .semibold))
+                .font(.scaled(11, weight: .semibold))
                 .foregroundColor(.sForeground)
                 .frame(width: 26, height: 26)
         }
@@ -126,7 +126,7 @@ struct BulkPrintLabelsScreen: View {
     private var codeTypeSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Code type")
-                .font(.system(size: 13, weight: .medium))
+                .font(.scaled(13, weight: .medium))
                 .foregroundColor(.sMutedFG)
 
             HStack(spacing: 8) {
@@ -137,9 +137,9 @@ struct BulkPrintLabelsScreen: View {
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: type == .qr ? "qrcode" : "barcode")
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.scaled(13, weight: .medium))
                             Text(type.rawValue)
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.scaled(13, weight: .medium))
                         }
                         .foregroundColor(isSelected ? .sAccentFG : .sForeground)
                         .frame(maxWidth: .infinity)
@@ -160,7 +160,7 @@ struct BulkPrintLabelsScreen: View {
     private var sizeSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Label size")
-                .font(.system(size: 13, weight: .medium))
+                .font(.scaled(13, weight: .medium))
                 .foregroundColor(.sMutedFG)
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
@@ -171,9 +171,9 @@ struct BulkPrintLabelsScreen: View {
                     } label: {
                         VStack(spacing: 3) {
                             Text(size.label)
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.scaled(13, weight: .medium))
                             Text(size.subtitle)
-                                .font(.system(size: 10))
+                                .font(.scaled(10))
                                 .foregroundColor(isSelected ? .sAccentFG.opacity(0.8) : .sMutedFG)
                         }
                         .foregroundColor(isSelected ? .sAccentFG : .sForeground)
@@ -207,7 +207,7 @@ struct BulkPrintLabelsScreen: View {
                         Text("Print \(totalLabelCount) label\(totalLabelCount == 1 ? "" : "s")")
                     }
                 }
-                .font(.system(size: 15, weight: .semibold))
+                .font(.scaled(15, weight: .semibold))
                 .foregroundColor(.sAccentFG)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)

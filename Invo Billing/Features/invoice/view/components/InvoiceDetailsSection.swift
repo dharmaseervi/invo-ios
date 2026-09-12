@@ -13,14 +13,14 @@ struct InvoiceDetailsSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Details")
-                .font(.system(size: 13, weight: .medium))
+                .font(.scaled(13, weight: .medium))
                 .foregroundColor(.sMutedFG)
 
             VStack(spacing: 0) {
                 if let invoiceNumber {
                     row(label: "Invoice number") {
                         Text(invoiceNumber)
-                            .font(.system(size: 14, weight: .medium))
+                            .font(.scaled(14, weight: .medium))
                             .foregroundColor(.sForeground)
                     }
                     divider
@@ -43,9 +43,9 @@ struct InvoiceDetailsSection: View {
                     divider
                     HStack(spacing: 8) {
                         Image(systemName: "hourglass")
-                            .font(.system(size: 11))
+                            .font(.scaled(11))
                         Text("Payment due in \(daysUntilDue) day\(daysUntilDue == 1 ? "" : "s")")
-                            .font(.system(size: 12))
+                            .font(.scaled(12))
                         Spacer()
                     }
                     .foregroundColor(.sMutedFG)
@@ -55,9 +55,9 @@ struct InvoiceDetailsSection: View {
                     divider
                     HStack(spacing: 8) {
                         Image(systemName: "exclamationmark.triangle")
-                            .font(.system(size: 11))
+                            .font(.scaled(11))
                         Text("Due date is before the invoice date")
-                            .font(.system(size: 12))
+                            .font(.scaled(12))
                         Spacer()
                     }
                     .foregroundColor(.sDestructive)
@@ -78,7 +78,7 @@ struct InvoiceDetailsSection: View {
     private func row<Content: View>(label: String, @ViewBuilder content: () -> Content) -> some View {
         HStack {
             Text(label)
-                .font(.system(size: 14))
+                .font(.scaled(14))
                 .foregroundColor(.sForeground)
             Spacer()
             content()

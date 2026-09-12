@@ -34,7 +34,7 @@ struct ClientPickerView: View {
     private var quickSaleRow: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Quick sale")
-                .font(.system(size: 11, weight: .medium))
+                .font(.scaled(11, weight: .medium))
                 .foregroundColor(.sMutedFG)
                 .padding(.horizontal, 20)
 
@@ -50,10 +50,10 @@ struct ClientPickerView: View {
                                     .scaleEffect(0.8)
                             } else {
                                 Image(systemName: account.icon)
-                                    .font(.system(size: 13, weight: .semibold))
+                                    .font(.scaled(13, weight: .semibold))
                             }
                             Text(account.rawValue)
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.scaled(13, weight: .medium))
                         }
                         .foregroundColor(.sAccent)
                         .frame(maxWidth: .infinity)
@@ -71,7 +71,7 @@ struct ClientPickerView: View {
             .padding(.horizontal, 20)
 
             Text("No customer details needed — bills straight to the \(QuickSaleAccount.cash.rawValue.lowercased())/\(QuickSaleAccount.upi.rawValue) ledger")
-                .font(.system(size: 11))
+                .font(.scaled(11))
                 .foregroundColor(.sMutedFG)
                 .padding(.horizontal, 20)
         }
@@ -94,11 +94,11 @@ struct ClientPickerView: View {
                     // MARK: - Search Bar
                     HStack(spacing: 10) {
                         Image(systemName: "magnifyingglass")
-                            .font(.system(size: 14))
+                            .font(.scaled(14))
                             .foregroundColor(.sMutedFG)
 
                         TextField("Search clients", text: $searchText)
-                            .font(.system(size: 14))
+                            .font(.scaled(14))
                             .foregroundColor(.sForeground)
                             .tint(.sAccent)
                             .autocorrectionDisabled()
@@ -108,7 +108,7 @@ struct ClientPickerView: View {
                                 searchText = ""
                             } label: {
                                 Image(systemName: "xmark.circle.fill")
-                                    .font(.system(size: 14))
+                                    .font(.scaled(14))
                                     .foregroundColor(.sMutedFG)
                             }
                         }
@@ -136,24 +136,24 @@ struct ClientPickerView: View {
                                     .frame(width: 44, height: 44)
 
                                 Image(systemName: "plus")
-                                    .font(.system(size: 16))
+                                    .font(.scaled(16))
                                     .foregroundColor(.sMutedFG)
                             }
 
                             VStack(alignment: .leading, spacing: 3) {
                                 Text("Add new client")
-                                    .font(.system(size: 13, weight: .medium))
+                                    .font(.scaled(13, weight: .medium))
                                     .foregroundColor(.sForeground)
 
                                 Text("Create a new client record")
-                                    .font(.system(size: 11))
+                                    .font(.scaled(11))
                                     .foregroundColor(.sMutedFG)
                             }
 
                             Spacer()
 
                             Image(systemName: "chevron.right")
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(.scaled(12, weight: .semibold))
                                 .foregroundColor(.sMutedFG)
                         }
                         .padding(.horizontal, 20)
@@ -168,30 +168,30 @@ struct ClientPickerView: View {
                             ProgressView()
                                 .tint(.sAccent)
                             Text("Loading clients...")
-                                .font(.system(size: 13))
+                                .font(.scaled(13))
                                 .foregroundColor(.sMutedFG)
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else if filteredClients.isEmpty {
                         VStack(spacing: 14) {
                             Image(systemName: "person.crop.circle.badge.plus")
-                                .font(.system(size: 36))
+                                .font(.scaled(36))
                                 .foregroundColor(.sMutedFG)
 
                             VStack(spacing: 4) {
                                 Text(searchText.isEmpty ? "No clients yet" : "No clients found")
-                                    .font(.system(size: 14, weight: .semibold))
+                                    .font(.scaled(14, weight: .semibold))
                                     .foregroundColor(.sForeground)
 
                                 Text(searchText.isEmpty ? "Add your first client to get started" : "Try a different search")
-                                    .font(.system(size: 12))
+                                    .font(.scaled(12))
                                     .foregroundColor(.sMutedFG)
                             }
 
                             if searchText.isEmpty {
                                 Button(action: { showAddClient = true }) {
                                     Text("Add client")
-                                        .font(.system(size: 13, weight: .semibold))
+                                        .font(.scaled(13, weight: .semibold))
                                         .foregroundColor(.sAccentFG)
                                         .padding(.horizontal, 20)
                                         .padding(.vertical, 10)
@@ -205,13 +205,13 @@ struct ClientPickerView: View {
                     } else {
                         HStack {
                             Text("Existing clients")
-                                .font(.system(size: 11, weight: .medium))
+                                .font(.scaled(11, weight: .medium))
                                 .foregroundColor(.sMutedFG)
 
                             Spacer()
 
                             Text("\(filteredClients.count)")
-                                .font(.system(size: 11, weight: .medium))
+                                .font(.scaled(11, weight: .medium))
                                 .foregroundColor(.sMutedFG)
                         }
                         .padding(.horizontal, 20)
@@ -262,7 +262,7 @@ struct ClientPickerView: View {
                                 Button("Cancel") {
                                     showAddClient = false
                                 }
-                                .font(.system(size: 14))
+                                .font(.scaled(14))
                                 .foregroundColor(.sForeground)
                             }
                         }
@@ -288,7 +288,7 @@ struct ClientPickerRow: View {
         Button(action: onSelect) {
             HStack(spacing: 14) {
                 Text(String(client.name.prefix(1)).uppercased())
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.scaled(12, weight: .semibold))
                     .foregroundColor(.sAccentFG)
                     .frame(width: 44, height: 44)
                     .background(Color.sAccent)
@@ -296,14 +296,14 @@ struct ClientPickerRow: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(client.name)
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.scaled(13, weight: .medium))
                         .foregroundColor(.sForeground)
                         .lineLimit(1)
 
                     HStack(spacing: 6) {
                         if !client.email.isEmpty {
                             Text(client.email)
-                                .font(.system(size: 11))
+                                .font(.scaled(11))
                                 .foregroundColor(.sMutedFG)
                                 .lineLimit(1)
                         }
@@ -315,7 +315,7 @@ struct ClientPickerRow: View {
 
                         if !client.phone.isEmpty {
                             Text(client.phone)
-                                .font(.system(size: 11))
+                                .font(.scaled(11))
                                 .foregroundColor(.sMutedFG)
                                 .lineLimit(1)
                         }
@@ -323,7 +323,7 @@ struct ClientPickerRow: View {
 
                     if !client.city.isEmpty {
                         Text(client.city)
-                            .font(.system(size: 10))
+                            .font(.scaled(10))
                             .foregroundColor(.sMutedFG)
                     }
                 }
@@ -332,11 +332,11 @@ struct ClientPickerRow: View {
 
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.scaled(16, weight: .semibold))
                         .foregroundColor(.sAccent)
                 } else {
                     Image(systemName: "circle")
-                        .font(.system(size: 16))
+                        .font(.scaled(16))
                         .foregroundColor(.sBorder)
                 }
             }
@@ -360,7 +360,7 @@ struct AvatarView: View {
         let first = String(name.prefix(1)).uppercased()
 
         Text(first)
-            .font(.system(size: size * 0.45, weight: .bold))
+            .font(.scaled(size * 0.45, weight: .bold))
             .foregroundColor(.sAccentFG)
             .frame(width: size, height: size)
             .background(Color.sAccent)

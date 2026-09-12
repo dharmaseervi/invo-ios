@@ -37,7 +37,7 @@ struct MoreView: View {
                             // MARK: - Profile Section
                             VStack(alignment: .leading, spacing: 10) {
                                 Text("Profile")
-                                    .font(.system(size: 13, weight: .medium))
+                                    .font(.scaled(13, weight: .medium))
                                     .foregroundColor(.sMutedFG)
 
                                 NavigationLink {
@@ -45,7 +45,7 @@ struct MoreView: View {
                                 } label: {
                                     HStack(spacing: 14) {
                                         Text(String(vm.profile?.email.prefix(1).uppercased() ?? "U"))
-                                            .font(.system(size: 18, weight: .semibold))
+                                            .font(.scaled(18, weight: .semibold))
                                             .foregroundColor(.sAccentFG)
                                             .frame(width: 52, height: 52)
                                             .background(Color.sAccent)
@@ -53,17 +53,17 @@ struct MoreView: View {
 
                                         VStack(alignment: .leading, spacing: 4) {
                                             Text(vm.profile?.email ?? "Loading...")
-                                                .font(.system(size: 14, weight: .medium))
+                                                .font(.scaled(14, weight: .medium))
                                                 .foregroundColor(.sForeground)
                                             Text("View profile")
-                                                .font(.system(size: 12))
+                                                .font(.scaled(12))
                                                 .foregroundColor(.sMutedFG)
                                         }
 
                                         Spacer()
 
                                         Image(systemName: "chevron.right")
-                                            .font(.system(size: 12, weight: .semibold))
+                                            .font(.scaled(12, weight: .semibold))
                                             .foregroundColor(.sMutedFG)
                                     }
                                     .padding(14)
@@ -185,16 +185,16 @@ struct MoreView: View {
                                 VStack(spacing: 0) {
                                     HStack(spacing: 14) {
                                         Image(systemName: biometricKind.icon)
-                                            .font(.system(size: 14))
+                                            .font(.scaled(14))
                                             .foregroundColor(.sMutedFG)
                                             .frame(width: 24)
 
                                         VStack(alignment: .leading, spacing: 2) {
                                             Text(biometricKind.label)
-                                                .font(.system(size: 14))
+                                                .font(.scaled(14))
                                                 .foregroundColor(.sForeground)
                                             Text("Unlock the app instead of staying logged out")
-                                                .font(.system(size: 11.5))
+                                                .font(.scaled(11.5))
                                                 .foregroundColor(.sMutedFG)
                                         }
 
@@ -249,9 +249,9 @@ struct MoreView: View {
                             } label: {
                                 HStack(spacing: 8) {
                                     Image(systemName: "rectangle.portrait.and.arrow.right")
-                                        .font(.system(size: 14, weight: .semibold))
+                                        .font(.scaled(14, weight: .semibold))
                                     Text("Sign out")
-                                        .font(.system(size: 14, weight: .semibold))
+                                        .font(.scaled(14, weight: .semibold))
                                 }
                                 .foregroundColor(.sForeground)
                                 .frame(maxWidth: .infinity)
@@ -272,9 +272,9 @@ struct MoreView: View {
                             } label: {
                                 HStack(spacing: 8) {
                                     Image(systemName: "trash")
-                                        .font(.system(size: 14))
+                                        .font(.scaled(14))
                                     Text("Delete account")
-                                        .font(.system(size: 14, weight: .semibold))
+                                        .font(.scaled(14, weight: .semibold))
                                 }
                                 .foregroundColor(.sDestructive.opacity(0.7))
                                 .frame(maxWidth: .infinity)
@@ -291,10 +291,10 @@ struct MoreView: View {
                             // MARK: - Version
                             VStack(spacing: 6) {
                                 Text(appVersion)
-                                    .font(.system(size: 11))
+                                    .font(.scaled(11))
                                     .foregroundColor(.sMutedFG)
                                 Text("© 2025 Invo Billing. All rights reserved.")
-                                    .font(.system(size: 10))
+                                    .font(.scaled(10))
                                     .foregroundColor(.sMutedFG)
                             }
                             .frame(maxWidth: .infinity)
@@ -427,7 +427,7 @@ struct MoreView: View {
     // MARK: - Helpers
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
-            .font(.system(size: 13, weight: .medium))
+            .font(.scaled(13, weight: .medium))
             .foregroundColor(.sMutedFG)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 20)
@@ -450,24 +450,24 @@ struct MoreViewRow: View {
     var body: some View {
         HStack(spacing: 14) {
             Image(systemName: icon)
-                .font(.system(size: 14))
+                .font(.scaled(14))
                 .foregroundColor(.sMutedFG)
                 .frame(width: 24)
 
             Text(label)
-                .font(.system(size: 14))
+                .font(.scaled(14))
                 .foregroundColor(.sForeground)
 
             Spacer()
 
             if let value {
                 Text(value)
-                    .font(.system(size: 13))
+                    .font(.scaled(13))
                     .foregroundColor(.sMutedFG)
             }
 
             Image(systemName: "chevron.right")
-                .font(.system(size: 12, weight: .semibold))
+                .font(.scaled(12, weight: .semibold))
                 .foregroundColor(.sMutedFG)
         }
         .padding(.vertical, 12)
@@ -481,11 +481,11 @@ struct MoreViewRowBasic: View {
     var body: some View {
         HStack {
             Text(label)
-                .font(.system(size: 14))
+                .font(.scaled(14))
                 .foregroundColor(.sForeground)
             Spacer()
             Image(systemName: "chevron.right")
-                .font(.system(size: 12, weight: .semibold))
+                .font(.scaled(12, weight: .semibold))
                 .foregroundColor(.sMutedFG)
         }
         .padding(.vertical, 12)

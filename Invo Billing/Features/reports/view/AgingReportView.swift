@@ -47,13 +47,13 @@ struct AgingReportView: View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Total outstanding")
-                    .font(.system(size: 13))
+                    .font(.scaled(13))
                     .foregroundColor(.sMutedFG)
                 Text(Money.text(report.grand_total))
-                    .font(.system(size: 26, weight: .bold))
+                    .font(.scaled(26, weight: .bold))
                     .foregroundColor(.sForeground)
                 Text("Across \(report.clients.count) client\(report.clients.count == 1 ? "" : "s") · as of \(AppDate.text(fromWire: report.as_of))")
-                    .font(.system(size: 12))
+                    .font(.scaled(12))
                     .foregroundColor(.sMutedFG)
             }
 
@@ -67,10 +67,10 @@ struct AgingReportView: View {
                 ForEach(0..<5, id: \.self) { i in
                     VStack(alignment: .leading, spacing: 3) {
                         Text(Money.text(values[i]))
-                            .font(.system(size: 12.5, weight: .semibold))
+                            .font(.scaled(12.5, weight: .semibold))
                             .foregroundColor(values[i] > 0 ? bucketColors[i] : .sMutedFG)
                         Text(bucketLabels[i])
-                            .font(.system(size: 10))
+                            .font(.scaled(10))
                             .foregroundColor(.sMutedFG)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -91,7 +91,7 @@ struct AgingReportView: View {
     private func clientList(_ report: AgingReportResponse) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("By client")
-                .font(.system(size: 13, weight: .medium))
+                .font(.scaled(13, weight: .medium))
                 .foregroundColor(.sMutedFG)
                 .padding(.horizontal, 20)
 
@@ -113,13 +113,13 @@ struct AgingReportView: View {
     private var emptyState: some View {
         VStack(spacing: 12) {
             Image(systemName: "checkmark.circle")
-                .font(.system(size: 32))
+                .font(.scaled(32))
                 .foregroundColor(.sMutedFG)
             Text("Nothing outstanding")
-                .font(.system(size: 15, weight: .medium))
+                .font(.scaled(15, weight: .medium))
                 .foregroundColor(.sForeground)
             Text("Every invoice is fully paid right now")
-                .font(.system(size: 13))
+                .font(.scaled(13))
                 .foregroundColor(.sMutedFG)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -156,15 +156,15 @@ private struct AgingClientRow: View {
                 ZStack {
                     Circle().fill(Color.sAccentMuted).frame(width: 36, height: 36)
                     Text(initials)
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.scaled(12, weight: .semibold))
                         .foregroundColor(.sAccent)
                 }
                 Text(row.client_name)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.scaled(14, weight: .medium))
                     .foregroundColor(.sForeground)
                 Spacer()
                 Text(Money.text(row.total))
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.scaled(14, weight: .semibold))
                     .foregroundColor(worstColor)
             }
 

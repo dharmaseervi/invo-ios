@@ -25,9 +25,9 @@ struct ItemFormView: View {
                             } label: {
                                 HStack(spacing: 8) {
                                     Image(systemName: "shippingbox.fill")
-                                        .font(.system(size: 13, weight: .semibold))
+                                        .font(.scaled(13, weight: .semibold))
                                     Text("Record stock received")
-                                        .font(.system(size: 14, weight: .medium))
+                                        .font(.scaled(14, weight: .medium))
                                 }
                                 .foregroundColor(.sAccent)
                                 .frame(maxWidth: .infinity)
@@ -66,9 +66,9 @@ struct ItemFormView: View {
                                     .scaleEffect(0.85)
                             } else {
                                 Image(systemName: "checkmark.circle.fill")
-                                    .font(.system(size: 13, weight: .semibold))
+                                    .font(.scaled(13, weight: .semibold))
                                 Text(vm.isEditMode ? "Save changes" : "Create item")
-                                    .font(.system(size: 15, weight: .semibold))
+                                    .font(.scaled(15, weight: .semibold))
                             }
                         }
                         .foregroundColor(.sAccentFG)
@@ -84,7 +84,7 @@ struct ItemFormView: View {
                             vm.resetForm()
                         }) {
                             Text("Clear")
-                                .font(.system(size: 14, weight: .medium))
+                                .font(.scaled(14, weight: .medium))
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 14)
                                 .foregroundColor(.sForeground)

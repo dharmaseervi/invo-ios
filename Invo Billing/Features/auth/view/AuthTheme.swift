@@ -57,7 +57,7 @@ struct AuthField: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(label)
-                .font(.system(size: 12.5, weight: .medium))
+                .font(.scaled(12.5, weight: .medium))
                 .foregroundColor(AuthTheme.muted)
 
             HStack(spacing: 10) {
@@ -68,7 +68,7 @@ struct AuthField: View {
                         TextField(placeholder, text: $text)
                     }
                 }
-                .font(.system(size: 14))
+                .font(.scaled(14))
                 .foregroundColor(AuthTheme.foreground)
                 .tint(AuthTheme.accentBright)
                 .keyboardType(keyboard)
@@ -102,7 +102,7 @@ struct AuthPrimaryButton: View {
                     ProgressView().tint(.white).scaleEffect(0.85)
                 } else {
                     Text(title)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.scaled(15, weight: .semibold))
                         .foregroundColor(.white)
                 }
             }
@@ -127,9 +127,9 @@ struct AuthErrorBanner: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: "exclamationmark.circle")
-                .font(.system(size: 13))
+                .font(.scaled(13))
             Text(message)
-                .font(.system(size: 13))
+                .font(.scaled(13))
             Spacer()
         }
         .foregroundColor(AuthTheme.destructive)
@@ -156,7 +156,7 @@ struct VioletField: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(label)
-                .font(.system(size: 13, weight: .medium))
+                .font(.scaled(13, weight: .medium))
                 .foregroundColor(.sForeground)
 
             Group {
@@ -166,7 +166,7 @@ struct VioletField: View {
                     TextField(placeholder, text: $text)
                 }
             }
-            .font(.system(size: 14))
+            .font(.scaled(14))
             .foregroundColor(.sForeground)
             .tint(.sAccent)
             .keyboardType(keyboard)

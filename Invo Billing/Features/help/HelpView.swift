@@ -67,7 +67,7 @@ struct HelpView: View {
 
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
-            .font(.system(size: 13, weight: .medium))
+            .font(.scaled(13, weight: .medium))
             .foregroundColor(.sMutedFG)
             .padding(.horizontal, 20)
             .padding(.bottom, 10)
@@ -77,13 +77,13 @@ struct HelpView: View {
     private func row(_ title: String) -> some View {
         HStack {
             Text(title)
-                .font(.system(size: 14))
+                .font(.scaled(14))
                 .foregroundColor(.sForeground)
 
             Spacer()
 
             Image(systemName: "chevron.right")
-                .font(.system(size: 12, weight: .semibold))
+                .font(.scaled(12, weight: .semibold))
                 .foregroundColor(.sMutedFG)
         }
         .padding(.vertical, 12)
@@ -92,7 +92,7 @@ struct HelpView: View {
     private func infoRow(_ title: String) -> some View {
         HStack {
             Text(title)
-                .font(.system(size: 14))
+                .font(.scaled(14))
                 .foregroundColor(.sMutedFG)
             Spacer()
         }

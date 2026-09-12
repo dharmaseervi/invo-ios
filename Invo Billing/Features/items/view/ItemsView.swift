@@ -37,11 +37,11 @@ struct ItemsView: View {
                     // MARK: - Search Bar
                     HStack(spacing: 10) {
                         Image(systemName: "magnifyingglass")
-                            .font(.system(size: 14))
+                            .font(.scaled(14))
                             .foregroundColor(.sMutedFG)
 
                         TextField("Search name or SKU", text: $searchText)
-                            .font(.system(size: 14))
+                            .font(.scaled(14))
                             .foregroundColor(.sForeground)
                             .tint(.sAccent)
                             .autocorrectionDisabled()
@@ -67,18 +67,18 @@ struct ItemsView: View {
                                 ProgressView()
                                     .tint(.sAccent)
                                 Text("Loading items...")
-                                    .font(.system(size: 13))
+                                    .font(.scaled(13))
                                     .foregroundColor(.sMutedFG)
                             }
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                         } else if let error = vm.errorMessage {
                             VStack(spacing: 10) {
                                 Image(systemName: "exclamationmark.triangle")
-                                    .font(.system(size: 28))
+                                    .font(.scaled(28))
                                     .foregroundColor(.sDestructive)
 
                                 Text(error)
-                                    .font(.system(size: 13))
+                                    .font(.scaled(13))
                                     .foregroundColor(.sMutedFG)
                                     .multilineTextAlignment(.center)
 
@@ -89,7 +89,7 @@ struct ItemsView: View {
                                         Task { await vm.loadItems() }
                                     }) {
                                         Text("Try again")
-                                            .font(.system(size: 13, weight: .medium))
+                                            .font(.scaled(13, weight: .medium))
                                             .foregroundColor(.sAccent)
                                     }
                                     .padding(.top, 4)
@@ -100,16 +100,16 @@ struct ItemsView: View {
                         } else if filteredItems.isEmpty {
                             VStack(spacing: 16) {
                                 Image(systemName: "box.2")
-                                    .font(.system(size: 40))
+                                    .font(.scaled(40))
                                     .foregroundColor(.sMutedFG)
 
                                 VStack(spacing: 4) {
                                     Text("No items")
-                                        .font(.system(size: 15, weight: .semibold))
+                                        .font(.scaled(15, weight: .semibold))
                                         .foregroundColor(.sForeground)
 
                                     Text("Add your first item to get started")
-                                        .font(.system(size: 13))
+                                        .font(.scaled(13))
                                         .foregroundColor(.sMutedFG)
                                 }
 
@@ -117,7 +117,7 @@ struct ItemsView: View {
                                     ItemFormView()
                                 } label: {
                                     Text("Add item")
-                                        .font(.system(size: 13, weight: .semibold))
+                                        .font(.scaled(13, weight: .semibold))
                                         .foregroundColor(.sAccentFG)
                                         .padding(.horizontal, 20)
                                         .padding(.vertical, 10)
@@ -161,7 +161,7 @@ struct ItemsView: View {
                                             .padding(.vertical, 12)
                                     } else if !vm.hasMore && filteredItems.count > 20 {
                                         Text("All \(filteredItems.count) items loaded")
-                                            .font(.system(size: 12))
+                                            .font(.scaled(12))
                                             .foregroundColor(.sMutedFG)
                                             .padding(.vertical, 12)
                                     }
@@ -205,7 +205,7 @@ struct ItemsView: View {
                     } else {
                         HStack(spacing: 16) {
                             Button("Select") { isSelectMode = true }
-                                .font(.system(size: 15))
+                                .font(.scaled(15))
                             NavigationLink {
                                 ItemFormView()
                             } label: {
@@ -269,7 +269,7 @@ extension ItemsView {
     fileprivate var bulkPrintBar: some View {
         HStack {
             Text("\(selectedItemIDs.count) selected")
-                .font(.system(size: 13, weight: .medium))
+                .font(.scaled(13, weight: .medium))
                 .foregroundColor(.sMutedFG)
 
             Spacer()
@@ -281,7 +281,7 @@ extension ItemsView {
                     Image(systemName: "printer.fill")
                     Text("Print labels")
                 }
-                .font(.system(size: 14, weight: .semibold))
+                .font(.scaled(14, weight: .semibold))
                 .foregroundColor(.sAccentFG)
                 .padding(.horizontal, 18)
                 .padding(.vertical, 10)
@@ -308,17 +308,17 @@ struct ItemLookupResultSheet: View {
     var body: some View {
         VStack(spacing: 20) {
             Text(item.name)
-                .font(.system(size: 18, weight: .semibold))
+                .font(.scaled(18, weight: .semibold))
                 .foregroundColor(.sForeground)
                 .padding(.top, 24)
 
             HStack(spacing: 0) {
                 VStack(spacing: 4) {
                     Text(Money.text(item.price))
-                        .font(.system(size: 22, weight: .bold))
+                        .font(.scaled(22, weight: .bold))
                         .foregroundColor(.sForeground)
                     Text("Price")
-                        .font(.system(size: 12))
+                        .font(.scaled(12))
                         .foregroundColor(.sMutedFG)
                 }
                 .frame(maxWidth: .infinity)
@@ -327,10 +327,10 @@ struct ItemLookupResultSheet: View {
 
                 VStack(spacing: 4) {
                     Text("\(item.quantity)")
-                        .font(.system(size: 22, weight: .bold))
+                        .font(.scaled(22, weight: .bold))
                         .foregroundColor(isLowStock ? .sDestructive : .sForeground)
                     Text(item.unit ?? "In stock")
-                        .font(.system(size: 12))
+                        .font(.scaled(12))
                         .foregroundColor(.sMutedFG)
                 }
                 .frame(maxWidth: .infinity)
@@ -338,7 +338,7 @@ struct ItemLookupResultSheet: View {
 
             if isLowStock {
                 Text(item.quantity <= 0 ? "Out of stock" : "Low stock")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.scaled(12, weight: .semibold))
                     .foregroundColor(.sDestructive)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
@@ -369,14 +369,14 @@ struct ItemListRowView: View {
         HStack(spacing: 12) {
             if isSelectMode {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 20))
+                    .font(.scaled(20))
                     .foregroundColor(isSelected ? .sAccent : .sBorder)
             }
 
             Button(action: onTapRow) {
                 HStack(spacing: 12) {
                     Text(String(item.name.prefix(1)).uppercased())
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.scaled(14, weight: .semibold))
                         .foregroundColor(.sAccentFG)
                         .frame(width: 44, height: 44)
                         .background(Color.sAccent)
@@ -385,12 +385,12 @@ struct ItemListRowView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         HStack(spacing: 6) {
                             Text(item.name)
-                                .font(.system(size: 14, weight: .medium))
+                                .font(.scaled(14, weight: .medium))
                                 .foregroundColor(.sForeground)
 
                             if isLowStock {
                                 Text(item.quantity <= 0 ? "Out of stock" : "Low stock")
-                                    .font(.system(size: 9, weight: .semibold))
+                                    .font(.scaled(9, weight: .semibold))
                                     .foregroundColor(.sDestructive)
                                     .padding(.horizontal, 6)
                                     .padding(.vertical, 2)
@@ -401,20 +401,20 @@ struct ItemListRowView: View {
 
                         HStack(spacing: 8) {
                             Text(Money.text(item.price))
-                                .font(.system(size: 12))
+                                .font(.scaled(12))
                                 .foregroundColor(.sForeground)
 
                             Text("•")
                                 .foregroundColor(.sMutedFG)
                             Text("\(item.quantity) \(item.unit ?? "in stock")")
-                                .font(.system(size: 11))
+                                .font(.scaled(11))
                                 .foregroundColor(isLowStock ? .sDestructive : .sMutedFG)
 
                             if let desc = item.description, !desc.isEmpty {
                                 Text("•")
                                     .foregroundColor(.sMutedFG)
                                 Text(desc)
-                                    .font(.system(size: 11))
+                                    .font(.scaled(11))
                                     .foregroundColor(.sMutedFG)
                                     .lineLimit(1)
                             }
@@ -430,7 +430,7 @@ struct ItemListRowView: View {
             if !isSelectMode {
                 Button(action: onTapPrint) {
                     Image(systemName: "qrcode")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.scaled(14, weight: .semibold))
                         .foregroundColor(.sMutedFG)
                 }
                 .buttonStyle(.plain)

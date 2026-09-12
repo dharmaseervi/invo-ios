@@ -20,7 +20,7 @@ struct ItemsSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Items")
-                .font(.system(size: 13, weight: .medium))
+                .font(.scaled(13, weight: .medium))
                 .foregroundColor(.sMutedFG)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 10)
@@ -28,14 +28,14 @@ struct ItemsSection: View {
             if invoiceItems.isEmpty {
                 VStack(spacing: 12) {
                     Image(systemName: "box.2")
-                        .font(.system(size: 32))
+                        .font(.scaled(32))
                         .foregroundColor(.sMutedFG)
                     VStack(spacing: 4) {
                         Text("No items added")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.scaled(14, weight: .semibold))
                             .foregroundColor(.sForeground)
                         Text("Add items to create your invoice")
-                            .font(.system(size: 12))
+                            .font(.scaled(12))
                             .foregroundColor(.sMutedFG)
                     }
                 }
@@ -50,11 +50,11 @@ struct ItemsSection: View {
                 VStack(spacing: 8) {
                     HStack {
                         Text("Total items")
-                            .font(.system(size: 12))
+                            .font(.scaled(12))
                             .foregroundColor(.sMutedFG)
                         Spacer()
                         Text("\(totalItems)")
-                            .font(.system(size: 13))
+                            .font(.scaled(13))
                             .foregroundColor(.sForeground)
                     }
 
@@ -62,11 +62,11 @@ struct ItemsSection: View {
 
                     HStack {
                         Text("Total amount")
-                            .font(.system(size: 12))
+                            .font(.scaled(12))
                             .foregroundColor(.sMutedFG)
                         Spacer()
                         Text(Money.text(totalAmount))
-                            .font(.system(size: 13))
+                            .font(.scaled(13))
                             .foregroundColor(.sForeground)
                     }
                 }
@@ -102,9 +102,9 @@ struct ItemsSection: View {
                 Button(action: { showItemPicker = true }) {
                     HStack(spacing: 8) {
                         Image(systemName: "plus.circle")
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(.scaled(13, weight: .semibold))
                         Text("Add item")
-                            .font(.system(size: 14, weight: .medium))
+                            .font(.scaled(14, weight: .medium))
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
@@ -117,9 +117,9 @@ struct ItemsSection: View {
                 Button(action: { showScanner = true }) {
                     HStack(spacing: 8) {
                         Image(systemName: "barcode.viewfinder")
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(.scaled(13, weight: .semibold))
                         Text("Scan item")
-                            .font(.system(size: 14, weight: .medium))
+                            .font(.scaled(14, weight: .medium))
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
@@ -171,7 +171,7 @@ struct ItemRowZara: View {
     var body: some View {
         HStack(spacing: 12) {
             Text(String(item.item.name.prefix(1)).uppercased())
-                .font(.system(size: 12, weight: .semibold))
+                .font(.scaled(12, weight: .semibold))
                 .foregroundColor(.sAccentFG)
                 .frame(width: 40, height: 40)
                 .background(Color.sAccent)
@@ -179,25 +179,25 @@ struct ItemRowZara: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(item.item.name)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.scaled(13, weight: .medium))
                     .foregroundColor(.sForeground)
                     .lineLimit(1)
 
                 HStack(spacing: 6) {
                     Text("Qty: \(item.qty)")
-                        .font(.system(size: 11))
+                        .font(.scaled(11))
                         .foregroundColor(.sMutedFG)
                     Text("•")
                         .foregroundColor(.sMutedFG)
                     Text(Money.text(item.rate))
-                        .font(.system(size: 11))
+                        .font(.scaled(11))
                         .foregroundColor(.sMutedFG)
 
                     if item.discount > 0 {
                         Text("•")
                             .foregroundColor(.sMutedFG)
                         Text("Disc: \(Money.text(item.discount))")
-                            .font(.system(size: 11))
+                            .font(.scaled(11))
                             .foregroundColor(.sMutedFG)
                     }
                 }
@@ -207,18 +207,18 @@ struct ItemRowZara: View {
 
             VStack(alignment: .trailing, spacing: 8) {
                 Text(Money.text(item.total))
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.scaled(13, weight: .semibold))
                     .foregroundColor(.sForeground)
 
                 HStack(spacing: 14) {
                     Button(action: onEdit) {
                         Image(systemName: "pencil")
-                            .font(.system(size: 12))
+                            .font(.scaled(12))
                             .foregroundColor(.sMutedFG)
                     }
                     Button(action: onDelete) {
                         Image(systemName: "trash")
-                            .font(.system(size: 12))
+                            .font(.scaled(12))
                             .foregroundColor(.sDestructive)
                     }
                 }
@@ -272,12 +272,12 @@ struct EditItemSheetZara: View {
                                 // Item Display
                                 VStack(alignment: .leading, spacing: 10) {
                                     Text("Item")
-                                        .font(.system(size: 13, weight: .medium))
+                                        .font(.scaled(13, weight: .medium))
                                         .foregroundColor(.sMutedFG)
 
                                     HStack(spacing: 12) {
                                         Text(String(currentItem.item.name.prefix(1)).uppercased())
-                                            .font(.system(size: 12, weight: .semibold))
+                                            .font(.scaled(12, weight: .semibold))
                                             .foregroundColor(.sAccentFG)
                                             .frame(width: 44, height: 44)
                                             .background(Color.sAccent)
@@ -285,12 +285,12 @@ struct EditItemSheetZara: View {
 
                                         VStack(alignment: .leading, spacing: 3) {
                                             Text(currentItem.item.name)
-                                                .font(.system(size: 14, weight: .medium))
+                                                .font(.scaled(14, weight: .medium))
                                                 .foregroundColor(.sForeground)
 
                                             if let desc = currentItem.item.description {
                                                 Text(desc)
-                                                    .font(.system(size: 12))
+                                                    .font(.scaled(12))
                                                     .foregroundColor(.sMutedFG)
                                                     .lineLimit(1)
                                             }
@@ -306,18 +306,18 @@ struct EditItemSheetZara: View {
                                 // Quantity
                                 VStack(alignment: .leading, spacing: 10) {
                                     Text("Quantity")
-                                        .font(.system(size: 13, weight: .medium))
+                                        .font(.scaled(13, weight: .medium))
                                         .foregroundColor(.sMutedFG)
 
                                     HStack(spacing: 12) {
                                         Button(action: { if qty > 1 { qty -= 1 } }) {
                                             Image(systemName: "minus.circle")
-                                                .font(.system(size: 20))
+                                                .font(.scaled(20))
                                                 .foregroundColor(.sMutedFG)
                                         }
 
                                         TextField("Qty", value: $qty, format: .number)
-                                            .font(.system(size: 16, weight: .semibold))
+                                            .font(.scaled(16, weight: .semibold))
                                             .multilineTextAlignment(.center)
                                             .keyboardType(.numberPad)
                                             .frame(maxWidth: .infinity)
@@ -325,7 +325,7 @@ struct EditItemSheetZara: View {
 
                                         Button(action: { qty += 1 }) {
                                             Image(systemName: "plus.circle")
-                                                .font(.system(size: 20))
+                                                .font(.scaled(20))
                                                 .foregroundColor(.sMutedFG)
                                         }
                                     }
@@ -339,16 +339,16 @@ struct EditItemSheetZara: View {
                                 // Rate
                                 VStack(alignment: .leading, spacing: 10) {
                                     Text("Unit price")
-                                        .font(.system(size: 13, weight: .medium))
+                                        .font(.scaled(13, weight: .medium))
                                         .foregroundColor(.sMutedFG)
 
                                     HStack(spacing: 8) {
                                         Text("₹")
-                                            .font(.system(size: 14))
+                                            .font(.scaled(14))
                                             .foregroundColor(.sMutedFG)
 
                                         TextField("0.00", value: $rate, format: .number)
-                                            .font(.system(size: 15))
+                                            .font(.scaled(15))
                                             .keyboardType(.decimalPad)
                                             .frame(maxWidth: .infinity)
                                             .foregroundColor(.sForeground)
@@ -363,16 +363,16 @@ struct EditItemSheetZara: View {
                                 // Discount
                                 VStack(alignment: .leading, spacing: 10) {
                                     Text("Discount")
-                                        .font(.system(size: 13, weight: .medium))
+                                        .font(.scaled(13, weight: .medium))
                                         .foregroundColor(.sMutedFG)
 
                                     HStack(spacing: 8) {
                                         Text("₹")
-                                            .font(.system(size: 14))
+                                            .font(.scaled(14))
                                             .foregroundColor(.sMutedFG)
 
                                         TextField("0.00", value: $discount, format: .number)
-                                            .font(.system(size: 15))
+                                            .font(.scaled(15))
                                             .keyboardType(.decimalPad)
                                             .frame(maxWidth: .infinity)
                                             .foregroundColor(.sForeground)
@@ -387,7 +387,7 @@ struct EditItemSheetZara: View {
                                 // Tax Rate
                                 VStack(alignment: .leading, spacing: 10) {
                                     Text("Tax rate")
-                                        .font(.system(size: 13, weight: .medium))
+                                        .font(.scaled(13, weight: .medium))
                                         .foregroundColor(.sMutedFG)
 
                                     Picker("Tax", selection: $taxRate) {
@@ -404,7 +404,7 @@ struct EditItemSheetZara: View {
                                 // Summary
                                 VStack(alignment: .leading, spacing: 10) {
                                     Text("Summary")
-                                        .font(.system(size: 13, weight: .medium))
+                                        .font(.scaled(13, weight: .medium))
                                         .foregroundColor(.sMutedFG)
 
                                     VStack(spacing: 0) {
@@ -452,9 +452,9 @@ struct EditItemSheetZara: View {
                             }) {
                                 HStack(spacing: 8) {
                                     Image(systemName: "checkmark.circle.fill")
-                                        .font(.system(size: 13, weight: .semibold))
+                                        .font(.scaled(13, weight: .semibold))
                                     Text("Save changes")
-                                        .font(.system(size: 15, weight: .semibold))
+                                        .font(.scaled(15, weight: .semibold))
                                 }
                                 .foregroundColor(.sAccentFG)
                                 .frame(maxWidth: .infinity)
@@ -470,7 +470,7 @@ struct EditItemSheetZara: View {
                                 dismiss()
                             }) {
                                 Text("Cancel")
-                                    .font(.system(size: 14, weight: .medium))
+                                    .font(.scaled(14, weight: .medium))
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 14)
                                     .foregroundColor(.sForeground)
@@ -516,13 +516,13 @@ struct SummaryLineZara: View {
     var body: some View {
         HStack(spacing: 0) {
             Text(label)
-                .font(.system(size: isTotal ? 14 : 12, weight: isTotal ? .semibold : .regular))
+                .font(.scaled(isTotal ? 14 : 12, weight: isTotal ? .semibold : .regular))
                 .foregroundColor(.sForeground)
 
             Spacer()
 
             Text(Money.text(value))
-                .font(.system(size: isTotal ? 14 : 12, weight: isTotal ? .semibold : .regular))
+                .font(.scaled(isTotal ? 14 : 12, weight: isTotal ? .semibold : .regular))
                 .foregroundColor(.sForeground)
         }
         .padding(.horizontal, 14)

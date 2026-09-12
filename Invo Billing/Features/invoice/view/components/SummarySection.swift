@@ -16,7 +16,7 @@ struct SummarySection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Summary")
-                .font(.system(size: 13, weight: .medium))
+                .font(.scaled(13, weight: .medium))
                 .foregroundColor(.sMutedFG)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 10)
@@ -29,17 +29,17 @@ struct SummarySection: View {
                 HStack(spacing: 0) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Tax")
-                            .font(.system(size: 13))
+                            .font(.scaled(13))
                             .foregroundColor(.sForeground)
                         Text("(\(String(format: "%.1f", taxPercentage))%)")
-                            .font(.system(size: 11))
+                            .font(.scaled(11))
                             .foregroundColor(.sMutedFG)
                     }
 
                     Spacer()
 
                     Text(Money.text(tax))
-                        .font(.system(size: 13))
+                        .font(.scaled(13))
                         .foregroundColor(.sForeground)
                 }
                 .padding(.horizontal, 14)
@@ -49,19 +49,19 @@ struct SummarySection: View {
 
                 HStack(spacing: 0) {
                     Text("Discount")
-                        .font(.system(size: 13))
+                        .font(.scaled(13))
                         .foregroundColor(.sForeground)
 
                     Spacer()
 
                     HStack(spacing: 2) {
                         Text("₹")
-                            .font(.system(size: 13))
+                            .font(.scaled(13))
                             .foregroundColor(.sMutedFG)
                         TextField("0.00", text: $discountText)
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
-                            .font(.system(size: 13))
+                            .font(.scaled(13))
                             .foregroundColor(.sForeground)
                             .tint(.sAccent)
                             .frame(width: 80)
@@ -87,17 +87,17 @@ struct SummarySection: View {
                 HStack(spacing: 0) {
                     VStack(alignment: .leading, spacing: 3) {
                         Text("Total amount")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.scaled(14, weight: .semibold))
                             .foregroundColor(.sForeground)
                         Text("Amount due by invoice date")
-                            .font(.system(size: 11))
+                            .font(.scaled(11))
                             .foregroundColor(.sMutedFG)
                     }
 
                     Spacer()
 
                     Text(Money.text(total))
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.scaled(16, weight: .semibold))
                         .foregroundColor(.sForeground)
                 }
                 .padding(.horizontal, 14)
@@ -124,13 +124,13 @@ struct SummaryRowZara: View {
     var body: some View {
         HStack(spacing: 0) {
             Text(label)
-                .font(.system(size: isTotal ? 14 : 13, weight: isTotal ? .semibold : .regular))
+                .font(.scaled(isTotal ? 14 : 13, weight: isTotal ? .semibold : .regular))
                 .foregroundColor(.sForeground)
 
             Spacer()
 
             Text(Money.text(value))
-                .font(.system(size: isTotal ? 15 : 13, weight: isTotal ? .semibold : .regular))
+                .font(.scaled(isTotal ? 15 : 13, weight: isTotal ? .semibold : .regular))
                 .foregroundColor(.sForeground)
         }
         .padding(.horizontal, 14)

@@ -22,7 +22,7 @@ struct EditEstimateView: View {
                         // MARK: - Customer
                         VStack(alignment: .leading, spacing: 10) {
                             Text("Customer")
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.scaled(13, weight: .medium))
                                 .foregroundColor(.sMutedFG)
 
                             Button { showClientPicker = true } label: {
@@ -31,25 +31,25 @@ struct EditEstimateView: View {
                                         MinimalAvatarView(name: client.name)
                                         VStack(alignment: .leading, spacing: 2) {
                                             Text(client.name)
-                                                .font(.system(size: 14, weight: .medium))
+                                                .font(.scaled(14, weight: .medium))
                                                 .foregroundColor(.sForeground)
                                             if !client.email.isEmpty {
                                                 Text(client.email)
-                                                    .font(.system(size: 12))
+                                                    .font(.scaled(12))
                                                     .foregroundColor(.sMutedFG)
                                             }
                                         }
                                     } else {
                                         Image(systemName: "person.crop.circle.badge.plus")
-                                            .font(.system(size: 18))
+                                            .font(.scaled(18))
                                             .foregroundColor(.sAccent)
                                         Text("Select client")
-                                            .font(.system(size: 14, weight: .medium))
+                                            .font(.scaled(14, weight: .medium))
                                             .foregroundColor(.sForeground)
                                     }
                                     Spacer()
                                     Image(systemName: "chevron.right")
-                                        .font(.system(size: 12, weight: .semibold))
+                                        .font(.scaled(12, weight: .semibold))
                                         .foregroundColor(.sMutedFG)
                                 }
                                 .padding(14)
@@ -63,17 +63,17 @@ struct EditEstimateView: View {
                         // MARK: - Dates
                         VStack(alignment: .leading, spacing: 10) {
                             Text("Details")
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.scaled(13, weight: .medium))
                                 .foregroundColor(.sMutedFG)
 
                             VStack(spacing: 0) {
                                 HStack {
                                     Text("Estimate number")
-                                        .font(.system(size: 14))
+                                        .font(.scaled(14))
                                         .foregroundColor(.sForeground)
                                     Spacer()
                                     Text(vm.estimateNumber)
-                                        .font(.system(size: 14))
+                                        .font(.scaled(14))
                                         .foregroundColor(.sMutedFG)
                                 }
                                 .padding(14)
@@ -81,20 +81,20 @@ struct EditEstimateView: View {
                                 Rectangle().fill(Color.sBorder).frame(height: 0.5)
 
                                 DatePicker("Estimate date", selection: $vm.estimateDate, displayedComponents: .date)
-                                    .font(.system(size: 14))
+                                    .font(.scaled(14))
                                     .padding(14)
 
                                 Rectangle().fill(Color.sBorder).frame(height: 0.5)
 
                                 Toggle("Set expiry date", isOn: $vm.hasExpiryDate)
-                                    .font(.system(size: 14))
+                                    .font(.scaled(14))
                                     .tint(.sAccent)
                                     .padding(14)
 
                                 if vm.hasExpiryDate {
                                     Rectangle().fill(Color.sBorder).frame(height: 0.5)
                                     DatePicker("Valid until", selection: $vm.expiryDate, in: vm.estimateDate..., displayedComponents: .date)
-                                        .font(.system(size: 14))
+                                        .font(.scaled(14))
                                         .padding(14)
                                 }
                             }
@@ -129,10 +129,10 @@ struct EditEstimateView: View {
                 HStack(spacing: 14) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Total")
-                            .font(.system(size: 11))
+                            .font(.scaled(11))
                             .foregroundColor(.sMutedFG)
                         Text(Money.text(vm.total))
-                            .font(.system(size: 17, weight: .semibold))
+                            .font(.scaled(17, weight: .semibold))
                             .foregroundColor(.sForeground)
                     }
                     Spacer()
@@ -146,7 +146,7 @@ struct EditEstimateView: View {
                                 ProgressView().tint(.sAccentFG).scaleEffect(0.85)
                             } else {
                                 Text("Save changes")
-                                    .font(.system(size: 15, weight: .semibold))
+                                    .font(.scaled(15, weight: .semibold))
                             }
                         }
                         .foregroundColor(.sAccentFG)

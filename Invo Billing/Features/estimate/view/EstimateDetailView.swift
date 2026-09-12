@@ -42,21 +42,21 @@ struct EstimateDetailView: View {
                                 ZStack {
                                     Circle().fill(Color.sAccentMuted).frame(width: 48, height: 48)
                                     Text(initials(for: detail.client.name))
-                                        .font(.system(size: 15, weight: .semibold))
+                                        .font(.scaled(15, weight: .semibold))
                                         .foregroundColor(.sAccent)
                                 }
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(detail.client.name)
-                                        .font(.system(size: 16, weight: .semibold))
+                                        .font(.scaled(16, weight: .semibold))
                                         .foregroundColor(.sForeground)
                                     Text(detail.estimate_number)
-                                        .font(.system(size: 13))
+                                        .font(.scaled(13))
                                         .foregroundColor(.sMutedFG)
                                 }
                                 Spacer()
                                 let config = statusConfig(detail.status)
                                 Text(config.label)
-                                    .font(.system(size: 11, weight: .medium))
+                                    .font(.scaled(11, weight: .medium))
                                     .foregroundColor(config.color)
                                     .padding(.horizontal, 9)
                                     .padding(.vertical, 4)
@@ -67,16 +67,16 @@ struct EstimateDetailView: View {
 
                             VStack(alignment: .leading, spacing: 3) {
                                 Text("Total amount")
-                                    .font(.system(size: 11))
+                                    .font(.scaled(11))
                                     .foregroundColor(.sMutedFG)
                                 Text(Money.text(detail.total))
-                                    .font(.system(size: 22, weight: .bold))
+                                    .font(.scaled(22, weight: .bold))
                                     .foregroundColor(.sForeground)
                             }
 
                             if let expiry = detail.expiry_date {
                                 Text("Valid until \(expiry)")
-                                    .font(.system(size: 12))
+                                    .font(.scaled(12))
                                     .foregroundColor(.sMutedFG)
                             }
                         }
@@ -93,7 +93,7 @@ struct EstimateDetailView: View {
                         // MARK: - Line Items
                         VStack(alignment: .leading, spacing: 0) {
                             Text("Line items")
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.scaled(13, weight: .medium))
                                 .foregroundColor(.sMutedFG)
                                 .padding(.horizontal, 20)
                                 .padding(.bottom, 10)
@@ -104,15 +104,15 @@ struct EstimateDetailView: View {
                                     HStack {
                                         VStack(alignment: .leading, spacing: 4) {
                                             Text(vm.itemNames[item.item_id] ?? "Item #\(item.item_id)")
-                                                .font(.system(size: 13, weight: .semibold))
+                                                .font(.scaled(13, weight: .semibold))
                                                 .foregroundColor(.sForeground)
                                             Text("Qty: \(item.qty)")
-                                                .font(.system(size: 11))
+                                                .font(.scaled(11))
                                                 .foregroundColor(.sMutedFG)
                                         }
                                         Spacer()
                                         Text(Money.text(item.total))
-                                            .font(.system(size: 13, weight: .semibold))
+                                            .font(.scaled(13, weight: .semibold))
                                             .foregroundColor(.sForeground)
                                     }
                                     .padding(14)
@@ -127,7 +127,7 @@ struct EstimateDetailView: View {
                         // MARK: - Summary
                         VStack(alignment: .leading, spacing: 0) {
                             Text("Summary")
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.scaled(13, weight: .medium))
                                 .foregroundColor(.sMutedFG)
                                 .padding(.horizontal, 20)
                                 .padding(.bottom, 10)
@@ -268,7 +268,7 @@ struct EstimateDetailView: View {
             Image(systemName: icon)
             Text(title)
         }
-        .font(.system(size: 14, weight: .semibold))
+        .font(.scaled(14, weight: .semibold))
         .frame(maxWidth: .infinity)
         .padding(.vertical, 14)
         .foregroundColor(filled ? .sAccentFG : .sForeground)
@@ -283,11 +283,11 @@ struct EstimateDetailView: View {
     private func summaryRow(_ label: String, _ value: Double, isTotal: Bool = false) -> some View {
         HStack(spacing: 0) {
             Text(label)
-                .font(.system(size: isTotal ? 14 : 13, weight: isTotal ? .semibold : .regular))
+                .font(.scaled(isTotal ? 14 : 13, weight: isTotal ? .semibold : .regular))
                 .foregroundColor(.sForeground)
             Spacer()
             Text(Money.text(value))
-                .font(.system(size: isTotal ? 15 : 13, weight: isTotal ? .semibold : .regular))
+                .font(.scaled(isTotal ? 15 : 13, weight: isTotal ? .semibold : .regular))
                 .foregroundColor(.sForeground)
         }
         .padding(.horizontal, 14)

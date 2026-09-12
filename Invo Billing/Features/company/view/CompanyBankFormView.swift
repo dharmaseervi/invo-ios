@@ -57,7 +57,7 @@ struct CompanyBankFormView: View {
 
                             Toggle(isOn: $isDefault) {
                                 Text("Set as default account")
-                                    .font(.system(size: 13))
+                                    .font(.scaled(13))
                                     .foregroundColor(.sForeground)
                             }
                             .tint(.sAccent)
@@ -65,7 +65,7 @@ struct CompanyBankFormView: View {
 
                         if showError {
                             Text("Please fill in all required fields.")
-                                .font(.system(size: 12))
+                                .font(.scaled(12))
                                 .foregroundColor(.sDestructive)
                         }
 
@@ -114,7 +114,7 @@ extension CompanyBankFormView {
                         ProgressView().tint(.sAccentFG)
                     } else {
                         Text(isEditing ? "Update account" : "Save bank details")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(.scaled(15, weight: .semibold))
                             .foregroundColor(.sAccentFG)
                     }
                 }
@@ -126,7 +126,7 @@ extension CompanyBankFormView {
 
     private func sectionLabel(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 13, weight: .medium))
+            .font(.scaled(13, weight: .medium))
             .foregroundColor(.sMutedFG)
     }
 
@@ -171,11 +171,11 @@ struct ZaraTextField: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(label)
-                .font(.system(size: 11, weight: .medium))
+                .font(.scaled(11, weight: .medium))
                 .foregroundColor(.sMutedFG)
 
             TextField("", text: $text, prompt: Text(placeholder).foregroundColor(.sMutedFG))
-                .font(.system(size: 15))
+                .font(.scaled(15))
                 .foregroundColor(.sForeground)
                 .tint(.sAccent)
                 .keyboardType(keyboard)

@@ -18,7 +18,7 @@ struct PricingStockSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Pricing & inventory")
-                .font(.system(size: 13, weight: .medium))
+                .font(.scaled(13, weight: .medium))
                 .foregroundColor(.sMutedFG)
                 .padding(.horizontal, 20)
 
@@ -36,7 +36,7 @@ struct PricingStockSection: View {
 
                         if let cost = Double(vm.costPrice), cost > 0 {
                             Text("Label code: \(CostPriceCoder.encode(cost))")
-                                .font(.system(size: 10))
+                                .font(.scaled(10))
                                 .foregroundColor(.sMutedFG)
                         }
                     }
@@ -88,7 +88,7 @@ struct TaxRatePicker: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Tax rate (GST %)")
-                .font(.system(size: 13, weight: .medium))
+                .font(.scaled(13, weight: .medium))
                 .foregroundColor(.sForeground)
 
             Menu {
@@ -106,13 +106,13 @@ struct TaxRatePicker: View {
             } label: {
                 HStack {
                     Text(taxRate.isEmpty ? "Select" : "\(taxRate)%")
-                        .font(.system(size: 14))
+                        .font(.scaled(14))
                         .foregroundColor(.sForeground)
 
                     Spacer()
 
                     Image(systemName: "chevron.down")
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.scaled(11, weight: .medium))
                         .foregroundColor(.sMutedFG)
                 }
                 .padding(.horizontal, 12)
@@ -142,18 +142,18 @@ struct FormField: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text(title)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.scaled(13, weight: .medium))
                     .foregroundColor(.sForeground)
                 if error != nil {
                     Image(systemName: "exclamationmark.circle")
-                        .font(.system(size: 12))
+                        .font(.scaled(12))
                         .foregroundColor(.sDestructive)
                 }
             }
 
             TextField(placeholder, text: $text)
                 .keyboardType(keyboardType)
-                .font(.system(size: 14))
+                .font(.scaled(14))
                 .foregroundColor(.sForeground)
                 .tint(.sAccent)
                 .autocorrectionDisabled()
@@ -168,7 +168,7 @@ struct FormField: View {
 
             if let error = error {
                 Text(error)
-                    .font(.system(size: 11))
+                    .font(.scaled(11))
                     .foregroundColor(.sDestructive)
             }
         }
@@ -186,12 +186,12 @@ struct FormFieldHalf: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
-                .font(.system(size: 13, weight: .medium))
+                .font(.scaled(13, weight: .medium))
                 .foregroundColor(.sForeground)
 
             TextField(placeholder, text: $text)
                 .keyboardType(keyboardType)
-                .font(.system(size: 14))
+                .font(.scaled(14))
                 .foregroundColor(.sForeground)
                 .tint(.sAccent)
                 .autocorrectionDisabled()

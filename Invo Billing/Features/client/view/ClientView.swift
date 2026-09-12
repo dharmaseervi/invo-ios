@@ -24,11 +24,11 @@ struct ClientView: View {
                     // MARK: - Search Bar
                     HStack(spacing: 10) {
                         Image(systemName: "magnifyingglass")
-                            .font(.system(size: 14))
+                            .font(.scaled(14))
                             .foregroundColor(.sMutedFG)
 
                         TextField("Search name or email", text: $searchText)
-                            .font(.system(size: 14))
+                            .font(.scaled(14))
                             .foregroundColor(.sForeground)
                             .tint(.sAccent)
                     }
@@ -50,7 +50,7 @@ struct ClientView: View {
                                 ProgressView()
                                     .tint(.sAccent)
                                 Text("Loading clients...")
-                                    .font(.system(size: 13))
+                                    .font(.scaled(13))
                                     .foregroundColor(.sMutedFG)
                             }
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -58,17 +58,17 @@ struct ClientView: View {
                         else if let error = vm.errorMessage {
                             VStack(spacing: 10) {
                                 Image(systemName: "exclamationmark.triangle")
-                                    .font(.system(size: 28))
+                                    .font(.scaled(28))
                                     .foregroundColor(.sDestructive)
                                 Text(error)
-                                    .font(.system(size: 13))
+                                    .font(.scaled(13))
                                     .foregroundColor(.sMutedFG)
                                     .multilineTextAlignment(.center)
                                 Button {
                                     Task { await vm.loadClients() }
                                 } label: {
                                     Text("Retry")
-                                        .font(.system(size: 13, weight: .medium))
+                                        .font(.scaled(13, weight: .medium))
                                         .foregroundColor(.sAccent)
                                 }
                             }
@@ -78,23 +78,23 @@ struct ClientView: View {
                         else if filteredClients.isEmpty {
                             VStack(spacing: 16) {
                                 Image(systemName: "person.crop.circle.badge.plus")
-                                    .font(.system(size: 40))
+                                    .font(.scaled(40))
                                     .foregroundColor(.sMutedFG)
                                 VStack(spacing: 4) {
                                     Text(searchText.isEmpty ? "No clients" : "No results")
-                                        .font(.system(size: 15, weight: .semibold))
+                                        .font(.scaled(15, weight: .semibold))
                                         .foregroundColor(.sForeground)
                                     Text(searchText.isEmpty
                                          ? "Add your first client to get started"
                                          : "Try a different search")
-                                        .font(.system(size: 13))
+                                        .font(.scaled(13))
                                         .foregroundColor(.sMutedFG)
                                         .multilineTextAlignment(.center)
                                 }
                                 if searchText.isEmpty {
                                     NavigationLink(destination: ClientFormView()) {
                                         Text("Add client")
-                                            .font(.system(size: 13, weight: .semibold))
+                                            .font(.scaled(13, weight: .semibold))
                                             .foregroundColor(.sAccentFG)
                                             .padding(.horizontal, 20)
                                             .padding(.vertical, 10)
@@ -156,12 +156,12 @@ struct ClientListRowView: View {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(client.name)
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.scaled(14, weight: .medium))
                         .foregroundColor(.sForeground)
 
                     if client.isQuickSaleAccount {
                         Text("Ledger")
-                            .font(.system(size: 9, weight: .semibold))
+                            .font(.scaled(9, weight: .semibold))
                             .foregroundColor(.sAccent)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
@@ -172,12 +172,12 @@ struct ClientListRowView: View {
 
                 if !client.email.isEmpty {
                     Text(client.email)
-                        .font(.system(size: 12))
+                        .font(.scaled(12))
                         .foregroundColor(.sMutedFG)
                 }
                 if !client.phone.isEmpty {
                     Text(client.phone)
-                        .font(.system(size: 11))
+                        .font(.scaled(11))
                         .foregroundColor(.sMutedFG)
                 }
             }
@@ -185,7 +185,7 @@ struct ClientListRowView: View {
             Spacer()
 
             Image(systemName: "chevron.right")
-                .font(.system(size: 12, weight: .semibold))
+                .font(.scaled(12, weight: .semibold))
                 .foregroundColor(.sMutedFG)
         }
         .padding(14)
@@ -207,7 +207,7 @@ struct MinimalAvatarView: View {
         let first = String(name.prefix(1)).uppercased()
 
         Text(first)
-            .font(.system(size: 14, weight: .semibold))
+            .font(.scaled(14, weight: .semibold))
             .foregroundColor(.sAccentFG)
             .frame(width: size, height: size)
             .background(Color.sAccent)

@@ -17,7 +17,7 @@ struct PrinterPickerSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Printer")
-                .font(.system(size: 13, weight: .medium))
+                .font(.scaled(13, weight: .medium))
                 .foregroundColor(.sMutedFG)
 
             HStack(spacing: 8) {
@@ -30,10 +30,10 @@ struct PrinterPickerSection: View {
                     } label: {
                         VStack(spacing: 3) {
                             Text(service.displayName)
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.scaled(13, weight: .medium))
                             if !service.isAvailable {
                                 Text("Not set up")
-                                    .font(.system(size: 10))
+                                    .font(.scaled(10))
                                     .foregroundColor(isSelected ? .sAccentFG.opacity(0.8) : .sMutedFG)
                             }
                         }
@@ -56,7 +56,7 @@ struct PrinterPickerSection: View {
 
                 Toggle(isOn: $autoCut) {
                     Text("Auto cut after each label")
-                        .font(.system(size: 13))
+                        .font(.scaled(13))
                         .foregroundColor(.sForeground)
                 }
                 .tint(.sAccent)
@@ -76,16 +76,16 @@ struct PrinterPickerSection: View {
                     Image(systemName: "printer.fill")
                         .foregroundColor(.sAccent)
                     Text(selectedPrinter.name)
-                        .font(.system(size: 13))
+                        .font(.scaled(13))
                         .foregroundColor(.sForeground)
                     Spacer()
                     Button("Change") { self.selectedPrinter = nil }
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.scaled(12, weight: .medium))
                 }
             } else {
                 if !printerManager.savedPrinters.isEmpty {
                     Text("Recent printers")
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.scaled(11, weight: .medium))
                         .foregroundColor(.sMutedFG)
                     ForEach(printerManager.savedPrinters) { printer in
                         printerRow(printer)
@@ -104,7 +104,7 @@ struct PrinterPickerSection: View {
                         }
                         Text(isDiscovering ? "Searching..." : "Find printers")
                     }
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.scaled(13, weight: .medium))
                     .foregroundColor(.sAccent)
                 }
                 .disabled(isDiscovering)
@@ -119,7 +119,7 @@ struct PrinterPickerSection: View {
                 if searchFoundNothing {
                     Text((diagnostics.lastMessage.isEmpty ? "No printers found." : diagnostics.lastMessage)
                          + " If the printer is on and on this Wi-Fi, check Settings › Privacy & Security › Local Network and make sure Invo Billing is allowed — without it iOS blocks the search silently.")
-                        .font(.system(size: 11))
+                        .font(.scaled(11))
                         .foregroundColor(Color(red: 0.851, green: 0.588, blue: 0.082))
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -130,7 +130,7 @@ struct PrinterPickerSection: View {
                 if showManualEntry {
                     HStack(spacing: 8) {
                         TextField("192.168.1.13", text: $manualIP)
-                            .font(.system(size: 13))
+                            .font(.scaled(13))
                             .foregroundColor(.sForeground)
                             .tint(.sAccent)
                             .keyboardType(.decimalPad)
@@ -151,12 +151,12 @@ struct PrinterPickerSection: View {
                             selectedPrinter = printer
                             printerManager.remember(printer)
                         }
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.scaled(13, weight: .medium))
                         .foregroundColor(.sAccent)
                     }
                 } else {
                     Button("Enter IP address") { showManualEntry = true }
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.scaled(12, weight: .medium))
                         .foregroundColor(.sMutedFG)
                 }
             }
@@ -175,19 +175,19 @@ struct PrinterPickerSection: View {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(printer.name)
-                        .font(.system(size: 13))
+                        .font(.scaled(13))
                         .foregroundColor(.sForeground)
                     // Two printers of the same model are otherwise indistinguishable in
                     // this list — the address is the only thing that tells them apart.
                     if !printer.id.isEmpty {
                         Text(printer.id)
-                            .font(.system(size: 10))
+                            .font(.scaled(10))
                             .foregroundColor(.sMutedFG)
                     }
                 }
                 Spacer()
                 Text(printer.connectionType)
-                    .font(.system(size: 11))
+                    .font(.scaled(11))
                     .foregroundColor(.sMutedFG)
             }
         }

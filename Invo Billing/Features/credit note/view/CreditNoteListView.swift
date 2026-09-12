@@ -137,11 +137,11 @@ struct CreditNoteListView: View {
     private var cnSearchBar: some View {
         HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 14))
+                .font(.scaled(14))
                 .foregroundColor(.sMutedFG)
 
             TextField("Search by number or client", text: $searchText)
-                .font(.system(size: 14))
+                .font(.scaled(14))
                 .foregroundColor(.sForeground)
                 .tint(.sAccent)
                 .autocorrectionDisabled()
@@ -153,7 +153,7 @@ struct CreditNoteListView: View {
                     }
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 14))
+                        .font(.scaled(14))
                         .foregroundColor(.sMutedFG)
                 }
             }
@@ -181,13 +181,13 @@ struct CreditNoteListView: View {
                     } label: {
                         HStack(spacing: 5) {
                             Image(systemName: filter.icon)
-                                .font(.system(size: 11))
+                                .font(.scaled(11))
                             Text(filter.rawValue.capitalized)
-                                .font(.system(size: 13, weight: selectedFilter == filter ? .medium : .regular))
+                                .font(.scaled(13, weight: selectedFilter == filter ? .medium : .regular))
                             let count = countFor(filter)
                             if count > 0 {
                                 Text("\(count)")
-                                    .font(.system(size: 11))
+                                    .font(.scaled(11))
                                     .foregroundColor(.sMutedFG)
                             }
                         }
@@ -228,7 +228,7 @@ struct CreditNoteListView: View {
             // Section Header
             HStack {
                 Text("Overview")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.scaled(13, weight: .medium))
                     .foregroundColor(.sMutedFG)
 
                 Spacer()
@@ -281,13 +281,13 @@ struct CreditNoteListView: View {
             // Section Header
             HStack {
                 Text("All credit notes")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.scaled(13, weight: .medium))
                     .foregroundColor(.sMutedFG)
 
                 Spacer()
 
                 Text("\(filteredNotes.count) items")
-                    .font(.system(size: 11))
+                    .font(.scaled(11))
                     .foregroundColor(.sMutedFG)
             }
             .padding(.horizontal, 24)
@@ -334,7 +334,7 @@ struct CreditNoteListView: View {
                         .frame(width: 80, height: 80)
 
                     Image(systemName: "arrow.uturn.backward.circle")
-                        .font(.system(size: 32, weight: .ultraLight))
+                        .font(.scaled(32, weight: .ultraLight))
                         .foregroundColor(.sMutedFG)
                 }
 
@@ -349,7 +349,7 @@ struct CreditNoteListView: View {
                     searchText.isEmpty && selectedFilter == .all
                         ? "No credit notes" : "No results"
                 )
-                .font(.system(size: 15, weight: .semibold))
+                .font(.scaled(15, weight: .semibold))
                 .foregroundColor(.sForeground)
 
                 Text(
@@ -357,7 +357,7 @@ struct CreditNoteListView: View {
                         ? "Create a credit note for returns\nor adjustments"
                         : "Try adjusting your search or filters"
                 )
-                .font(.system(size: 13))
+                .font(.scaled(13))
                 .foregroundColor(.sMutedFG)
                 .multilineTextAlignment(.center)
             }
@@ -369,10 +369,10 @@ struct CreditNoteListView: View {
                 } label: {
                     HStack(spacing: 8) {
                         Text("Create credit note")
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(.scaled(13, weight: .semibold))
 
                         Image(systemName: "arrow.right")
-                            .font(.system(size: 11, weight: .light))
+                            .font(.scaled(11, weight: .light))
                     }
                     .foregroundColor(.sAccentFG)
                     .padding(.horizontal, 32)
@@ -408,7 +408,7 @@ struct CreditNoteListView: View {
             }
 
             Text("Loading...")
-                .font(.system(size: 13))
+                .font(.scaled(13))
                 .foregroundColor(.sMutedFG)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -434,11 +434,11 @@ struct CNStatCardView: View {
     var body: some View {
         VStack(spacing: 6) {
             Text(value)
-                .font(.system(size: 18, weight: .semibold))
+                .font(.scaled(18, weight: .semibold))
                 .foregroundColor(valueColor)
 
             Text(label)
-                .font(.system(size: 11))
+                .font(.scaled(11))
                 .foregroundColor(.sMutedFG)
         }
         .frame(maxWidth: .infinity)
@@ -466,7 +466,7 @@ struct CNRowView: View {
         HStack(alignment: .top, spacing: 16) {
             // Index Number
             Text(String(format: "%02d", index))
-                .font(.system(size: 11))
+                .font(.scaled(11))
                 .foregroundColor(.sMutedFG)
                 .frame(width: 20)
 
@@ -474,21 +474,21 @@ struct CNRowView: View {
             VStack(alignment: .leading, spacing: 8) {
                 // Credit Note Number
                 Text(cn.credit_number)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.scaled(14, weight: .medium))
                     .foregroundColor(.sForeground)
 
                 // Client Name
                 Text(cn.client_name)
-                    .font(.system(size: 12))
+                    .font(.scaled(12))
                     .foregroundColor(.sMutedFG)
 
                 // Type Badge
                 HStack(spacing: 6) {
                     Image(systemName: typeConfig.icon)
-                        .font(.system(size: 10, weight: .medium))
+                        .font(.scaled(10, weight: .medium))
 
                     Text(typeConfig.label)
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.scaled(11, weight: .medium))
                 }
                 .foregroundColor(typeConfig.color)
                 .padding(.horizontal, 10)
@@ -502,7 +502,7 @@ struct CNRowView: View {
             // Right Content - Amount
             VStack(alignment: .trailing, spacing: 8) {
                 Text(Money.text(cn.total))
-                    .font(.system(size: 16, weight: .light))
+                    .font(.scaled(16, weight: .light))
                     .tracking(0.5)
                     .foregroundColor(.sForeground)
 
@@ -511,13 +511,13 @@ struct CNRowView: View {
                     in: .whitespacesAndNewlines
                 ).isEmpty {
                     Text(formatDate(cn.credit_date))
-                        .font(.system(size: 10, weight: .light))
+                        .font(.scaled(10, weight: .light))
                         .foregroundColor(.sMutedFG)
                 }
 
                 // Arrow
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 10, weight: .light))
+                    .font(.scaled(10, weight: .light))
                     .foregroundColor(.sBorder)
             }
         }
