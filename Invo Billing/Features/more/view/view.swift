@@ -1,6 +1,9 @@
 import SwiftUI
 
 struct MoreView: View {
+    #if DEBUG
+    @State private var debugScreenOpen = false
+    #endif
     @StateObject var vm = UserViewModel()
     @EnvironmentObject var authVM: AuthViewModel
     @EnvironmentObject var session: SessionManager
@@ -304,6 +307,29 @@ struct MoreView: View {
                 }
             }
             .navigationTitle("More")
+            // Debug builds accept -startScreen <name> so a sub-screen can be opened directly
+            // for a screenshot pass. Checking the reports at an accessibility text size
+            // otherwise means driving the UI by hand. Compiled out of release.
+            #if DEBUG
+            .navigationDestination(isPresented: $debugScreenOpen) {
+                switch UserDefaults.standard.string(forKey: "startScreen") ?? "" {
+                case "estimates": AnyView(EstimateListView())
+                case "expenses": AnyView(ExpenseView())
+                case "ledger": AnyView(LedgerView())
+                case "gst": AnyView(GSTReportView())
+                case "aging": AnyView(AgingReportView())
+                case "stock": AnyView(StockReportView())
+                case "credit": AnyView(CreditNoteListView())
+                case "company": AnyView(CompanyView())
+                default: AnyView(EmptyView())
+                }
+            }
+            .onAppear {
+                if UserDefaults.standard.string(forKey: "startScreen") != nil {
+                    debugScreenOpen = true
+                }
+            }
+            #endif
             .navigationBarTitleDisplayMode(.large)
             .task {
                 await vm.loadProfile()

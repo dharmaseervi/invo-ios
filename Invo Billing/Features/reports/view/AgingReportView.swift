@@ -63,22 +63,13 @@ struct AgingReportView: View {
                 report.totals.current, report.totals.days_1_30, report.totals.days_31_60,
                 report.totals.days_61_90, report.totals.days_90_plus
             ]
-            HStack(spacing: 0) {
-                ForEach(0..<5, id: \.self) { i in
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(Money.text(values[i])).moneyLine()
-                            .font(.scaled(12.5, weight: .semibold))
-                            .foregroundColor(values[i] > 0 ? bucketColors[i] : .sMutedFG)
-                        Text(bucketLabels[i])
-                            .font(.scaled(10))
-                            .foregroundColor(.sMutedFG)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    if i < 4 {
-                        Rectangle().fill(Color.sBorder).frame(width: 0.5, height: 26)
-                    }
-                }
-            }
+            AdaptiveStatRow(stats: (0..<5).map { i in
+                .init(
+                    label: bucketLabels[i],
+                    value: Money.text(values[i]),
+                    color: values[i] > 0 ? bucketColors[i] : .sMutedFG
+                )
+            })
         }
         .padding(18)
         .background(Color.sCard)

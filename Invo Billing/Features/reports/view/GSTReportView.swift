@@ -99,15 +99,12 @@ struct GSTReportView: View {
 
             Rectangle().fill(Color.sBorder).frame(height: 0.5)
 
-            HStack(spacing: 0) {
-                taxStat(label: "CGST", value: report.summary.cgst)
-                Rectangle().fill(Color.sBorder).frame(width: 0.5, height: 30)
-                taxStat(label: "SGST", value: report.summary.sgst)
-                Rectangle().fill(Color.sBorder).frame(width: 0.5, height: 30)
-                taxStat(label: "IGST", value: report.summary.igst)
-                Rectangle().fill(Color.sBorder).frame(width: 0.5, height: 30)
-                taxStat(label: "Total", value: report.summary.total, isTotal: true)
-            }
+            AdaptiveStatRow(stats: [
+                .init(label: "CGST", value: Money.text(report.summary.cgst)),
+                .init(label: "SGST", value: Money.text(report.summary.sgst)),
+                .init(label: "IGST", value: Money.text(report.summary.igst)),
+                .init(label: "Total", value: Money.text(report.summary.total), color: .sAccent),
+            ])
         }
         .padding(18)
         .background(Color.sCard)
@@ -116,18 +113,6 @@ struct GSTReportView: View {
         .padding(.horizontal, 20)
     }
 
-    private func taxStat(label: String, value: Double, isTotal: Bool = false) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(Money.text(value)).moneyLine()
-                .font(.scaled(13, weight: .semibold))
-                .foregroundColor(isTotal ? .sAccent : .sForeground)
-            Text(label)
-                .font(.scaled(10.5))
-                .foregroundColor(.sMutedFG)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.leading, 4)
-    }
 
     // MARK: - HSN Summary
     private func hsnSection(_ report: GSTReportResponse) -> some View {

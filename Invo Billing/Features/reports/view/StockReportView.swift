@@ -94,37 +94,21 @@ struct StockReportView: View {
 
             Rectangle().fill(Color.sBorder).frame(height: 0.5)
 
-            HStack(spacing: 0) {
-                statColumn(label: "Retail value", value: currency(totals.retailValue), color: .sForeground)
-                Rectangle().fill(Color.sBorder).frame(width: 0.5, height: 30)
-                statColumn(label: "Potential profit", value: currency(totals.potentialProfit), color: profitColor)
-                Rectangle().fill(Color.sBorder).frame(width: 0.5, height: 30)
-                statColumn(
+            AdaptiveStatRow(stats: [
+                .init(label: "Retail value", value: currency(totals.retailValue)),
+                .init(label: "Potential profit", value: currency(totals.potentialProfit), color: profitColor),
+                .init(
                     label: "Need attention",
                     value: "\(totals.lowCount + totals.outCount)",
                     color: totals.outCount > 0 ? .sDestructive : .sForeground
-                )
-            }
+                ),
+            ])
         }
         .padding(18)
         .background(Color.sCard)
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.sBorder, lineWidth: 0.5))
         .cornerRadius(16)
         .padding(.horizontal, 20)
-    }
-
-    private func statColumn(label: String, value: String, color: Color) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(value)
-                .font(.scaled(14, weight: .semibold))
-                .foregroundColor(color)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-            Text(label)
-                .font(.scaled(10))
-                .foregroundColor(.sMutedFG)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - Search & filters
@@ -180,14 +164,16 @@ struct StockReportView: View {
                 .padding(.horizontal, 20)
             }
 
-            HStack(spacing: 8) {
+            // Scrolls rather than squeezing: at a large text size the fixed row crushed
+            // "In stock" and "Low" into "In…" and "Lo…", and stacked the Sort label into
+            // a vertical column of letters.
+            ScrollView(.horizontal, showsIndicators: false) {
+              HStack(spacing: 8) {
                 ForEach(StockStatusFilter.allCases) { status in
                     chip(title: status.label, isSelected: vm.statusFilter == status) {
                         vm.statusFilter = status
                     }
                 }
-
-                Spacer()
 
                 Menu {
                     Picker("Sort", selection: $vm.sortOption) {
@@ -202,14 +188,17 @@ struct StockReportView: View {
                     }
                     .font(.scaled(12, weight: .medium))
                     .foregroundColor(.sForeground)
+                    .lineLimit(1)
+                    .fixedSize()
                     .padding(.horizontal, 12)
                     .padding(.vertical, 7)
                     .background(Color.sCard)
                     .overlay(Capsule().stroke(Color.sBorder, lineWidth: 0.5))
                     .clipShape(Capsule())
                 }
+              }
+              .padding(.horizontal, 20)
             }
-            .padding(.horizontal, 20)
 
             if vm.isFiltered {
                 Button {
@@ -233,6 +222,9 @@ struct StockReportView: View {
                 .font(.scaled(12, weight: .medium))
                 .foregroundColor(isSelected ? .sAccentFG : .sForeground)
                 .lineLimit(1)
+                // The chip sizes to its label instead of being squeezed by the row —
+                // "In stock" was rendering as "In…".
+                .fixedSize()
                 .padding(.horizontal, 12)
                 .padding(.vertical, 7)
                 .background(isSelected ? Color.sAccent : Color.sCard)
