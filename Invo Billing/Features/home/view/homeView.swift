@@ -36,7 +36,10 @@ struct HomeView: View {
                             }
                         }
                         .padding(.top, 20)
-                        .padding(.bottom, 100)
+                        // TabView already insets scroll content for the tab bar; the
+                        // extra 100pt here was stacked on top of it and left a dead
+                        // band under the last row.
+                        .padding(.bottom, 24)
                     }
                     .refreshable { fetch() }
                 }
@@ -101,6 +104,83 @@ struct HomeView: View {
     
     private var revenueTrend: [DailyRevenue]? { viewModel.dashboard?.revenue.trend }
 
+    /// Weekday initial for a "YYYY-MM-DD" day from the trend, in the user's own locale.
+    private func weekdayLabel(_ isoDay: String) -> String {
+        let parser = DateFormatter()
+        parser.dateFormat = "yyyy-MM-dd"
+        parser.timeZone = .current
+        guard let date = parser.date(from: isoDay) else { return "" }
+        let day = DateFormatter()
+        day.locale = .current
+        day.setLocalizedDateFormatFromTemplate("EEEEE")   // single-letter weekday
+        return day.string(from: date)
+    }
+
+    /// Seven days of revenue as a small column chart.
+    ///
+    /// The bars sit on a drawn baseline and carry weekday labels, because a bare row of
+    /// rectangles floating in a box reads as a chart that failed to load — which is
+    /// exactly how it looked in a week with one trading day. A day with no sales now
+    /// renders as an empty column above the rule rather than a 3pt stub, and the busiest
+    /// day is called out in words so the chart says something even at a glance.
+    @ViewBuilder
+    private func revenueChart(_ trend: [DailyRevenue]) -> some View {
+        let peak = trend.map(\.total).max() ?? 0
+        let scale = max(peak, 1)
+        let chartHeight: CGFloat = 72
+
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Last 7 days")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.sMutedFG)
+                Spacer()
+                if peak > 0 {
+                    Text("Best day ₹\(formattedAmount(peak))")
+                        .font(.system(size: 12))
+                        .foregroundColor(.sMutedFG)
+                }
+            }
+
+            HStack(alignment: .bottom, spacing: 6) {
+                ForEach(Array(trend.enumerated()), id: \.element.id) { index, day in
+                    let isToday = index == trend.count - 1
+                    let filled = CGFloat(day.total / scale) * chartHeight
+
+                    VStack(spacing: 6) {
+                        // The full-height track keeps every column the same size, so a
+                        // quiet day reads as "nothing sold" instead of a missing bar.
+                        ZStack(alignment: .bottom) {
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(Color.sMuted.opacity(0.35))
+                                .frame(height: chartHeight)
+
+                            if day.total > 0 {
+                                RoundedRectangle(cornerRadius: 4)
+                                    .fill(isToday ? Color.sAccent : Color.sAccent.opacity(0.45))
+                                    .frame(height: max(6, filled))
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+
+                        Text(weekdayLabel(day.date))
+                            .font(.system(size: 11, weight: isToday ? .semibold : .regular))
+                            .foregroundColor(isToday ? .sForeground : .sMutedFG)
+                    }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("\(day.date), ₹\(formattedAmount(day.total))")
+                }
+            }
+            .overlay(alignment: .bottom) {
+                // A baseline the columns stand on, so the group reads as a chart.
+                Rectangle()
+                    .fill(Color.sBorder)
+                    .frame(height: 1)
+                    .padding(.bottom, 22)
+            }
+        }
+    }
+
     // MARK: - Revenue Card
     var revenueCard: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -142,31 +222,18 @@ struct HomeView: View {
                 )
             }
             
-            // Last seven days of real revenue. This previously drew a fixed set of bar
-            // heights — invented data on the dashboard of a billing app. Hidden
-            // entirely when the server sends no trend, rather than showing something
-            // made up.
-            if let trend = revenueTrend, !trend.isEmpty {
-                let peak = max(trend.map(\.total).max() ?? 0, 1)
-
-                HStack(alignment: .bottom, spacing: 3) {
-                    ForEach(Array(trend.enumerated()), id: \.element.id) { index, day in
-                        let isToday = index == trend.count - 1
-                        // Scaled against the week's peak, with a visible floor so a
-                        // zero-revenue day reads as an empty day rather than a gap.
-                        let height = max(3, CGFloat(day.total / peak) * 64)
-
-                        RoundedRectangle(cornerRadius: 3)
-                            .fill(isToday ? Color.sAccent : Color.sMuted)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 3)
-                                    .stroke(isToday ? Color.clear : Color.sBorder, lineWidth: 0.5)
-                            )
-                            .frame(maxWidth: .infinity)
-                            .frame(height: height)
-                    }
-                }
-                .frame(height: 64)
+            // Last seven days of real revenue. Never invented: when the server sends no
+            // trend the chart says so rather than drawing shapes.
+            // A week of empty columns reads as a chart that failed to load, so a week
+            // with no sales says so in words instead.
+            if let trend = revenueTrend, trend.contains(where: { $0.total > 0 }) {
+                revenueChart(trend)
+            } else {
+                Text("No sales recorded in the last 7 days")
+                    .font(.system(size: 13))
+                    .foregroundColor(.sMutedFG)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 18)
             }
         }
         .padding(16)
