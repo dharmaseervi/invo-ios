@@ -26,48 +26,15 @@ struct PDFLookView: View {
             
             // Top Action Bar
             VStack(spacing: 0) {
-                HStack(spacing: 16) {
-                    
-                    // Back
-                    Button {
-                        dismiss()
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "chevron.left")
-                            Text("Back")
-                        }
-                        .font(.scaled(14, weight: .light))
-                        .foregroundColor(.white)
-                    }
-                    
-                    Spacer()
-                    
-                    // Share
-                    Button {
-                        sharePDF()
-                    } label: {
-                        Image(systemName: "square.and.arrow.up")
-                            .font(.scaled(16, weight: .semibold))
-                            .foregroundColor(.white)
-                    }
-                    
-                    // Download
-                    Button {
-                        saveToFiles()
-                    } label: {
-                        Image(systemName: "arrow.down.doc")
-                            .font(.scaled(16, weight: .semibold))
-                            .foregroundColor(.white)
-                    }
-                    
-                    // Print
-                    Button {
-                        printPDF()
-                    } label: {
-                        Image(systemName: "printer")
-                            .font(.scaled(16, weight: .semibold))
-                            .foregroundColor(.white)
-                    }
+                // "Back" plus three icons in one row is the widest chrome in the app.
+                // It fits a 440pt phone at the largest text size with little to spare,
+                // and a 375pt phone — an SE or a mini, both of which run iOS 26 — is
+                // 65pt narrower. Rather than pick a breakpoint, let the row measure
+                // itself: the word "Back" is dropped only when it genuinely will not
+                // fit, and the chevron alone still reads as a back button.
+                ViewThatFits(in: .horizontal) {
+                    actionBar(showsBackLabel: true)
+                    actionBar(showsBackLabel: false)
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
@@ -140,6 +107,46 @@ struct PDFQuickLookViewer: UIViewControllerRepresentable {
 
 extension PDFLookView {
     
+
+    private func actionBar(showsBackLabel: Bool) -> some View {
+        HStack(spacing: 16) {
+            Button {
+                dismiss()
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "chevron.left")
+                    if showsBackLabel {
+                        Text("Back")
+                    }
+                }
+                .font(.scaled(14, weight: .light))
+                .foregroundColor(.white)
+            }
+            .accessibilityLabel("Back")
+
+            Spacer()
+
+            // Icon-only buttons need a spoken name; without one VoiceOver falls back to
+            // guessing at the symbol and announces "square and arrow up".
+            barButton("square.and.arrow.up", label: "Share PDF", action: sharePDF)
+            barButton("arrow.down.doc", label: "Save to Files", action: saveToFiles)
+            barButton("printer", label: "Print", action: printPDF)
+        }
+    }
+
+    private func barButton(
+        _ symbol: String,
+        label: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.scaled(16, weight: .semibold))
+                .foregroundColor(.white)
+        }
+        .accessibilityLabel(label)
+    }
+
     private func sharePDF() {
         presentActivity(items: [pdfURL])
     }

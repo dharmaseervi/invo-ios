@@ -333,8 +333,10 @@ struct MoreView: View {
                 case "stock": AnyView(StockReportView())
                 case "credit": AnyView(CreditNoteListView())
                 case "company": AnyView(CompanyView())
-    case "expenseform": AnyView(ExpenseFormView())
-    case "estimateform": AnyView(CreateEstimateView())
+                case "expenseform": AnyView(ExpenseFormView())
+                case "estimateform": AnyView(CreateEstimateView())
+                case "printinvoice": AnyView(DebugPrintPreviewLoader())
+                case "pdflook": AnyView(DebugPDFLookLoader())
                 default: AnyView(EmptyView())
                 }
             }
