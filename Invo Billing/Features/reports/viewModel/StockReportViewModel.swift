@@ -52,6 +52,10 @@ final class StockReportViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var showAlert = false
+    /// Set when a refresh fails but earlier data is still on screen. Shown as a bar
+    /// under the title rather than an alert, because the numbers below it are still
+    /// perfectly good and there is nothing for the reader to decide.
+    @Published var refreshFailure: String?
 
     @Published var searchText = ""
     @Published var selectedCategory: String?
@@ -151,14 +155,40 @@ final class StockReportViewModel: ObservableObject {
 
         isLoading = true
         errorMessage = nil
+        refreshFailure = nil
         defer { isLoading = false }
 
         do {
             report = try await service.fetchStockReport(companyID: companyID)
         } catch {
-            errorMessage = "Couldn't load the stock report. Pull to retry."
-            showAlert = true
+            // A failed refresh used to throw a modal over a screen full of correct
+            // figures, which made a recoverable blip look like a broken app and forced
+            // a tap to get back to data that had not gone anywhere. Only interrupt when
+            // there is nothing to read.
+            let message = readableMessage(for: error)
+            if report == nil {
+                errorMessage = message
+                showAlert = true
+            } else {
+                refreshFailure = message
+            }
         }
+    }
+
+    /// Offline is the common case and is the reader's to fix, so it says so plainly
+    /// instead of blaming the report.
+    private func readableMessage(for error: Error) -> String {
+        if let urlError = error as? URLError {
+            switch urlError.code {
+            case .notConnectedToInternet, .networkConnectionLost, .dataNotAllowed:
+                return "No internet connection."
+            case .timedOut:
+                return "The server took too long to answer."
+            default:
+                return "Couldn't reach the server."
+            }
+        }
+        return error.localizedDescription
     }
 
     // MARK: - CSV export

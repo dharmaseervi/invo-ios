@@ -19,6 +19,9 @@ struct StockReportView: View {
             } else if vm.report != nil {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 20) {
+                        if let failure = vm.refreshFailure {
+                            refreshFailureBar(failure)
+                        }
                         summaryCard
                         searchBar
                         filterBar
@@ -59,6 +62,32 @@ struct StockReportView: View {
         } message: {
             Text(vm.errorMessage ?? "Something went wrong")
         }
+    }
+
+    /// A refresh that failed over figures that are still on screen. Not an alert: the
+    /// numbers below are the ones that loaded successfully, and the only thing to do is
+    /// pull again, which the bar says.
+    private func refreshFailureBar(_ message: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.scaled(12))
+                .foregroundColor(lowStockColor)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(message)
+                    .font(.scaled(13, weight: .medium))
+                    .foregroundColor(.sForeground)
+                Text("Showing the last figures that loaded. Pull down to try again.")
+                    .font(.scaled(12))
+                    .foregroundColor(.sMutedFG)
+            }
+            Spacer(minLength: 0)
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(12)
+        .background(lowStockColor.opacity(0.12))
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(lowStockColor.opacity(0.35), lineWidth: 0.5))
+        .cornerRadius(10)
+        .padding(.horizontal, 20)
     }
 
     // MARK: - Summary
