@@ -101,6 +101,14 @@ final class CreateCreditNoteViewModel: ObservableObject {
 
     // MARK: - Derived Values
 
+    /// The typed credit amount. "1,200" read as nothing, which left Save greyed out with
+    /// no reason, so the thousands separator people type is ignored.
+    private var amountValue: Double {
+        let t = amount.replacingOccurrences(of: ",", with: "").trimmingCharacters(in: .whitespaces)
+        guard let v = Double(t), v.isFinite, v >= 0 else { return 0 }
+        return v
+    }
+
     var subtotal: Double {
         switch creditType {
         case .returnItems:
@@ -108,7 +116,7 @@ final class CreateCreditNoteViewModel: ObservableObject {
                 partial + (line.rate * Double(line.qty) - line.discount)
             }
         case .adjustment, .discount:
-            return Double(amount) ?? 0
+            return amountValue
         }
     }
 
@@ -131,7 +139,7 @@ final class CreateCreditNoteViewModel: ObservableObject {
         case .returnItems:
             return !items.isEmpty
         case .adjustment, .discount:
-            return (Double(amount) ?? 0) > 0
+            return amountValue > 0
         }
     }
 
