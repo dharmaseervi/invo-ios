@@ -6,6 +6,7 @@ struct InvoiceDetailView: View {
     @Environment(\.dismiss) var dismiss
     @State private var showRecordPayment = false
     @State private var showEditInvoice = false
+    @State private var showCreditNote = false
     @State private var showDeleteConfirmation = false
     @State private var isDeleting = false
 
@@ -83,6 +84,15 @@ struct InvoiceDetailView: View {
                                 }) {
                                     Label("Send payment reminder", systemImage: "bell")
                                 }
+                            }
+                        }
+
+                        // Goods back or a price corrected, against this invoice so its
+                        // balance goes down. Only an issued invoice can be credited.
+                        if let detail = vm.invoiceDetail,
+                           [.issued, .partial, .paid].contains(detail.status) {
+                            Button(action: { showCreditNote = true }) {
+                                Label("Credit note", systemImage: "arrow.uturn.backward.circle")
                             }
                         }
 
@@ -477,6 +487,16 @@ struct InvoiceDetailView: View {
             }.joined(separator: "\n"))
         }
         .presentationCompactAdaptation(.sheet)
+        .sheet(isPresented: $showCreditNote, onDismiss: {
+            // A credit note changes the balance shown here.
+            Task { await vm.fetchInvoiceDetail(invoiceID: invoiceID) }
+        }) {
+            if let detail = vm.invoiceDetail {
+                NavigationStack {
+                    CreateCreditNoteView(invoice: detail)
+                }
+            }
+        }
         .sheet(isPresented: $showEditInvoice) {
             NavigationStack {
                 EditInvoiceView(invoiceID: invoiceID)

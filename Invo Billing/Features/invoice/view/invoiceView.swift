@@ -38,9 +38,11 @@ struct InvoiceView: View {
     }
     
     var totalAmount: Double { filteredInvoices.reduce(0) { $0 + $1.total } }
+    /// What customers owe: issued and part-paid invoices only. Drafts were counted too,
+    /// though nobody has been sent them yet.
     var outstandingAmount: Double {
         vm.invoices
-            .filter { $0.status != .paid && $0.status != .cancelled }
+            .filter { Self.isOwed($0.status) }
             .reduce(0) { $0 + $1.remaining_amount }
     }
     var overdueCount: Int { vm.invoices.filter { isOverdue($0) }.count }
@@ -56,11 +58,23 @@ struct InvoiceView: View {
     /// red badge, the "6 overdue" count and the Overdue filter, so customers were being
     /// chased a day before they were late, and the row could read "Due today" beside an
     /// Overdue badge.
+    ///
+    /// And only an invoice that is actually owed can be late. "Not paid" also caught
+    /// drafts, which nobody has been sent, and cancelled invoices — a draft read "7 days
+    /// overdue" and swelled the overdue count.
     private func isOverdue(_ invoice: InvoiceResponse) -> Bool {
-        guard invoice.status != .paid,
+        guard Self.isOwed(invoice.status),
               let due = AppDate.date(fromWire: invoice.due_date) else { return false }
         let calendar = Calendar.current
         return calendar.startOfDay(for: due) < calendar.startOfDay(for: Date())
+    }
+
+    /// Issued to the customer and not yet settled — the same rule the server uses.
+    static func isOwed(_ status: InvoiceStatus) -> Bool {
+        switch status {
+        case .issued, .partial, .sent, .pending, .overdue: return true
+        case .draft, .paid, .cancelled: return false
+        }
     }
     
     private func countFor(_ filter: InvoiceFilter) -> Int {
@@ -457,6 +471,9 @@ struct InvoiceRowCard: View {
         if days == 0 { return "Due today" }
         if days == 1 { return "Due tomorrow" }
         if days < 0 {
+            // Past the date but not owed (a draft, a cancelled invoice): it isn't late,
+            // so it says nothing rather than "7 days overdue" beside a Draft badge.
+            guard isOverdue else { return "" }
             let late = abs(days)
             return late == 1 ? "1 day overdue" : "\(late) days overdue"
         }
@@ -491,12 +508,14 @@ struct InvoiceRowCard: View {
                     let meta = ViewThatFits(in: .horizontal) {
                         HStack(spacing: 6) {
                             invoiceNumberText
-                            Text("·").font(.scaled(12)).foregroundColor(.sMutedFG)
-                            dueText
+                            if !daysInfo.isEmpty {
+                                Text("·").font(.scaled(12)).foregroundColor(.sMutedFG)
+                                dueText
+                            }
                         }
                         VStack(alignment: .leading, spacing: 2) {
                             invoiceNumberText
-                            dueText
+                            if !daysInfo.isEmpty { dueText }
                         }
                     }
                     meta

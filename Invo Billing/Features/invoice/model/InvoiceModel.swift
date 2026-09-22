@@ -141,6 +141,8 @@ struct ClientSummary: Codable {
 struct InvoiceItemDetail: Codable, Identifiable {
     let id: Int
     let item_id: Int
+    /// Sent by the server all along; optional so an older response still decodes.
+    let item_name: String?
     let qty: Int
     let rate: Double
     let discount: Double

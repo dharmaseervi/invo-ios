@@ -70,8 +70,50 @@ class ItemViewModel: ObservableObject {
     var isValid: Bool {
         !name.isEmpty && !price.isEmpty
     }
+
+    // MARK: - Number fields
+    //
+    // These were converted with `Int(quantity) ?? 0` and `Double(price) ?? 0`, so anything
+    // that didn't parse was saved as zero without a word: stock typed as "2.5" became 0,
+    // and a price typed as "1,200" became ₹0. Now a value that can't be read is refused
+    // with a reason, and the thousands separator people type is accepted.
+
+    /// A money field: blank is 0, commas are ignored, anything else must be a number ≥ 0.
+    private static func money(_ text: String) -> Double? {
+        let t = text.replacingOccurrences(of: ",", with: "").trimmingCharacters(in: .whitespaces)
+        if t.isEmpty { return 0 }
+        guard let v = Double(t), v >= 0, v.isFinite else { return nil }
+        return v
+    }
+
+    /// A count: blank is 0, otherwise a whole number ≥ 0. Stock is counted in whole units
+    /// on the server, so "2.5" can't be stored — it has to be refused, not rounded.
+    private static func count(_ text: String) -> Int? {
+        let t = text.replacingOccurrences(of: ",", with: "").trimmingCharacters(in: .whitespaces)
+        if t.isEmpty { return 0 }
+        guard let v = Int(t), v >= 0 else { return nil }
+        return v
+    }
+
+    /// The first number field that can't be saved, as something to show the person.
+    private var numberProblem: String? {
+        if Self.money(price) == nil { return "Enter the selling price as a number, like 450 or 1,200.50." }
+        if Self.money(costPrice) == nil { return "Enter the cost price as a number, or leave it blank." }
+        if Self.count(quantity) == nil { return "Stock is counted in whole units — enter a whole number, like 12." }
+        if Self.count(lowStockAlert) == nil { return "The low-stock alert must be a whole number, like 5." }
+        if Double(taxRate) == nil && !taxRate.isEmpty { return "Choose a GST rate." }
+        return nil
+    }
+
+    private func refuseBadNumbers() -> Bool {
+        guard let problem = numberProblem else { return false }
+        errorMessage = problem
+        showAlert = true
+        return true
+    }
     
     func createItem() async -> Bool {
+        if refuseBadNumbers() { return false }
         guard let companyId = SessionManager.shared.selectedCompanyId else {
             errorMessage = "Select company first"
             showAlert = true
@@ -86,10 +128,10 @@ class ItemViewModel: ObservableObject {
             hsn_code: hsnCode,
             unit: unit,
             description: description,
-            cost_price: Double(costPrice) ?? 0,
-            price: Double(price) ?? 0,
-            quantity: Int(quantity) ?? 0,
-            low_stock_alert: Int(lowStockAlert) ?? 0,
+            cost_price: Self.money(costPrice) ?? 0,
+            price: Self.money(price) ?? 0,
+            quantity: Self.count(quantity) ?? 0,
+            low_stock_alert: Self.count(lowStockAlert) ?? 0,
             tax_rate: Double(taxRate) ?? 0
         )
 
@@ -140,6 +182,7 @@ class ItemViewModel: ObservableObject {
     }
 
     func updateItem() async -> Bool {
+        if refuseBadNumbers() { return false }
         guard let itemId = editingItemId else { return false }
         guard let companyId = SessionManager.shared.selectedCompanyId else {
             errorMessage = "Select company first"
@@ -155,10 +198,10 @@ class ItemViewModel: ObservableObject {
             hsn_code: hsnCode,
             unit: unit,
             description: description,
-            cost_price: Double(costPrice) ?? 0,
-            price: Double(price) ?? 0,
-            quantity: Int(quantity) ?? 0,
-            low_stock_alert: Int(lowStockAlert) ?? 0,
+            cost_price: Self.money(costPrice) ?? 0,
+            price: Self.money(price) ?? 0,
+            quantity: Self.count(quantity) ?? 0,
+            low_stock_alert: Self.count(lowStockAlert) ?? 0,
             tax_rate: Double(taxRate) ?? 0
         )
 
