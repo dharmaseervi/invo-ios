@@ -17,6 +17,13 @@ struct CreateInvoiceView: View {
     @State private var editingItem: InvoiceLineItem?
     @State private var showBillingSheet = false
     @State private var showShippingSheet = false
+    @State private var showDiscardConfirm = false
+
+    /// Something has been entered that would be lost. A bare screen closes without a
+    /// question; a half-written invoice asks.
+    private var hasUnsavedWork: Bool {
+        vm.selectedClient != nil || !vm.items.isEmpty || vm.discount > 0
+    }
 
     var body: some View {
         ZStack {
@@ -117,8 +124,19 @@ struct CreateInvoiceView: View {
         // there is no way out of a half-written invoice.
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Button("Cancel") { dismiss() }
+                // Asks first when there is something to lose. Cancel threw away a
+                // part-written invoice on one tap, with nothing between a mis-tap and
+                // losing the lot.
+                Button("Cancel") {
+                    if hasUnsavedWork { showDiscardConfirm = true } else { dismiss() }
+                }
             }
+        }
+        .alert("Discard this invoice?", isPresented: $showDiscardConfirm) {
+            Button("Keep editing", role: .cancel) { }
+            Button("Discard", role: .destructive) { dismiss() }
+        } message: {
+            Text("What you have entered will be lost.")
         }
         .sheet(isPresented: $showClientPicker) {
             ClientPickerView(selectedClient: $vm.selectedClient)

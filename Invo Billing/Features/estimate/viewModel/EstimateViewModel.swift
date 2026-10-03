@@ -35,9 +35,22 @@ final class EstimateViewModel: ObservableObject {
     var onEstimateCreated: (() -> Void)?
 
     // MARK: - Computed Totals
-    var subtotal: Double { items.reduce(0) { $0 + $1.totalBeforeTax } }
-    var tax: Double { items.reduce(0) { $0 + $1.taxAmount } }
-    var total: Double { max(subtotal + tax - discount, 0) }
+    // The server's arithmetic, shared with invoices: an estimate's discount is applied
+    // before tax, apportioned across the lines. It matters doubly here, because an
+    // estimate turns into an invoice — a quote that added up differently from the bill
+    // that followed it is a conversation with a customer nobody wants to have.
+    private var computed: InvoiceTotals {
+        Totals.compute(
+            lines: items.map {
+                Totals.Line(qty: $0.qty, rate: $0.rate, discount: $0.discount, taxRate: $0.taxRate)
+            },
+            invoiceDiscount: discount
+        )
+    }
+
+    var subtotal: Double { computed.subtotal }
+    var tax: Double { computed.tax }
+    var total: Double { computed.total }
 
     var isValid: Bool {
         selectedClient != nil && !items.isEmpty

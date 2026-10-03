@@ -7,6 +7,13 @@ struct CreateEstimateView: View {
     @State private var showClientPicker = false
     @State private var showItemPicker = false
     @State private var editingItem: InvoiceLineItem?
+    @State private var showDiscardConfirm = false
+
+    /// Something has been entered that would be lost. A bare screen closes without a
+    /// question; a half-written estimate asks.
+    private var hasUnsavedWork: Bool {
+        vm.selectedClient != nil || !vm.items.isEmpty
+    }
 
     var body: some View {
         ZStack {
@@ -165,10 +172,21 @@ struct CreateEstimateView: View {
         // Presented as a full-screen cover, so there is no back chevron to leave by.
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Button("Cancel") { dismiss() }
+                // Asks first when there is something to lose. Cancel threw away a
+                // part-written estimate on one tap, with nothing between a mis-tap and
+                // losing the lot.
+                Button("Cancel") {
+                    if hasUnsavedWork { showDiscardConfirm = true } else { dismiss() }
+                }
             }
         }
         .navigationBarTitleDisplayMode(.inline)
+        .alert("Discard this estimate?", isPresented: $showDiscardConfirm) {
+            Button("Keep editing", role: .cancel) { }
+            Button("Discard", role: .destructive) { dismiss() }
+        } message: {
+            Text("What you have entered will be lost.")
+        }
         .sheet(isPresented: $showClientPicker) {
             ClientPickerView(selectedClient: $vm.selectedClient)
         }
