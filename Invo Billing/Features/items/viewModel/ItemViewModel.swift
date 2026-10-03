@@ -44,6 +44,9 @@ class ItemViewModel: ObservableObject {
     /// Paging state. nextCursor is nil once the catalogue is exhausted, which is also
     /// what stops the list asking for more forever at the bottom.
     @Published var isLoadingMore = false
+    /// True when the last page failed, so the list can offer another go rather than
+    /// looking as though the catalogue ended there.
+    @Published var loadMoreFailed = false
     private var nextCursor: String?
     private var activeSearch = ""
     private var searchTask: Task<Void, Never>?
@@ -285,7 +288,8 @@ class ItemViewModel: ObservableObject {
     /// Fetches the next page when the list nears its end. Guarded so overlapping
     /// scroll events cannot fire several identical requests.
     func loadMoreIfNeeded(currentItem item: ItemResponse) async {
-        guard !isLoadingMore, let cursor = nextCursor,
+        // Not while a page is failing: the Try again row drives that.
+        guard !isLoadingMore, !loadMoreFailed, let cursor = nextCursor,
               let companyId = SessionManager.shared.selectedCompanyId else { return }
 
         // Trigger a few rows early so the next page is usually already there by the
@@ -307,10 +311,37 @@ class ItemViewModel: ObservableObject {
             let existing = Set(items.map(\.id))
             items.append(contentsOf: page.items.filter { !existing.contains($0.id) })
             nextCursor = page.next_cursor
+            loadMoreFailed = false
         } catch {
-            // A failed page is not worth an error screen over a list that already has
-            // content; the user can scroll again to retry.
-            nextCursor = nil
+            // The cursor is kept. Clearing it ended the list: there was no page left to
+            // ask for, so scrolling again did nothing and the rest of the catalogue was
+            // unreachable until the screen was reopened — with nothing on screen to say
+            // so. The Try again row drives the retry instead.
+            loadMoreFailed = true
+        }
+    }
+
+    /// Another go at the page that failed, from the row at the end of the list.
+    func retryLoadMore() async {
+        guard !isLoadingMore, let cursor = nextCursor,
+              let companyId = SessionManager.shared.selectedCompanyId else { return }
+
+        loadMoreFailed = false
+        isLoadingMore = true
+        defer { isLoadingMore = false }
+
+        do {
+            let page = try await ItemService().loadItems(
+                companyId: companyId,
+                limit: Self.pageSize,
+                cursor: cursor,
+                search: activeSearch.isEmpty ? nil : activeSearch
+            )
+            let existing = Set(items.map(\.id))
+            items.append(contentsOf: page.items.filter { !existing.contains($0.id) })
+            nextCursor = page.next_cursor
+        } catch {
+            loadMoreFailed = true
         }
     }
 
