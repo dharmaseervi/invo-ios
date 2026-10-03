@@ -54,3 +54,30 @@ struct ClientLedger: Identifiable {
     let totalCredit: Double
     let balance: Double
 }
+
+/// A customer's standing, counted by the server over their whole history.
+///
+/// The screens used to sum the rows they had fetched, which meant downloading a
+/// business's entire ledger to draw a list of names and balances — and would have meant
+/// showing a page's totals as a customer's totals once those rows were paged.
+struct LedgerSummaryModel: Codable, Identifiable {
+    let client_id: Int
+    let client_name: String
+    let debit: Double
+    let credit: Double
+    let balance: Double
+    let entries: Int
+
+    var id: Int { client_id }
+
+    var asClientLedger: ClientLedger {
+        ClientLedger(
+            id: client_id, clientID: client_id, clientName: client_name,
+            totalDebit: debit, totalCredit: credit, balance: balance
+        )
+    }
+
+    static let empty = LedgerSummaryModel(
+        client_id: 0, client_name: "", debit: 0, credit: 0, balance: 0, entries: 0
+    )
+}

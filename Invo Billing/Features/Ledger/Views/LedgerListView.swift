@@ -49,9 +49,28 @@ struct LedgerListView: View {
                     Spacer()
                 } else {
                     ScrollView {
-                        VStack(spacing: 10) {
+                        LazyVStack(spacing: 10) {
+                            // Older entries load upwards: the statement reads forwards,
+                            // so the newest page is the one shown first.
+                            if vm.isLoadingMore {
+                                ProgressView()
+                                    .tint(.sAccent)
+                                    .padding(.vertical, 12)
+                            } else if vm.loadMoreFailed {
+                                VStack(spacing: 6) {
+                                    Text("Couldn't load earlier entries.")
+                                        .font(.scaled(13))
+                                        .foregroundColor(.sMutedFG)
+                                    Button("Try again") { Task { await vm.retryLoadMore() } }
+                                        .font(.scaled(13, weight: .medium))
+                                        .foregroundColor(.sAccent)
+                                }
+                                .padding(.vertical, 12)
+                            }
+
                             ForEach(vm.entries) { entry in
                                 LedgerRowView(entry: entry)
+                                    .task { await vm.loadMoreIfNeeded(currentItem: entry) }
                             }
                         }
                         .padding(20)

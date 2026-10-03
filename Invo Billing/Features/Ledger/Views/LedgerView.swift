@@ -56,7 +56,7 @@ struct LedgerView: View {
                                 if vm.filteredClients.isEmpty {
                                     noResultsState.padding(.top, 60)
                                 } else {
-                                    VStack(spacing: 10) {
+                                    LazyVStack(spacing: 10) {
                                         ForEach(vm.filteredClients) { client in
                                             NavigationLink {
                                                 LedgerListView(clientID: client.clientID)
@@ -64,6 +64,23 @@ struct LedgerView: View {
                                                 LedgerRow(client: client)
                                             }
                                             .buttonStyle(.plain)
+                                            .task { await vm.loadMoreIfNeeded(currentItem: client) }
+                                        }
+
+                                        if vm.isLoadingMore {
+                                            ProgressView()
+                                                .tint(.sAccent)
+                                                .padding(.vertical, 12)
+                                        } else if vm.loadMoreFailed {
+                                            VStack(spacing: 6) {
+                                                Text("Couldn't load more customers.")
+                                                    .font(.scaled(13))
+                                                    .foregroundColor(.sMutedFG)
+                                                Button("Try again") { Task { await vm.retryLoadMore() } }
+                                                    .font(.scaled(13, weight: .medium))
+                                                    .foregroundColor(.sAccent)
+                                            }
+                                            .padding(.vertical, 12)
                                         }
                                     }
                                     .padding(20)
@@ -77,6 +94,14 @@ struct LedgerView: View {
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 Task { await vm.fetchCompanyLedger() }
+            }
+            // The search box asks the server, debounced — it used to filter only the
+            // customers whose entries happened to have been downloaded.
+            .task(id: vm.searchText) {
+                guard !vm.summaries.isEmpty || !vm.searchText.isEmpty else { return }
+                try? await Task.sleep(nanoseconds: 300_000_000)
+                guard !Task.isCancelled else { return }
+                await vm.fetchCompanyLedger()
             }
             .alert("Error", isPresented: $vm.showAlert) {
                 Button("OK", role: .cancel) {}

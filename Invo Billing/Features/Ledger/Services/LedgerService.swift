@@ -85,4 +85,55 @@ final class LedgerService {
         return decoded.data
     }
 
+    /// One customer's totals over their whole history.
+    func fetchClientSummary(clientID: Int, companyID: Int) async throws -> LedgerSummaryModel {
+        guard let url = URL(string: "\(baseURL)/ledger/\(clientID)/summary") else {
+            throw URLError(.badURL)
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        if let token = KeychainManager.shared.loadToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        request.setValue(String(companyID), forHTTPHeaderField: "X-Company-ID")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+        return try JSONDecoder().decode(LedgerSummaryModel.self, from: data)
+    }
+
+    /// One row per customer with ledger history — the ledger list, without fetching
+    /// every entry the business has ever written to build it.
+    func fetchCompanySummaries(
+        companyID: Int,
+        search: String? = nil,
+        limit: Int = 0,
+        offset: Int = 0
+    ) async throws -> [LedgerSummaryModel] {
+        var components = URLComponents(string: "\(baseURL)/companies/\(companyID)/ledger/summary")
+        components?.queryItems = []
+        if let search, !search.isEmpty {
+            components?.queryItems?.append(URLQueryItem(name: "search", value: search))
+        }
+        if limit > 0 {
+            components?.queryItems?.append(URLQueryItem(name: "limit", value: String(limit)))
+            components?.queryItems?.append(URLQueryItem(name: "offset", value: String(offset)))
+        }
+        guard let url = components?.url else { throw URLError(.badURL) }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        if let token = KeychainManager.shared.loadToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+        struct Wrapper: Codable { let data: [LedgerSummaryModel] }
+        return try JSONDecoder().decode(Wrapper.self, from: data).data
+    }
 }
