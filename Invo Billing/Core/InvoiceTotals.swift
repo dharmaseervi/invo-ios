@@ -134,11 +134,17 @@ enum Totals {
         var remainders: [(index: Int, frac: Int)] = []
         var allocated = 0
         for (i, w) in weights.enumerated() {
-            let exact = total * w
-            let share = exact / sum
+            // Full width, because total * w overflows on real figures: both are in
+            // paise, so a 3-crore discount against a 4-crore line multiplies out to
+            // 1.2e19 — past Int64, which in Swift is a crash rather than a wrong
+            // number. multipliedFullWidth keeps all 128 bits and dividingFullWidth
+            // brings it back down; the quotient cannot overflow because w <= sum, so
+            // the share is never more than the total being split.
+            let wide = total.multipliedFullWidth(by: w)
+            let (share, frac) = sum.dividingFullWidth(wide)
             shares[i] = share
             allocated += share
-            remainders.append((i, exact % sum))
+            remainders.append((i, frac))
         }
 
         var left = total - allocated

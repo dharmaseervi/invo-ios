@@ -84,6 +84,12 @@ struct InvoiceView: View {
         }
     }
     
+    /// The very first load, where there is nothing on screen yet to keep. Later loads
+    /// leave the controls in place.
+    private var isFirstLoad: Bool {
+        vm.isFetchingList && vm.invoices.isEmpty && searchText.isEmpty && selectedFilter == .all
+    }
+
     /// Fetches the list and its figures for whatever is in the search box and selected
     /// on the filter bar.
     private func reload() async {
@@ -98,7 +104,12 @@ struct InvoiceView: View {
             ZStack {
                 Color.sBackground.ignoresSafeArea()
                 VStack(spacing: 0) {
-                    if vm.isFetchingList {
+                    // The search field and the filters stay mounted while a search
+                    // runs. They used to be inside the branch that the loading
+                    // placeholder replaced, so every keystroke tore the field off the
+                    // screen, the keyboard went with it, and the next character had
+                    // nowhere to go. Only the results area waits.
+                    if isFirstLoad {
                         loadingView
                     } else {
                         ScrollView(showsIndicators: false) {
@@ -108,7 +119,11 @@ struct InvoiceView: View {
                                 }
                                 searchBar.padding(.top, 16)
                                 filterRow.padding(.top, 12)
-                                if filteredInvoices.isEmpty {
+                                if vm.isFetchingList {
+                                    ProgressView()
+                                        .tint(.sAccent)
+                                        .frame(minHeight: 360)
+                                } else if filteredInvoices.isEmpty {
                                     emptyState.frame(minHeight: 360)
                                 } else {
                                     invoiceList.padding(.top, 18)
@@ -276,9 +291,16 @@ struct InvoiceView: View {
                     Text("Outstanding")
                         .font(.scaled(13))
                         .foregroundColor(.sMutedFG)
-                    Text(Money.compact(outstandingAmount)).moneyLine()
+                    // A dash, not ₹0, when the figures could not be fetched: zero reads
+                    // as "nothing is owed", which is the opposite of "we don't know".
+                    Text(vm.summaryFailed ? "—" : Money.compact(outstandingAmount)).moneyLine()
                         .font(.scaled(28, weight: .bold))
                         .foregroundColor(.sForeground)
+                    if vm.summaryFailed {
+                        Button("Totals unavailable — retry") { Task { await reload() } }
+                            .font(.scaled(12))
+                            .foregroundColor(.sAccent)
+                    }
                 }
                 Spacer()
                 if overdueCount > 0 {

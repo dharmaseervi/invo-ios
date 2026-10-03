@@ -31,6 +31,9 @@ class InvoiceViewModel: ObservableObject {
     @Published var loadMoreFailed = false
     /// Counts and totals for the whole list, from the server.
     @Published var summary: InvoiceSummary = .empty
+    /// True when the figures could not be fetched, so the header can say so instead of
+    /// showing zeroes as though the business had nothing outstanding.
+    @Published var summaryFailed = false
     @Published var isFetchingDetail = false
     @Published var showScanner = false
     @Published var invoiceNumber: String = "Auto-generated"
@@ -307,6 +310,13 @@ class InvoiceViewModel: ObservableObject {
     /// Paging state. hasMoreInvoices goes false once a page comes back short, which is
     /// what stops the list asking forever at the bottom.
     private var invoiceOffset = 0
+    /// Identifies the newest list request. Every reply checks it before touching the
+    /// screen, so a slow one cannot land on top of a newer one.
+    ///
+    /// Comparing the query instead of a counter is not enough: typing "a", deleting it
+    /// and typing "a" again makes two requests that look identical, and the first one
+    /// coming back last would still be stale.
+    private var listRequestID = 0
     private var listCompanyID: Int?
     private var listClientID: Int?
     private var listSearch: String?
@@ -320,8 +330,9 @@ class InvoiceViewModel: ObservableObject {
         limit: Int = invoicePageSize,
         offset: Int = 0
     ) async {
+        listRequestID += 1
+        let request = listRequestID
         isFetchingList = true
-        defer { isFetchingList = false }
 
         // Remembered so loadMoreInvoices can continue the same query.
         listCompanyID = companyID
@@ -349,11 +360,20 @@ class InvoiceViewModel: ObservableObject {
                 limit: limit,
                 offset: offset
             )
+            let newSummary = await summaryResult
+            guard request == listRequestID else { return }
             invoices = response.data
             invoiceOffset = response.data.count
             hasMoreInvoices = response.data.count >= limit
-            summary = await summaryResult ?? summary
+            loadMoreFailed = false
+            // A summary that failed is cleared rather than left behind: keeping the
+            // previous one put one search's totals above another search's rows.
+            summary = newSummary ?? .empty
+            summaryFailed = newSummary == nil
+            isFetchingList = false
         } catch let error as NSError {
+            guard request == listRequestID else { return }
+            isFetchingList = false
             // Handle 404 "No invoices found" gracefully
             if error.code == 404 {
                 invoices = []
@@ -362,6 +382,8 @@ class InvoiceViewModel: ObservableObject {
             }
             showError(error.localizedDescription)
         } catch {
+            guard request == listRequestID else { return }
+            isFetchingList = false
             showError(error.localizedDescription)
         }
     }
@@ -381,6 +403,10 @@ class InvoiceViewModel: ObservableObject {
         isLoadingMoreInvoices = true
         defer { isLoadingMoreInvoices = false }
 
+        // The page belongs to this query. If the search or filter changes while it is
+        // out, the rows it carries are for a list nobody is looking at any more.
+        let request = listRequestID
+
         do {
             let response = try await service.getInvoices(
                 companyID: listCompanyID ?? SessionManager.shared.selectedCompanyId,
@@ -390,12 +416,14 @@ class InvoiceViewModel: ObservableObject {
                 limit: Self.invoicePageSize,
                 offset: invoiceOffset
             )
+            guard request == listRequestID else { return }
             let existing = Set(invoices.map(\.id))
             invoices.append(contentsOf: response.data.filter { !existing.contains($0.id) })
             invoiceOffset += response.data.count
             hasMoreInvoices = response.data.count >= Self.invoicePageSize
             loadMoreFailed = false
         } catch {
+            guard request == listRequestID else { return }
             // A failed page must not replace a list that already has content, and must
             // not quietly end the list either: hasMoreInvoices stayed false, so the
             // older invoices were unreachable until the screen was left and reopened,
@@ -412,6 +440,8 @@ class InvoiceViewModel: ObservableObject {
         isLoadingMoreInvoices = true
         defer { isLoadingMoreInvoices = false }
 
+        let request = listRequestID
+
         do {
             let response = try await service.getInvoices(
                 companyID: listCompanyID ?? SessionManager.shared.selectedCompanyId,
@@ -421,11 +451,13 @@ class InvoiceViewModel: ObservableObject {
                 limit: Self.invoicePageSize,
                 offset: invoiceOffset
             )
+            guard request == listRequestID else { return }
             let existing = Set(invoices.map(\.id))
             invoices.append(contentsOf: response.data.filter { !existing.contains($0.id) })
             invoiceOffset += response.data.count
             hasMoreInvoices = response.data.count >= Self.invoicePageSize
         } catch {
+            guard request == listRequestID else { return }
             loadMoreFailed = true
         }
     }
