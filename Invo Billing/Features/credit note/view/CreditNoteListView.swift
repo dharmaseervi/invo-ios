@@ -314,6 +314,28 @@ struct CreditNoteListView: View {
                     .frame(height: 1)
                     .padding(.horizontal, 24)
             }
+            .task(id: filteredNotes.count) {
+                // Only the server knows what else there is: the screen holds a page.
+                if let last = filteredNotes.last {
+                    await vm.loadMoreIfNeeded(currentItem: last)
+                }
+            }
+
+            if vm.isLoadingMore {
+                ProgressView()
+                    .tint(.sAccent)
+                    .padding(.vertical, 12)
+            } else if vm.loadMoreFailed {
+                VStack(spacing: 6) {
+                    Text("Couldn't load more credit notes.")
+                        .font(.scaled(13))
+                        .foregroundColor(.sMutedFG)
+                    Button("Try again") { Task { await vm.retryLoadMore() } }
+                        .font(.scaled(13, weight: .medium))
+                        .foregroundColor(.sAccent)
+                }
+                .padding(.vertical, 12)
+            }
         }
     }
 

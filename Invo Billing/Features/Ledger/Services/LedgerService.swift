@@ -7,15 +7,16 @@ final class LedgerService {
 
     private let baseURL = AppEnvironment.baseURL
 
-    func fetchLedger(clientID: Int, companyID: Int) async throws
+    /// A customer's statement, oldest first. limit 0 asks for the whole history, which
+    /// for a long-standing customer is thousands of lines fetched to show the last few;
+    /// a page takes the newest `limit` entries and still reads forwards.
+    func fetchLedger(clientID: Int, companyID: Int, limit: Int = 0, offset: Int = 0) async throws
         -> [LedgerEntryModel]
     {
 
-        guard
-            let url = URL(
-                string: "\(baseURL)/ledger/\(clientID)"
-            )
-        else {
+        var path = "\(baseURL)/ledger/\(clientID)"
+        if limit > 0 { path += "?limit=\(limit)&offset=\(offset)" }
+        guard let url = URL(string: path) else {
             throw URLError(.badURL)
         }
 
@@ -50,11 +51,13 @@ final class LedgerService {
         return decoded.data                                                                              
     }
 
-    func fetchCompanyLedger(companyID: Int) async throws -> [LedgerEntryModel] {
+    /// The whole company's ledger — every invoice and payment it has ever made — so a
+    /// page is the difference between a screen that opens and one that waits.
+    func fetchCompanyLedger(companyID: Int, limit: Int = 0, offset: Int = 0) async throws -> [LedgerEntryModel] {
 
-        let url = URL(
-            string: "\(AppEnvironment.baseURL)/companies/\(companyID)/ledger"
-        )!
+        var path = "\(AppEnvironment.baseURL)/companies/\(companyID)/ledger"
+        if limit > 0 { path += "?limit=\(limit)&offset=\(offset)" }
+        let url = URL(string: path)!
 
         var request = URLRequest(url: url)
         request.httpMethod = "GET"

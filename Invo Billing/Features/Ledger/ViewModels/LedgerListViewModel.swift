@@ -31,6 +31,11 @@ final class LedgerListViewModel: ObservableObject {
       
     
     // MARK: Fetch All Company Ledger
+    //
+    // Not paged, deliberately: `clients` below groups every entry by customer and takes
+    // each one's balance from their last row, so a page would give a customer the
+    // balance they happened to have part-way through their history. Paging this needs a
+    // per-customer summary from the server rather than a slice of the rows.
     func fetchCompanyLedger() async {
         isLoading = true
         defer { isLoading = false }

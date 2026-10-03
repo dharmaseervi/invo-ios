@@ -86,9 +86,13 @@ struct InvoiceView: View {
     
     /// The very first load, where there is nothing on screen yet to keep. Later loads
     /// leave the controls in place.
-    private var isFirstLoad: Bool {
-        vm.isFetchingList && vm.invoices.isEmpty && searchText.isEmpty && selectedFilter == .all
-    }
+    ///
+    /// Tracked rather than guessed from an empty list: a search that matched nothing
+    /// leaves the list empty, so clearing that search made this true again and the
+    /// search box disappeared under the placeholder exactly when it was being used.
+    @State private var hasLoadedOnce = false
+
+    private var isFirstLoad: Bool { vm.isFetchingList && !hasLoadedOnce }
 
     /// Fetches the list and its figures for whatever is in the search box and selected
     /// on the filter bar.
@@ -97,6 +101,7 @@ struct InvoiceView: View {
             search: searchText.trimmingCharacters(in: .whitespaces),
             status: serverStatus
         )
+        hasLoadedOnce = true
     }
 
     var body: some View {

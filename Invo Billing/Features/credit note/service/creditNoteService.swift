@@ -6,11 +6,15 @@ final class CreditNoteService {
     private let baseURL = AppEnvironment.baseURL
     
     // MARK: - Get All Credit Notes
-    func fetchAll() async throws -> [CreditNoteModel] {
+    /// One page of credit notes. limit 0 asks for the lot, which is what this screen
+    /// used to do on every visit.
+    func fetchAll(limit: Int = 0, offset: Int = 0) async throws -> [CreditNoteModel] {
         guard let companyId = SessionManager.shared.selectedCompanyId else {
             throw URLError(.badURL)
         }
-        let url = URL(string: "\(baseURL)/credit-notes?company_id=\(companyId)")!
+        var query = "company_id=\(companyId)"
+        if limit > 0 { query += "&limit=\(limit)&offset=\(offset)" }
+        let url = URL(string: "\(baseURL)/credit-notes?\(query)")!
         var req = URLRequest(url: url)
         req.httpMethod = "GET"
 

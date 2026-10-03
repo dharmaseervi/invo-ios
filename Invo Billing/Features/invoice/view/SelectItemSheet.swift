@@ -181,6 +181,20 @@ struct SelectItemSheet: View {
                                     ProgressView()
                                         .tint(.sAccent)
                                         .padding(.vertical, 12)
+                                } else if vm.loadMoreFailed {
+                                    // The picker shares the list's view model, which
+                                    // stops paging after a failed page — so without a
+                                    // way to retry here, the older items simply could
+                                    // not be reached while adding a line.
+                                    VStack(spacing: 6) {
+                                        Text("Couldn't load more items.")
+                                            .font(.scaled(13))
+                                            .foregroundColor(.sMutedFG)
+                                        Button("Try again") { Task { await vm.retryLoadMore() } }
+                                            .font(.scaled(13, weight: .medium))
+                                            .foregroundColor(.sAccent)
+                                    }
+                                    .padding(.vertical, 12)
                                 }
                             }
                             .padding(.horizontal, 20)

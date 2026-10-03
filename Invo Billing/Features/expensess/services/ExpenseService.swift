@@ -41,11 +41,13 @@ final class ExpenseService {
     }
     
     // MARK: - Get All Expenses
-    func getExpenses(companyId: Int) async throws -> [Expense] {
-        
-        guard
-            let url = URL(string: "\(baseURL)/companies/\(companyId)/expenses")
-        else {
+    /// One page of expenses. limit 0 asks for every expense the company has ever
+    /// recorded, which is what this screen used to do on every visit.
+    func getExpenses(companyId: Int, limit: Int = 0, offset: Int = 0) async throws -> [Expense] {
+
+        var path = "\(baseURL)/companies/\(companyId)/expenses"
+        if limit > 0 { path += "?limit=\(limit)&offset=\(offset)" }
+        guard let url = URL(string: path) else {
             throw URLError(.badURL)
         }
         

@@ -47,6 +47,9 @@ class ItemViewModel: ObservableObject {
     /// True when the last page failed, so the list can offer another go rather than
     /// looking as though the catalogue ended there.
     @Published var loadMoreFailed = false
+    /// Identifies the newest list request, so a reply for an older search — or a page
+    /// belonging to a list that has since been replaced — is thrown away.
+    private var listRequestID = 0
     private var nextCursor: String?
     private var activeSearch = ""
     private var searchTask: Task<Void, Never>?
@@ -256,6 +259,14 @@ class ItemViewModel: ObservableObject {
     func loadItems() async {
         guard let companyId = SessionManager.shared.selectedCompanyId else { return }
 
+        // A fresh load is a new list: the request number moves on so a page still out
+        // from the previous one cannot append its rows here, and loadMoreFailed is
+        // cleared — left set, it kept blocking automatic paging after a successful
+        // reload, so the list silently stopped growing.
+        listRequestID += 1
+        let request = listRequestID
+        loadMoreFailed = false
+
         isLoading = true
         items = []
         nextCursor = nil
@@ -273,13 +284,16 @@ class ItemViewModel: ObservableObject {
                 limit: Self.pageSize,
                 search: activeSearch.isEmpty ? nil : activeSearch
             )
+            guard request == listRequestID else { return }
             items = page.items
             nextCursor = page.next_cursor
         } catch is SessionExpiredError {
+            guard request == listRequestID else { return }
             errorMessage = "Your session has expired. Sign out and sign in again."
             sessionExpired = true
             showAlert = true
         } catch {
+            guard request == listRequestID else { return }
             errorMessage = "Couldn't reach the server. Check your connection and try again."
             showAlert = true
         }
@@ -300,6 +314,8 @@ class ItemViewModel: ObservableObject {
         isLoadingMore = true
         defer { isLoadingMore = false }
 
+        let request = listRequestID
+
         do {
             let page = try await ItemService().loadItems(
                 companyId: companyId,
@@ -307,12 +323,14 @@ class ItemViewModel: ObservableObject {
                 cursor: cursor,
                 search: activeSearch.isEmpty ? nil : activeSearch
             )
+            guard request == listRequestID else { return }
             // Guard against duplicates if a reload landed while this was in flight.
             let existing = Set(items.map(\.id))
             items.append(contentsOf: page.items.filter { !existing.contains($0.id) })
             nextCursor = page.next_cursor
             loadMoreFailed = false
         } catch {
+            guard request == listRequestID else { return }
             // The cursor is kept. Clearing it ended the list: there was no page left to
             // ask for, so scrolling again did nothing and the rest of the catalogue was
             // unreachable until the screen was reopened — with nothing on screen to say
@@ -330,6 +348,8 @@ class ItemViewModel: ObservableObject {
         isLoadingMore = true
         defer { isLoadingMore = false }
 
+        let request = listRequestID
+
         do {
             let page = try await ItemService().loadItems(
                 companyId: companyId,
@@ -337,10 +357,12 @@ class ItemViewModel: ObservableObject {
                 cursor: cursor,
                 search: activeSearch.isEmpty ? nil : activeSearch
             )
+            guard request == listRequestID else { return }
             let existing = Set(items.map(\.id))
             items.append(contentsOf: page.items.filter { !existing.contains($0.id) })
             nextCursor = page.next_cursor
         } catch {
+            guard request == listRequestID else { return }
             loadMoreFailed = true
         }
     }

@@ -109,6 +109,25 @@ struct ExpenseView: View {
                                                 )
                                             }
                                             .buttonStyle(.plain)
+                                            .task {
+                                                await vm.loadMoreIfNeeded(currentItem: expense)
+                                            }
+                                        }
+
+                                        if vm.isLoadingMore {
+                                            ProgressView()
+                                                .tint(.sAccent)
+                                                .padding(.vertical, 12)
+                                        } else if vm.loadMoreFailed {
+                                            VStack(spacing: 6) {
+                                                Text("Couldn't load more expenses.")
+                                                    .font(.scaled(13))
+                                                    .foregroundColor(.sMutedFG)
+                                                Button("Try again") { Task { await vm.retryLoadMore() } }
+                                                    .font(.scaled(13, weight: .medium))
+                                                    .foregroundColor(.sAccent)
+                                            }
+                                            .padding(.vertical, 12)
                                         }
                                     }
                                     .padding(.horizontal, 20)
