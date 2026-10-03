@@ -325,7 +325,11 @@ struct InvoiceView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 10)
 
-            VStack(spacing: 10) {
+            // Lazy: a plain VStack builds every row as soon as the list is drawn, and
+            // each row's .task fires with it — so opening the screen asked for the next
+            // page immediately, however little had been scrolled, and a long list paid
+            // for rows nobody had looked at.
+            LazyVStack(spacing: 10) {
                 ForEach(filteredInvoices) { invoice in
                     NavigationLink(destination: InvoiceDetailView(invoiceID: invoice.id, vm: vm)) {
                         InvoiceRowCard(invoice: invoice, vm: vm, isOverdue: isOverdue(invoice))

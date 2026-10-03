@@ -132,7 +132,11 @@ struct ItemsView: View {
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                         } else {
                             ScrollView(.vertical, showsIndicators: false) {
-                                VStack(spacing: 10) {
+                                // Lazy: a plain VStack builds every row up front, and
+                                // each row's .task fires with it — so the whole
+                                // catalogue was constructed, and the next page asked
+                                // for, before anything had been scrolled.
+                                LazyVStack(spacing: 10) {
                                     ForEach(filteredItems) { item in
                                         ItemListRowView(
                                             item: item,

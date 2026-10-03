@@ -48,18 +48,26 @@ class EditInvoiceViewModel: ObservableObject {
     private let service = InvoiceService()
     private let addressService = AddressService()
 
-    // MARK: - Computed Properties (same as InvoiceViewModel)
-    var subtotal: Double {
-        items.reduce(0) { $0 + $1.totalBeforeTax }
+    // MARK: - Computed Totals (UI ONLY)
+    //
+    // Worked out by the shared Totals code, which mirrors the server line for line. The
+    // old sum here was subtotal + tax - discount, but the server applies an invoice
+    // discount before tax and spreads it across the lines — so with any discount the
+    // figure quoted on this screen was not the figure saved on the invoice.
+    private var computed: InvoiceTotals {
+        Totals.compute(
+            lines: items.map {
+                Totals.Line(qty: $0.qty, rate: $0.rate, discount: $0.discount, taxRate: $0.taxRate)
+            },
+            invoiceDiscount: discount
+        )
     }
 
-    var tax: Double {
-        items.reduce(0) { $0 + $1.taxAmount }
-    }
+    var subtotal: Double { computed.subtotal }
 
-    var total: Double {
-        max(subtotal + tax - discount, 0)
-    }
+    var tax: Double { computed.tax }
+
+    var total: Double { computed.total }
 
     var isValid: Bool {
         selectedClient != nil && !items.isEmpty

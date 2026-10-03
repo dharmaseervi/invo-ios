@@ -70,17 +70,25 @@ class InvoiceViewModel: ObservableObject {
     private let service = InvoiceService()
 
     // MARK: - Computed Totals (UI ONLY)
-    var subtotal: Double {
-        items.reduce(0) { $0 + $1.totalBeforeTax }
+    //
+    // Worked out by the shared Totals code, which mirrors the server line for line. The
+    // old sum here was subtotal + tax - discount, but the server applies an invoice
+    // discount before tax and spreads it across the lines — so with any discount the
+    // figure quoted on this screen was not the figure saved on the invoice.
+    private var computed: InvoiceTotals {
+        Totals.compute(
+            lines: items.map {
+                Totals.Line(qty: $0.qty, rate: $0.rate, discount: $0.discount, taxRate: $0.taxRate)
+            },
+            invoiceDiscount: discount
+        )
     }
 
-    var tax: Double {
-        items.reduce(0) { $0 + $1.taxAmount }
-    }
+    var subtotal: Double { computed.subtotal }
 
-    var total: Double {
-        max(subtotal + tax - discount, 0)
-    }
+    var tax: Double { computed.tax }
+
+    var total: Double { computed.total }
 
     // MARK: - Validation
     var isValid: Bool {
@@ -169,18 +177,27 @@ class InvoiceViewModel: ObservableObject {
         guard let client = selectedClient else { return }
         guard !client.isQuickSaleAccount else { return }
 
+        // Cleared first, and only filled from a reply that still matches the client on
+        // screen. Before, a client with no address on file left the previous client's
+        // address in the fields — and createInvoice then saved it onto the new client,
+        // so one customer's address was written into another's record and printed on
+        // their invoice. Switching clients quickly could do the same with a reply that
+        // arrived late.
+        let requested = client.id
+        billingAddress = .empty(type: "billing")
+        shippingAddress = .empty(type: "shipping")
+        isShippingSameAsBilling = true
+
         do {
-            if let billing = try await addressService.getClientAddress(
-                clientID: client.id,
-                type: "billing"
-            ) {
+            let billing = try await addressService.getClientAddress(clientID: requested, type: "billing")
+            guard selectedClient?.id == requested else { return }
+            if let billing {
                 billingAddress = AddressFormModel(from: billing)
             }
 
-            if let shipping = try await addressService.getClientAddress(
-                clientID: client.id,
-                type: "shipping"
-            ) {
+            let shipping = try await addressService.getClientAddress(clientID: requested, type: "shipping")
+            guard selectedClient?.id == requested else { return }
+            if let shipping {
                 shippingAddress = AddressFormModel(from: shipping)
                 isShippingSameAsBilling = false
             } else {
@@ -188,12 +205,21 @@ class InvoiceViewModel: ObservableObject {
             }
         } catch {
             // Handle any thrown errors from address service calls
+            guard selectedClient?.id == requested else { return }
             showError(error.localizedDescription)
         }
     }
 
     // MARK: - Create Invoice (Backend Calculates Everything)
     func createInvoice() async -> Bool {
+        // Busy from the first tap, not from the create call.
+        //
+        // isLoading used to be set after the addresses had been saved, which is a
+        // round trip or two — so a second tap in that window started a second create
+        // and the customer got two identical invoices, both counted and both owed.
+        if isLoading { return false }
+        isLoading = true
+        defer { isLoading = false }
 
         // 1️⃣ Save addresses FIRST
         let addressesSaved = await saveClientAddressesIfNeeded()
@@ -237,9 +263,6 @@ class InvoiceViewModel: ObservableObject {
                 )
             }
         )
-
-        isLoading = true
-        defer { isLoading = false }
 
         do {
             _ = try await service.createInvoices(payload: payload)
@@ -364,7 +387,19 @@ class InvoiceViewModel: ObservableObject {
         }
     }
 
+    /// Names for the lines on an invoice.
+    ///
+    /// The server sends the name with each line, so they are taken from the reply that
+    /// is already in hand. This used to fetch them one item at a time, in sequence: a
+    /// six-line invoice meant six more round trips before the screen could finish
+    /// drawing, every time it was opened. Anything the server left out is still fetched,
+    /// so an older server keeps working.
     private func loadItemNames(for items: [InvoiceItemDetail]) async {
+        for item in items where itemNames[item.item_id] == nil {
+            if let name = item.item_name, !name.isEmpty {
+                itemNames[item.item_id] = name
+            }
+        }
         for item in items where itemNames[item.item_id] == nil {
             if let response = try? await ItemService().getItemByID(item.item_id),
                let name = response.first?.name {
