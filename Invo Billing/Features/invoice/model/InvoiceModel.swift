@@ -73,6 +73,28 @@ enum InvoiceStatus: String, Codable {
 
 // MARK: - Invoice List Response
 
+/// What the list screen shows above the rows, counted by the server over every invoice
+/// that matches — not over the page that happens to be loaded.
+struct InvoiceSummary: Codable {
+    let total: Int
+    let draft: Int
+    let issued: Int
+    let partial: Int
+    let paid: Int
+    let cancelled: Int
+    let overdue: Int
+    /// Issued and part-paid: the invoices a customer still owes something on.
+    let owed: Int
+    let outstanding: Double
+    let overdue_amount: Double
+    let invoiced: Double
+
+    static let empty = InvoiceSummary(
+        total: 0, draft: 0, issued: 0, partial: 0, paid: 0, cancelled: 0,
+        overdue: 0, owed: 0, outstanding: 0, overdue_amount: 0, invoiced: 0
+    )
+}
+
 struct InvoiceListResponse: Codable {
     let data: [InvoiceResponse]
     let limit: Int?

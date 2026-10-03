@@ -26,6 +26,11 @@ class InvoiceViewModel: ObservableObject {
     @Published var isFetchingList = false
     @Published var isLoadingMoreInvoices = false
     @Published var hasMoreInvoices = false
+    /// True when the last attempt at the next page failed, so the list can offer
+    /// another go instead of looking as though it had reached the end.
+    @Published var loadMoreFailed = false
+    /// Counts and totals for the whole list, from the server.
+    @Published var summary: InvoiceSummary = .empty
     @Published var isFetchingDetail = false
     @Published var showScanner = false
     @Published var invoiceNumber: String = "Auto-generated"
@@ -304,10 +309,14 @@ class InvoiceViewModel: ObservableObject {
     private var invoiceOffset = 0
     private var listCompanyID: Int?
     private var listClientID: Int?
+    private var listSearch: String?
+    private var listStatus: String?
 
     func fetchInvoices(
         companyID: Int? = nil,
         clientID: Int? = nil,
+        search: String? = nil,
+        status: String? = nil,
         limit: Int = invoicePageSize,
         offset: Int = 0
     ) async {
@@ -317,23 +326,38 @@ class InvoiceViewModel: ObservableObject {
         // Remembered so loadMoreInvoices can continue the same query.
         listCompanyID = companyID
         listClientID = clientID
+        listSearch = search
+        listStatus = status
         invoiceOffset = 0
         hasMoreInvoices = false
 
+        let company = companyID ?? SessionManager.shared.selectedCompanyId
+
+        // The figures above the list are counted by the server over everything that
+        // matches. Added up here they described the loaded page and called it the
+        // business: "Outstanding" was the outstanding amount of the latest fifty.
+        async let summaryResult = try? service.getInvoiceSummary(
+            companyID: company, clientID: clientID, search: search
+        )
+
         do {
             let response = try await service.getInvoices(
-                companyID: companyID ?? SessionManager.shared.selectedCompanyId,
+                companyID: company,
                 clientID: clientID,
+                search: search,
+                status: status,
                 limit: limit,
                 offset: offset
             )
             invoices = response.data
             invoiceOffset = response.data.count
             hasMoreInvoices = response.data.count >= limit
+            summary = await summaryResult ?? summary
         } catch let error as NSError {
             // Handle 404 "No invoices found" gracefully
             if error.code == 404 {
                 invoices = []
+                summary = await summaryResult ?? .empty
                 return
             }
             showError(error.localizedDescription)
@@ -349,7 +373,8 @@ class InvoiceViewModel: ObservableObject {
     /// and the Outstanding total on the summary card silently under-reported what was
     /// actually owed, because it is computed from the loaded rows.
     func loadMoreInvoices(currentItem invoice: InvoiceResponse) async {
-        guard !isLoadingMoreInvoices, hasMoreInvoices else { return }
+        // Not while a previous page is still failing: the Retry row drives that.
+        guard !isLoadingMoreInvoices, hasMoreInvoices, !loadMoreFailed else { return }
         guard let index = invoices.firstIndex(where: { $0.id == invoice.id }),
               index >= invoices.count - 10 else { return }
 
@@ -360,6 +385,39 @@ class InvoiceViewModel: ObservableObject {
             let response = try await service.getInvoices(
                 companyID: listCompanyID ?? SessionManager.shared.selectedCompanyId,
                 clientID: listClientID,
+                search: listSearch,
+                status: listStatus,
+                limit: Self.invoicePageSize,
+                offset: invoiceOffset
+            )
+            let existing = Set(invoices.map(\.id))
+            invoices.append(contentsOf: response.data.filter { !existing.contains($0.id) })
+            invoiceOffset += response.data.count
+            hasMoreInvoices = response.data.count >= Self.invoicePageSize
+            loadMoreFailed = false
+        } catch {
+            // A failed page must not replace a list that already has content, and must
+            // not quietly end the list either: hasMoreInvoices stayed false, so the
+            // older invoices were unreachable until the screen was left and reopened,
+            // with nothing on screen to say so. The offset is kept and the row at the
+            // bottom offers another go.
+            loadMoreFailed = true
+        }
+    }
+
+    /// Another go at the page that failed, from the Retry row at the end of the list.
+    func retryLoadMore() async {
+        guard !isLoadingMoreInvoices else { return }
+        loadMoreFailed = false
+        isLoadingMoreInvoices = true
+        defer { isLoadingMoreInvoices = false }
+
+        do {
+            let response = try await service.getInvoices(
+                companyID: listCompanyID ?? SessionManager.shared.selectedCompanyId,
+                clientID: listClientID,
+                search: listSearch,
+                status: listStatus,
                 limit: Self.invoicePageSize,
                 offset: invoiceOffset
             )
@@ -368,8 +426,7 @@ class InvoiceViewModel: ObservableObject {
             invoiceOffset += response.data.count
             hasMoreInvoices = response.data.count >= Self.invoicePageSize
         } catch {
-            // A failed page should not replace a list that already has content.
-            hasMoreInvoices = false
+            loadMoreFailed = true
         }
     }
 

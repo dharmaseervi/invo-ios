@@ -90,6 +90,8 @@ final class InvoiceService {
     func getInvoices(
         companyID: Int? = nil,
         clientID: Int? = nil,
+        search: String? = nil,
+        status: String? = nil,
         limit: Int = 10,
         offset: Int = 0
     ) async throws -> InvoiceListResponse {
@@ -107,6 +109,15 @@ final class InvoiceService {
             urlComponents?.queryItems?.append(
                 URLQueryItem(name: "client_id", value: String(clientID))
             )
+        }
+
+        // Searching and filtering are the server's job: it can see every invoice, and
+        // this screen can only see the pages it has loaded.
+        if let search, !search.isEmpty {
+            urlComponents?.queryItems?.append(URLQueryItem(name: "search", value: search))
+        }
+        if let status, !status.isEmpty {
+            urlComponents?.queryItems?.append(URLQueryItem(name: "status", value: status))
         }
 
         urlComponents?.queryItems?.append(
@@ -552,6 +563,43 @@ final class InvoiceService {
     }
 
 
+
+
+    /// Counts and totals over every invoice that matches, not just the loaded page.
+    ///
+    /// The list screen used to add up the rows it happened to have, so "Outstanding"
+    /// described the most recent page rather than the business.
+    func getInvoiceSummary(
+        companyID: Int?,
+        clientID: Int? = nil,
+        search: String? = nil
+    ) async throws -> InvoiceSummary {
+        var urlComponents = URLComponents(string: "\(baseURL)/invoices/summary")
+        urlComponents?.queryItems = []
+        if let companyID {
+            urlComponents?.queryItems?.append(URLQueryItem(name: "company_id", value: String(companyID)))
+        }
+        if let clientID {
+            urlComponents?.queryItems?.append(URLQueryItem(name: "client_id", value: String(clientID)))
+        }
+        if let search, !search.isEmpty {
+            urlComponents?.queryItems?.append(URLQueryItem(name: "search", value: search))
+        }
+
+        guard let url = urlComponents?.url else { throw URLError(.badURL) }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        if let token = KeychainManager.shared.loadToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+        return try JSONDecoder().decode(InvoiceSummary.self, from: data)
+    }
 }
 
 

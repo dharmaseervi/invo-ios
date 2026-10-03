@@ -18,38 +18,34 @@ struct InvoiceView: View {
         case issued = "Issued"
     }
     
-    var filteredInvoices: [InvoiceResponse] {
-        var invoices = vm.invoices
-        if !searchText.isEmpty {
-            invoices = invoices.filter {
-                $0.invoice_number.localizedCaseInsensitiveContains(searchText)
-                || ($0.client_name ?? "").localizedCaseInsensitiveContains(searchText)
-            }
-        }
+    /// The rows as the server returned them: the search box and the filter are query
+    /// parameters now, so there is nothing left to filter here.
+    ///
+    /// Filtering the loaded rows meant searching only what had been scrolled past, and
+    /// the counts beside the filters described that handful of rows while looking like
+    /// the state of the whole business.
+    var filteredInvoices: [InvoiceResponse] { vm.invoices }
+
+    /// What the server's status filter is called for each tab.
+    private var serverStatus: String? {
         switch selectedFilter {
-        case .all: break
-        case .paid: invoices = invoices.filter { $0.status == .paid }
-        case .draft: invoices = invoices.filter { $0.status == .draft }
-        case .overdue: invoices = invoices.filter { isOverdue($0) }
-        case .partial: invoices = invoices.filter { $0.status == .partial }
-        case .issued: invoices = invoices.filter { $0.status == .issued }
+        case .all: return nil
+        case .paid: return "paid"
+        case .draft: return "draft"
+        case .overdue: return "overdue"
+        case .partial: return "partial"
+        case .issued: return "issued"
         }
-        return invoices
     }
-    
-    var totalAmount: Double { filteredInvoices.reduce(0) { $0 + $1.total } }
-    /// What customers owe: issued and part-paid invoices only. Drafts were counted too,
-    /// though nobody has been sent them yet.
-    var outstandingAmount: Double {
-        vm.invoices
-            .filter { Self.isOwed($0.status) }
-            .reduce(0) { $0 + $1.remaining_amount }
-    }
-    var overdueCount: Int { vm.invoices.filter { isOverdue($0) }.count }
-    var paidCount: Int { vm.invoices.filter { $0.status == .paid }.count }
-    var draftCount: Int { vm.invoices.filter { $0.status == .draft && !isOverdue($0) }.count }
-    var partialCount: Int { vm.invoices.filter { $0.status == .partial && !isOverdue($0) }.count }
-    var issuedCount: Int { vm.invoices.filter { $0.status == .issued }.count }
+
+    var totalAmount: Double { vm.summary.invoiced }
+    /// What customers owe across every matching invoice: issued and part-paid only.
+    var outstandingAmount: Double { vm.summary.outstanding }
+    var overdueCount: Int { vm.summary.overdue }
+    var paidCount: Int { vm.summary.paid }
+    var draftCount: Int { vm.summary.draft }
+    var partialCount: Int { vm.summary.partial }
+    var issuedCount: Int { vm.summary.issued }
     
     /// Overdue means the due date has *passed*, not that it has arrived.
     ///
@@ -79,7 +75,7 @@ struct InvoiceView: View {
     
     private func countFor(_ filter: InvoiceFilter) -> Int {
         switch filter {
-        case .all: return vm.invoices.count
+        case .all: return vm.summary.total
         case .paid: return paidCount
         case .draft: return draftCount
         case .overdue: return overdueCount
@@ -88,6 +84,15 @@ struct InvoiceView: View {
         }
     }
     
+    /// Fetches the list and its figures for whatever is in the search box and selected
+    /// on the filter bar.
+    private func reload() async {
+        await vm.fetchInvoices(
+            search: searchText.trimmingCharacters(in: .whitespaces),
+            status: serverStatus
+        )
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -113,7 +118,7 @@ struct InvoiceView: View {
                             .opacity(appearAnimation ? 1 : 0)
                             .offset(y: appearAnimation ? 0 : 10)
                         }
-                        .refreshable { await vm.fetchInvoices() }
+                        .refreshable { await reload() }
                     }
                 }
             }
@@ -127,8 +132,21 @@ struct InvoiceView: View {
                 }
             }
             .onAppear {
-                Task { await vm.fetchInvoices() }
+                Task { await reload() }
                 withAnimation(.easeOut(duration: 0.3)) { appearAnimation = true }
+            }
+            // The filter is a query parameter, so changing tab asks the server.
+            .onChange(of: selectedFilter) { _, _ in
+                Task { await reload() }
+            }
+            // Typing is debounced: a request per keystroke would be a request per
+            // keystroke, and the one that answers last is not necessarily the one for
+            // what is now in the box.
+            .task(id: searchText) {
+                guard !searchText.isEmpty || !vm.invoices.isEmpty else { return }
+                try? await Task.sleep(nanoseconds: 300_000_000)
+                guard !Task.isCancelled else { return }
+                await reload()
             }
             // Creating an invoice is a multistep task, and Apple's guidance is that
             // those belong in a full-screen modal rather than pushed inside a tab
@@ -344,6 +362,19 @@ struct InvoiceView: View {
                     ProgressView()
                         .tint(.sAccent)
                         .padding(.vertical, 12)
+                } else if vm.loadMoreFailed {
+                    // A failed page used to end the list silently: the older invoices
+                    // were simply unreachable until the screen was reopened, with
+                    // nothing on screen to say anything had gone wrong.
+                    VStack(spacing: 6) {
+                        Text("Couldn't load more invoices.")
+                            .font(.scaled(13))
+                            .foregroundColor(.sMutedFG)
+                        Button("Try again") { Task { await vm.retryLoadMore() } }
+                            .font(.scaled(13, weight: .medium))
+                            .foregroundColor(.sAccent)
+                    }
+                    .padding(.vertical, 12)
                 }
             }
             .padding(.horizontal, 20)
