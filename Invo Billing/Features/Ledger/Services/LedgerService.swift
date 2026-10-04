@@ -111,7 +111,7 @@ final class LedgerService {
         search: String? = nil,
         limit: Int = 0,
         offset: Int = 0
-    ) async throws -> [LedgerSummaryModel] {
+    ) async throws -> CompanyLedgerPage {
         var components = URLComponents(string: "\(baseURL)/companies/\(companyID)/ledger/summary")
         components?.queryItems = []
         if let search, !search.isEmpty {
@@ -133,7 +133,11 @@ final class LedgerService {
         guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
             throw URLError(.badServerResponse)
         }
-        struct Wrapper: Codable { let data: [LedgerSummaryModel] }
-        return try JSONDecoder().decode(Wrapper.self, from: data).data
+        struct Wrapper: Codable {
+            let data: [LedgerSummaryModel]
+            let totals: CompanyLedgerTotals?
+        }
+        let decoded = try JSONDecoder().decode(Wrapper.self, from: data)
+        return CompanyLedgerPage(rows: decoded.data, totals: decoded.totals)
     }
 }

@@ -8,13 +8,27 @@ final class CreditNoteService {
     // MARK: - Get All Credit Notes
     /// One page of credit notes. limit 0 asks for the lot, which is what this screen
     /// used to do on every visit.
-    func fetchAll(limit: Int = 0, offset: Int = 0) async throws -> [CreditNoteModel] {
+    func fetchAll(
+        search: String? = nil,
+        type: String? = nil,
+        limit: Int = 0,
+        offset: Int = 0
+    ) async throws -> [CreditNoteModel] {
         guard let companyId = SessionManager.shared.selectedCompanyId else {
             throw URLError(.badURL)
         }
-        var query = "company_id=\(companyId)"
-        if limit > 0 { query += "&limit=\(limit)&offset=\(offset)" }
-        let url = URL(string: "\(baseURL)/credit-notes?\(query)")!
+        var items = [URLQueryItem(name: "company_id", value: String(companyId))]
+        // Searching and filtering belong to the server: this screen holds a page, so a
+        // search done here missed every credit note that had not been downloaded.
+        if let search, !search.isEmpty { items.append(URLQueryItem(name: "search", value: search)) }
+        if let type, !type.isEmpty { items.append(URLQueryItem(name: "type", value: type)) }
+        if limit > 0 {
+            items.append(URLQueryItem(name: "limit", value: String(limit)))
+            items.append(URLQueryItem(name: "offset", value: String(offset)))
+        }
+        var components = URLComponents(string: "\(baseURL)/credit-notes")!
+        components.queryItems = items
+        let url = components.url!
         var req = URLRequest(url: url)
         req.httpMethod = "GET"
 
@@ -72,4 +86,43 @@ final class CreditNoteService {
             throw URLError(.badServerResponse)
         }
     }
+
+    /// Counts and amounts over every credit note that matches, not the loaded page.
+    func fetchSummary(search: String? = nil) async throws -> CreditNoteSummaryModel {
+        guard let companyId = SessionManager.shared.selectedCompanyId else {
+            throw URLError(.badURL)
+        }
+        var components = URLComponents(string: "\(baseURL)/credit-notes/summary")!
+        components.queryItems = [URLQueryItem(name: "company_id", value: String(companyId))]
+        if let search, !search.isEmpty {
+            components.queryItems?.append(URLQueryItem(name: "search", value: search))
+        }
+        guard let url = components.url else { throw URLError(.badURL) }
+
+        var req = URLRequest(url: url)
+        req.httpMethod = "GET"
+        if let token = KeychainManager.shared.loadToken() {
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        let (data, response) = try await URLSession.shared.data(for: req)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+        return try JSONDecoder().decode(CreditNoteSummaryModel.self, from: data)
+    }
+}
+
+/// The figures above the credit-note list, from the server.
+struct CreditNoteSummaryModel: Codable {
+    let total: Int
+    let returns: Int
+    let adjustments: Int
+    let discounts: Int
+    let amount: Double
+    let balance: Double
+
+    static let empty = CreditNoteSummaryModel(
+        total: 0, returns: 0, adjustments: 0, discounts: 0, amount: 0, balance: 0
+    )
 }

@@ -16,6 +16,12 @@ class ExpenseViewModel: ObservableObject {
     /// The last page failed; the list offers another go rather than looking finished.
     @Published var loadMoreFailed = false
 
+    /// The month and total figures, counted by the server over every expense.
+    @Published var summary: ExpenseSummaryModel = .empty
+    /// True when those figures could not be fetched, so the screen can say so rather
+    /// than showing ₹0 as though nothing had been spent.
+    @Published var summaryFailed = false
+
     /// Rows per request. The whole expense history used to arrive on every visit.
     private static let pageSize = 50
     private var offset = 0
@@ -47,13 +53,17 @@ class ExpenseViewModel: ObservableObject {
                 return
             }
 
+            async let summaryResult = try? service.getExpenseSummary(companyId: companyId)
             let page = try await service.getExpenses(
                 companyId: companyId, limit: Self.pageSize, offset: 0
             )
+            let newSummary = await summaryResult
             guard request == requestID else { return }
             expenses = page
             offset = page.count
             hasMore = page.count >= Self.pageSize
+            summary = newSummary ?? .empty
+            summaryFailed = newSummary == nil
         } catch {
             guard request == requestID else { return }
             errorMessage = error.localizedDescription

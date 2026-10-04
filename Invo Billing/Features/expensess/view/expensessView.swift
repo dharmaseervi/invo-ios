@@ -16,13 +16,13 @@ struct ExpenseView: View {
     @State private var showDeleteAlert = false
     @State private var selectedExpense: Expense? = nil
 
-    var totalAmount: Double {
-        vm.expenses.reduce(0) { $0 + $1.amount }
-    }
+    // From the server, over every expense. Added up from `vm.expenses` these were the
+    // total and average of the loaded page, labelled as the business's figures.
+    var totalAmount: Double { vm.summary.total }
 
     var averageAmount: Double {
-        guard !vm.expenses.isEmpty else { return 0 }
-        return totalAmount / Double(vm.expenses.count)
+        guard vm.summary.count > 0 else { return 0 }
+        return vm.summary.total / Double(vm.summary.count)
     }
 
     var body: some View {
@@ -64,7 +64,7 @@ struct ExpenseView: View {
 
                                             ExpenseStatCard(
                                                 label: "Total amount",
-                                                value: Money.text(totalAmount),
+                                                value: vm.summaryFailed ? "—" : Money.text(totalAmount),
                                                 icon: "creditcard"
                                             )
                                         }
@@ -72,7 +72,7 @@ struct ExpenseView: View {
                                         HStack(spacing: 10) {
                                             ExpenseStatCard(
                                                 label: "Average",
-                                                value: Money.text(averageAmount),
+                                                value: vm.summaryFailed ? "—" : Money.text(averageAmount),
                                                 icon: "chart.bar"
                                             )
 
@@ -95,7 +95,10 @@ struct ExpenseView: View {
                                         .padding(.horizontal, 20)
                                         .padding(.bottom, 10)
 
-                                    VStack(spacing: 8) {
+                                    // Lazy: a plain VStack builds every row at once and
+                                    // fires each row's paging task with it, so the next
+                                    // page was asked for before anything was scrolled.
+                                    LazyVStack(spacing: 8) {
                                         ForEach(vm.expenses, id: \.id) { expense in
                                             NavigationLink {
                                                 ExpenseEditView(vm: vm, expense: expense)

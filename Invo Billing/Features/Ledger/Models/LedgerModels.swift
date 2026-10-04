@@ -81,3 +81,23 @@ struct LedgerSummaryModel: Codable, Identifiable {
         client_id: 0, client_name: "", debit: 0, credit: 0, balance: 0, entries: 0
     )
 }
+
+/// The business's ledger position across every customer, counted by the server.
+///
+/// Receivable and payable are separate: a customer in credit does not reduce what the
+/// others owe, and one netted figure hides both.
+struct CompanyLedgerTotals: Codable {
+    let receivable: Double
+    let payable: Double
+    let clients: Int
+
+    static let empty = CompanyLedgerTotals(receivable: 0, payable: 0, clients: 0)
+}
+
+/// A page of customer rows and the totals that describe all of them.
+struct CompanyLedgerPage {
+    let rows: [LedgerSummaryModel]
+    /// nil when the totals could not be read, so the screen can say "unavailable"
+    /// rather than showing zeroes.
+    let totals: CompanyLedgerTotals?
+}

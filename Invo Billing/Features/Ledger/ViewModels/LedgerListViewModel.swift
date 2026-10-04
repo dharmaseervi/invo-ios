@@ -24,6 +24,11 @@ final class LedgerListViewModel: ObservableObject {
 
     /// One row per customer, counted by the server.
     @Published var summaries: [LedgerSummaryModel] = []
+    /// The business's position across every customer, not just the loaded page.
+    @Published var totals: CompanyLedgerTotals = .empty
+    /// True when the figures could not be fetched, so the screen can say so rather than
+    /// showing ₹0 as though nothing were owed.
+    @Published var totalsFailed = false
 
     /// Customers per request.
     private static let pageSize = 50
@@ -68,9 +73,11 @@ final class LedgerListViewModel: ObservableObject {
                 offset: 0
             )
             guard request == requestID else { return }
-            summaries = page
-            offset = page.count
-            hasMore = page.count >= Self.pageSize
+            summaries = page.rows
+            totals = page.totals ?? .empty
+            totalsFailed = page.totals == nil
+            offset = page.rows.count
+            hasMore = page.rows.count >= Self.pageSize
         } catch {
             guard request == requestID else { return }
             errorMessage = error.localizedDescription
@@ -109,9 +116,9 @@ final class LedgerListViewModel: ObservableObject {
             )
             guard request == requestID, askedAt == offset else { return }
             let existing = Set(summaries.map(\.client_id))
-            summaries.append(contentsOf: page.filter { !existing.contains($0.client_id) })
-            offset += page.count
-            hasMore = page.count >= Self.pageSize
+            summaries.append(contentsOf: page.rows.filter { !existing.contains($0.client_id) })
+            offset += page.rows.count
+            hasMore = page.rows.count >= Self.pageSize
         } catch {
             guard request == requestID else { return }
             loadMoreFailed = true
@@ -129,7 +136,10 @@ final class LedgerListViewModel: ObservableObject {
     var filteredClients: [ClientLedger] { clients }
 
     // MARK: Totals
-    var totalReceivable: Double {
-        clients.reduce(0) { $0 + max($1.balance, 0) }
-    }
+    //
+    // From the server, over every customer. Summed from `clients` this was the
+    // receivable of the customers that happened to have been loaded — a page — shown
+    // as the business's total receivable.
+    var totalReceivable: Double { totals.receivable }
+    var totalPayable: Double { totals.payable }
 }

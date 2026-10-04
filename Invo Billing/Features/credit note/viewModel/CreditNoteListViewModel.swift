@@ -26,17 +26,30 @@ final class CreditNoteListViewModel: ObservableObject {
     // MARK: - Dependencies
     private let service = CreditNoteService.shared
 
+    /// Counts and amounts over everything that matches, from the server.
+    @Published var summary: CreditNoteSummaryModel = .empty
+    /// True when those figures could not be fetched, so the screen can say so instead
+    /// of showing zeroes.
+    @Published var summaryFailed = false
+
+    /// What the screen is searching and filtering for, so a page continues the same
+    /// query.
+    private var activeSearch: String?
+    private var activeType: String?
+
     /// Rows per request. The whole list used to arrive on every visit.
     private static let pageSize = 50
     private var offset = 0
     private var requestID = 0
     
     // MARK: - Fetch All Credit Notes
-    func load() async {
+    func load(search: String? = nil, type: String? = nil) async {
         guard SessionManager.shared.selectedCompanyId != nil else {
             showError("No company selected")
             return
         }
+        activeSearch = search
+        activeType = type
         
         requestID += 1
         let request = requestID
@@ -47,11 +60,17 @@ final class CreditNoteListViewModel: ObservableObject {
         defer { isLoading = false }
 
         do {
-            let page = try await service.fetchAll(limit: Self.pageSize, offset: 0)
+            async let summaryResult = try? service.fetchSummary(search: search)
+            let page = try await service.fetchAll(
+                search: search, type: type, limit: Self.pageSize, offset: 0
+            )
+            let newSummary = await summaryResult
             guard request == requestID else { return }
             creditNotes = page
             offset = page.count
             hasMore = page.count >= Self.pageSize
+            summary = newSummary ?? .empty
+            summaryFailed = newSummary == nil
         } catch {
             guard request == requestID else { return }
             showError(error.localizedDescription)
@@ -81,7 +100,9 @@ final class CreditNoteListViewModel: ObservableObject {
         let askedAt = offset
 
         do {
-            let page = try await service.fetchAll(limit: Self.pageSize, offset: askedAt)
+            let page = try await service.fetchAll(
+                search: activeSearch, type: activeType, limit: Self.pageSize, offset: askedAt
+            )
             // Dropped if the list was reloaded while this was out.
             guard request == requestID, askedAt == offset else { return }
             let existing = Set(creditNotes.map(\.id))

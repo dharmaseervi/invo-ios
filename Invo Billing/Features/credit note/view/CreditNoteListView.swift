@@ -6,6 +6,9 @@ struct CreditNoteListView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showCreate = false
     @State private var searchText = ""
+    /// Tracked, not inferred from an empty list: a search that matches nothing would
+    /// otherwise take the search box away with it.
+    @State private var hasLoadedOnce = false
     @State private var selectedFilter: CNFilterType = .all
     @State private var appearAnimation = false
 
@@ -26,49 +29,40 @@ struct CreditNoteListView: View {
         }
     }
 
-    // MARK: - Filtered Data
-    var filteredNotes: [CreditNoteModel] {
-        var notes = vm.creditNotes
+    // MARK: - Rows
+    //
+    // As the server returned them: the search box and the filter are query parameters.
+    // Filtering here searched only the page that had been loaded, so older credit notes
+    // could not be found at all, and the counts below described that page.
+    var filteredNotes: [CreditNoteModel] { vm.creditNotes }
 
-        if !searchText.isEmpty {
-            notes = notes.filter {
-                $0.credit_number.localizedCaseInsensitiveContains(searchText)
-                    || $0.client_name.localizedCaseInsensitiveContains(
-                        searchText
-                    )
-            }
-        }
-
+    /// What the filter tab asks the server for.
+    private var serverType: String? {
         switch selectedFilter {
-        case .all:
-            break
-        case .return:
-            notes = notes.filter { $0.type == "return" }
-        case .adjustment:
-            notes = notes.filter { $0.type == "adjustment" }
-        case .discount:
-            notes = notes.filter { $0.type == "discount" }
+        case .all: return nil
+        case .return: return "return"
+        case .adjustment: return "adjustment"
+        case .discount: return "discount"
         }
-
-        return notes
     }
 
-    // MARK: - Stats
-    var totalAmount: Double {
-        vm.creditNotes.reduce(0) { $0 + $1.total }
+    /// Fetches the rows and their figures for what is on screen.
+    private func reload() async {
+        await vm.load(
+            search: searchText.trimmingCharacters(in: .whitespaces),
+            type: serverType
+        )
+        hasLoadedOnce = true
     }
 
-    var returnCount: Int {
-        vm.creditNotes.filter { $0.type == "return" }.count
-    }
+    // MARK: - Stats, counted by the server over everything that matches
+    var totalAmount: Double { vm.summary.amount }
 
-    var adjustmentCount: Int {
-        vm.creditNotes.filter { $0.type == "adjustment" }.count
-    }
+    var returnCount: Int { vm.summary.returns }
 
-    var discountCount: Int {
-        vm.creditNotes.filter { $0.type == "discount" }.count
-    }
+    var adjustmentCount: Int { vm.summary.adjustments }
+
+    var discountCount: Int { vm.summary.discounts }
 
     var body: some View {
         ZStack {
@@ -96,7 +90,7 @@ struct CreditNoteListView: View {
                         .offset(y: appearAnimation ? 0 : 20)
                     }
                     .refreshable {
-                        await vm.load()
+                        await reload()
                     }
                 }
             }
@@ -113,8 +107,19 @@ struct CreditNoteListView: View {
         .navigationDestination(isPresented: $showCreate) {
             CreateCreditNoteView()
         }
+        .onChange(of: selectedFilter) { _, _ in
+            Task { await reload() }
+        }
+        // Debounced: a request per keystroke, and the one answering last is not
+        // necessarily the one for what is in the box now.
+        .task(id: searchText) {
+            guard !searchText.isEmpty || !vm.creditNotes.isEmpty else { return }
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            guard !Task.isCancelled else { return }
+            await reload()
+        }
         .onAppear {
-            Task { await vm.load() }
+            Task { await reload() }
             withAnimation(.easeOut(duration: 0.6).delay(0.1)) {
                 appearAnimation = true
             }
@@ -123,7 +128,7 @@ struct CreditNoteListView: View {
         .onChange(of: SessionManager.shared.selectedCompanyId) { _ in
             Task {
                 vm.creditNotes = []
-                await vm.load()
+                await reload()
             }
         }
         .alert("Error", isPresented: $vm.showAlert) {
@@ -277,7 +282,7 @@ struct CreditNoteListView: View {
 
     // MARK: - List Section
     private var cnListSection: some View {
-        VStack(spacing: 0) {
+        LazyVStack(spacing: 0) {
             // Section Header
             HStack {
                 Text("All credit notes")
@@ -307,6 +312,9 @@ struct CreditNoteListView: View {
                 } label: {
                     CNRowView(cn: cn, index: index + 1)
                 }
+                // Per row, a few from the end: keyed on the count it fired again on
+                // every change to the list, which is both eager and repetitive.
+                .task { await vm.loadMoreIfNeeded(currentItem: cn) }
                 .buttonStyle(.plain)
 
                 Rectangle()
@@ -314,12 +322,7 @@ struct CreditNoteListView: View {
                     .frame(height: 1)
                     .padding(.horizontal, 24)
             }
-            .task(id: filteredNotes.count) {
-                // Only the server knows what else there is: the screen holds a page.
-                if let last = filteredNotes.last {
-                    await vm.loadMoreIfNeeded(currentItem: last)
-                }
-            }
+
 
             if vm.isLoadingMore {
                 ProgressView()

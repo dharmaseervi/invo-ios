@@ -3,6 +3,11 @@ import SwiftUI
 struct LedgerView: View {
 
     @StateObject private var vm = LedgerListViewModel()
+    /// Tracked rather than guessed from an empty list: a search that matched nothing
+    /// leaves the list empty, and inferring it would take the search box away again.
+    @State private var hasLoadedOnce = false
+
+    private var isFirstLoad: Bool { vm.isLoading && !hasLoadedOnce }
 
     var body: some View {
         Group {
@@ -11,11 +16,16 @@ struct LedgerView: View {
 
                 VStack(spacing: 0) {
 
-                    if vm.isLoading {
+                    // The search box and the summary stay on screen while a search
+                    // runs, and while it finds nothing. They used to sit inside the
+                    // branch that the spinner and the empty state replaced, so typing
+                    // tore the field away mid-search — and a search that matched
+                    // nothing left "No ledger activity yet" with no way to clear it.
+                    if isFirstLoad {
                         Spacer()
                         ProgressView().tint(.sAccent)
                         Spacer()
-                    } else if vm.clients.isEmpty {
+                    } else if vm.clients.isEmpty && vm.searchText.isEmpty && !vm.isLoading {
                         emptyState
                     } else {
                         ScrollView {
@@ -53,7 +63,11 @@ struct LedgerView: View {
                                 .padding(.horizontal, 20)
                                 .padding(.top, 16)
 
-                                if vm.filteredClients.isEmpty {
+                                if vm.isLoading {
+                                    ProgressView()
+                                        .tint(.sAccent)
+                                        .frame(minHeight: 240)
+                                } else if vm.filteredClients.isEmpty {
                                     noResultsState.padding(.top, 60)
                                 } else {
                                     LazyVStack(spacing: 10) {
@@ -93,7 +107,10 @@ struct LedgerView: View {
             .navigationTitle("Ledger")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
-                Task { await vm.fetchCompanyLedger() }
+                Task {
+                    await vm.fetchCompanyLedger()
+                    hasLoadedOnce = true
+                }
             }
             // The search box asks the server, debounced — it used to filter only the
             // customers whose entries happened to have been downloaded.
@@ -102,6 +119,7 @@ struct LedgerView: View {
                 try? await Task.sleep(nanoseconds: 300_000_000)
                 guard !Task.isCancelled else { return }
                 await vm.fetchCompanyLedger()
+                hasLoadedOnce = true
             }
             .alert("Error", isPresented: $vm.showAlert) {
                 Button("OK", role: .cancel) {}
@@ -117,12 +135,34 @@ struct LedgerView: View {
             Text("Total receivable")
                 .font(.scaled(13))
                 .foregroundColor(.sMutedFG)
-            Text(Money.text(vm.totalReceivable)).moneyLine()
+            // A dash when the figure could not be fetched: ₹0 reads as "nobody owes
+            // anything", which is the opposite of "we could not check".
+            Text(vm.totalsFailed ? "—" : Money.text(vm.totalReceivable)).moneyLine()
                 .font(.scaled(26, weight: .bold))
-                .foregroundColor(vm.totalReceivable > 0 ? .sDestructive : Color(red: 0.086, green: 0.639, blue: 0.341))
-            Text("Across \(vm.clients.count) client\(vm.clients.count == 1 ? "" : "s")")
+                .foregroundColor(
+                    vm.totalsFailed ? .sMutedFG
+                        : (vm.totalReceivable > 0 ? .sDestructive : Color(red: 0.086, green: 0.639, blue: 0.341))
+                )
+            if vm.totalsFailed {
+                Button("Totals unavailable — retry") {
+                    Task { await vm.fetchCompanyLedger() }
+                }
                 .font(.scaled(12))
-                .foregroundColor(.sMutedFG)
+                .foregroundColor(.sAccent)
+            } else {
+                // Every customer with history, counted by the server — not the rows
+                // that happen to be loaded.
+                Text("Across \(vm.totals.clients) client\(vm.totals.clients == 1 ? "" : "s")")
+                    .font(.scaled(12))
+                    .foregroundColor(.sMutedFG)
+                if vm.totalPayable > 0 {
+                    // Advances and credit balances, which netting into the receivable
+                    // would hide.
+                    Text("\(Money.text(vm.totalPayable)) in customer credit")
+                        .font(.scaled(12))
+                        .foregroundColor(.sMutedFG)
+                }
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(18)

@@ -18,11 +18,28 @@ struct LedgerListView: View {
             VStack(spacing: 0) {
 
                 // Summary
-                LedgerSummaryView(
-                    debit: vm.totalDebit,
-                    credit: vm.totalCredit,
-                    balance: vm.closingBalance
-                )
+                if vm.summaryFailed {
+                    // The figures are the customer's whole history, so when they cannot
+                    // be fetched the screen says so rather than showing ₹0 totals
+                    // above a page of real entries.
+                    VStack(spacing: 6) {
+                        Text("Totals unavailable")
+                            .font(.scaled(13, weight: .medium))
+                            .foregroundColor(.sForeground)
+                        Button("Try again") { Task { await vm.fetchLedger() } }
+                            .font(.scaled(13, weight: .medium))
+                            .foregroundColor(.sAccent)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(Color.sCard)
+                } else {
+                    LedgerSummaryView(
+                        debit: vm.totalDebit,
+                        credit: vm.totalCredit,
+                        balance: vm.closingBalance
+                    )
+                }
 
                 Rectangle().fill(Color.sBorder).frame(height: 0.5)
 
