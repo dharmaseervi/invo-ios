@@ -58,7 +58,9 @@ struct ExpenseView: View {
                                         HStack(spacing: 10) {
                                             ExpenseStatCard(
                                                 label: "Total count",
-                                                value: "\(vm.expenses.count)",
+                                                // From the server: this counted the
+                                                // rows that had been downloaded.
+                                                value: vm.summaryFailed ? "—" : "\(vm.summary.count)",
                                                 icon: "doc.text"
                                             )
 

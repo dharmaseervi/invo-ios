@@ -69,7 +69,10 @@ struct CreditNoteListView: View {
             Color.sBackground.ignoresSafeArea()
             
             VStack(spacing: 0) {
-                if vm.isLoading {
+                // Only the very first load replaces the screen. Every search set
+                // isLoading, and this branch took the search field and keyboard with
+                // it on each keystroke.
+                if vm.isLoading && !hasLoadedOnce {
                     cnLoadingView
                 } else {
                     ScrollView(.vertical, showsIndicators: false) {
@@ -113,7 +116,11 @@ struct CreditNoteListView: View {
         // Debounced: a request per keystroke, and the one answering last is not
         // necessarily the one for what is in the box now.
         .task(id: searchText) {
-            guard !searchText.isEmpty || !vm.creditNotes.isEmpty else { return }
+            // Only skip the run that fires before the first load; onAppear does that
+            // one. The old guard also skipped an empty box with an empty list, which is
+            // exactly the state after clearing a search that matched nothing — so the
+            // full list never came back.
+            guard hasLoadedOnce else { return }
             try? await Task.sleep(nanoseconds: 300_000_000)
             guard !Task.isCancelled else { return }
             await reload()
@@ -220,7 +227,8 @@ struct CreditNoteListView: View {
 
     private func countFor(_ filter: CNFilterType) -> Int {
         switch filter {
-        case .all: return vm.creditNotes.count
+        // From the server: this counted the rows that had been downloaded.
+        case .all: return vm.summary.total
         case .return: return returnCount
         case .adjustment: return adjustmentCount
         case .discount: return discountCount
@@ -240,6 +248,24 @@ struct CreditNoteListView: View {
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 16)
+
+            if vm.summaryFailed {
+                // Dashes and a retry, not zeroes: "₹0 credited, 0 returns" above a
+                // page of real credit notes reads as fact, and it is not.
+                VStack(spacing: 6) {
+                    Text("Totals unavailable")
+                        .font(.scaled(13, weight: .medium))
+                        .foregroundColor(.sForeground)
+                    Button("Try again") { Task { await reload() } }
+                        .font(.scaled(13, weight: .medium))
+                        .foregroundColor(.sAccent)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 20)
+                .background(Color.sMuted.opacity(0.4))
+                .overlay(Rectangle().stroke(Color.sBorder, lineWidth: 1))
+                .padding(.horizontal, 24)
+            } else {
 
             // Stats Cards
             HStack(spacing: 0) {
@@ -277,6 +303,7 @@ struct CreditNoteListView: View {
                     .stroke(Color.sBorder, lineWidth: 1)
             )
             .padding(.horizontal, 24)
+            }
         }
     }
 

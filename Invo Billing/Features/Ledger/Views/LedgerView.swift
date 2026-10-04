@@ -115,7 +115,11 @@ struct LedgerView: View {
             // The search box asks the server, debounced — it used to filter only the
             // customers whose entries happened to have been downloaded.
             .task(id: vm.searchText) {
-                guard !vm.summaries.isEmpty || !vm.searchText.isEmpty else { return }
+                // Only skip the run before the first load, which onAppear performs.
+                // The old guard also skipped an empty box with an empty list — the
+                // state after clearing a search that matched nothing — so the full
+                // list never came back.
+                guard hasLoadedOnce else { return }
                 try? await Task.sleep(nanoseconds: 300_000_000)
                 guard !Task.isCancelled else { return }
                 await vm.fetchCompanyLedger()

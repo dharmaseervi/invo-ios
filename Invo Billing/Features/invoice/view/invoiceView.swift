@@ -163,7 +163,11 @@ struct InvoiceView: View {
             // keystroke, and the one that answers last is not necessarily the one for
             // what is now in the box.
             .task(id: searchText) {
-                guard !searchText.isEmpty || !vm.invoices.isEmpty else { return }
+                // Only skip the run before the first load, which onAppear performs.
+                // Testing for an empty box and an empty list also skipped the state
+                // after clearing a search that matched nothing, so the full list never
+                // came back.
+                guard hasLoadedOnce else { return }
                 try? await Task.sleep(nanoseconds: 300_000_000)
                 guard !Task.isCancelled else { return }
                 await reload()

@@ -80,6 +80,10 @@ final class LedgerListViewModel: ObservableObject {
             hasMore = page.rows.count >= Self.pageSize
         } catch {
             guard request == requestID else { return }
+            // The whole request failed — rows and totals together, since the server
+            // returns one response. Marking the totals unavailable stops the header
+            // showing the last search's figures, or ₹0, as if they still applied.
+            totalsFailed = true
             errorMessage = error.localizedDescription
             showAlert = true
         }
