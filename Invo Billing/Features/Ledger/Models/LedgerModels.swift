@@ -33,11 +33,29 @@ struct LedgerEntryModel: Identifiable, Codable {
     }
 }
 
+/// What a ledger entry came from.
+///
+/// ADJUSTMENT was missing, and because an unknown value makes Codable throw, one
+/// cancelled invoice in a customer's history made their entire statement fail to load —
+/// not the one row, the whole response. Found on a device: the oldest page of a
+/// customer's ledger would not decode.
+///
+/// So unknown values now fall back to `.other` rather than throwing. The server can add
+/// a source type without blanking a statement in every copy of the app already on a
+/// phone, which is the kind of change this app cannot ship a fix for quickly.
 enum LedgerSourceType: String, Codable {
     case invoice = "INVOICE"
     case payment = "PAYMENT"
     case creditNote = "CREDIT_NOTE"
     case opening = "OPENING"
+    /// Written when an invoice is cancelled: the reversing entry.
+    case adjustment = "ADJUSTMENT"
+    case other
+
+    init(from decoder: Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        self = LedgerSourceType(rawValue: raw) ?? .other
+    }
 }
 
 

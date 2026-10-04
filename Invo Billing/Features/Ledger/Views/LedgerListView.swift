@@ -83,11 +83,17 @@ struct LedgerListView: View {
                                         .foregroundColor(.sAccent)
                                 }
                                 .padding(.vertical, 12)
+                            } else if vm.hasMore {
+                                Button("Load earlier entries") {
+                                    Task { await vm.loadEarlier() }
+                                }
+                                .font(.scaled(13, weight: .medium))
+                                .foregroundColor(.sAccent)
+                                .padding(.vertical, 12)
                             }
 
                             ForEach(vm.entries) { entry in
                                 LedgerRowView(entry: entry)
-                                    .task { await vm.loadMoreIfNeeded(currentItem: entry) }
                             }
                         }
                         .padding(20)
@@ -168,6 +174,10 @@ struct LedgerRowView: View {
         case .payment: return "Payment"
         case .creditNote: return "Credit Note"
         case .opening: return "Opening"
+        case .adjustment: return "Adjustment"
+        // A source type this version does not know about. The description beneath says
+        // what it was, so the row is still readable.
+        case .other: return "Entry"
         }
     }
 

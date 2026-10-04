@@ -75,12 +75,16 @@ final class LedgerViewModel: ObservableObject {
         }
     }
 
-    /// The page before the one on screen — a statement is read forwards, so paging
-    /// walks backwards through the history.
-    func loadMoreIfNeeded(currentItem entry: LedgerEntryModel) async {
-        guard !isLoadingMore, !loadMoreFailed, hasMore else { return }
-        guard let index = entries.firstIndex(where: { $0.id == entry.id }),
-              index <= 5 else { return }
+    /// Loads the page before the one on screen, when the reader asks for it.
+    ///
+    /// Not automatic, unlike a list that grows downwards. Each page is prepended, so the
+    /// rows that would trigger the next one are immediately at the top again — on a
+    /// device that cascaded through the whole history in one go, which is the opposite
+    /// of paging. A statement is also read forwards from where it opens, so older
+    /// entries are something to ask for rather than something to be given.
+    func loadEarlier() async {
+        guard !isLoadingMore, hasMore else { return }
+        loadMoreFailed = false
         await fetchNextPage()
     }
 
@@ -112,6 +116,11 @@ final class LedgerViewModel: ObservableObject {
             hasMore = page.count >= Self.pageSize
         } catch {
             guard request == requestID else { return }
+            #if DEBUG
+            // Worth keeping: this is what turned "the retry row keeps coming back" into
+            // "one entry's source_type will not decode".
+            print("Ledger page at offset \(askedAt) failed: \(error)")
+            #endif
             loadMoreFailed = true
         }
     }
