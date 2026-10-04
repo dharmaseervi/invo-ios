@@ -16,17 +16,18 @@ struct LedgerView: View {
 
                 VStack(spacing: 0) {
 
-                    // The search box and the summary stay on screen while a search
-                    // runs, and while it finds nothing. They used to sit inside the
-                    // branch that the spinner and the empty state replaced, so typing
-                    // tore the field away mid-search — and a search that matched
-                    // nothing left "No ledger activity yet" with no way to clear it.
+                    // Once the first load is done the summary and the search box stay
+                    // mounted, whatever the rows are doing — empty, loading, or being
+                    // searched. Everything else renders underneath them.
+                    //
+                    // Each earlier version of this took the field away at a different
+                    // moment: first on every keystroke, then on an empty box with an
+                    // empty list, which is the state during the debounce right after a
+                    // no-results search is cleared.
                     if isFirstLoad {
                         Spacer()
                         ProgressView().tint(.sAccent)
                         Spacer()
-                    } else if vm.clients.isEmpty && vm.searchText.isEmpty && !vm.isLoading {
-                        emptyState
                     } else {
                         ScrollView {
                             VStack(spacing: 0) {
@@ -68,7 +69,15 @@ struct LedgerView: View {
                                         .tint(.sAccent)
                                         .frame(minHeight: 240)
                                 } else if vm.filteredClients.isEmpty {
-                                    noResultsState.padding(.top, 60)
+                                    // "No customers yet" when there is genuinely
+                                    // nothing, "no matches" when a search found
+                                    // nothing — both below the search box, which stays
+                                    // where it is either way.
+                                    if vm.searchText.isEmpty {
+                                        emptyState.frame(minHeight: 320)
+                                    } else {
+                                        noResultsState.padding(.top, 60)
+                                    }
                                 } else {
                                     LazyVStack(spacing: 10) {
                                         ForEach(vm.filteredClients) { client in
