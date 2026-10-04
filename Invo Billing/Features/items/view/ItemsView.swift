@@ -13,6 +13,7 @@ struct ItemsView: View {
     @State private var lookupResult: ItemResponse?
     @State private var lookupNotFoundCode: String?
     @State private var isSelectMode = false
+    @State private var showImport = false
     @State private var selectedItemIDs: Set<Int> = []
     @State private var showBulkPrint = false
 
@@ -229,8 +230,17 @@ struct ItemsView: View {
                         HStack(spacing: 16) {
                             Button("Select") { isSelectMode = true }
                                 .font(.scaled(15))
-                            NavigationLink {
-                                ItemFormView()
+                            Menu {
+                                NavigationLink {
+                                    ItemFormView()
+                                } label: {
+                                    Label("New product", systemImage: "plus")
+                                }
+                                Button {
+                                    showImport = true
+                                } label: {
+                                    Label("Import from CSV", systemImage: "tablecells")
+                                }
                             } label: {
                                 Image(systemName: "plus")
                             }
@@ -249,6 +259,13 @@ struct ItemsView: View {
             }
             .navigationDestination(item: $itemToPrint) { item in
                 PrintLabelScreen(item: item)
+            }
+            // A whole catalogue arriving at once changes the list underneath, so it
+            // reloads when the import closes — but only if something was written.
+            .navigationDestination(isPresented: $showImport) {
+                ImportItemsView { imported in
+                    if imported { Task { await vm.loadItems() } }
+                }
             }
             .navigationDestination(isPresented: $showBulkPrint) {
                 BulkPrintLabelsScreen(items: vm.items.filter { selectedItemIDs.contains($0.id) })
