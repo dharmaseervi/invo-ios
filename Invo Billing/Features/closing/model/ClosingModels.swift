@@ -57,18 +57,40 @@ struct ApplyStocktakeResponse: Codable {
 
 // MARK: - Counting the drawer
 
-/// One day's cash: what the books expect against what was counted.
+/// One line of where the drawer's money came from or went.
+struct CashLine: Codable, Identifiable {
+    let label: String
+    let amount: Double
+    let count: Int
+
+    var id: String { label }
+}
+
+/// One day's cash: what the drawer should hold against what was counted.
+///
+/// A till holds what was in it this morning, plus what came in, less what went out.
+/// All three are kept so the screen can show the arithmetic rather than one figure
+/// somebody has to take on faith.
 struct DayClosing: Codable, Identifiable {
     let date: String
+    let opening_cash: Double
+    let cash_in: Double
+    let cash_out: Double
     let expected_cash: Double
     let counted_cash: Double
     /// Counted less expected: negative is short, positive is over.
     let difference: Double
     let note: String
     let closed: Bool
-    let payment_count: Int
+
+    /// Where each side came from. Optional so a day with nothing on it still decodes.
+    let in_breakdown: [CashLine]?
+    let out_breakdown: [CashLine]?
 
     var id: String { date }
+
+    var cashIn: [CashLine] { in_breakdown ?? [] }
+    var cashOut: [CashLine] { out_breakdown ?? [] }
 
     var isShort: Bool { difference < -0.004 }
     var isOver: Bool { difference > 0.004 }

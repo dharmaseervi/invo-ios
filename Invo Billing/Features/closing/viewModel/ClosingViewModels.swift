@@ -143,6 +143,7 @@ final class CashClosingViewModel: ObservableObject {
     private let service = ClosingService()
 
     var expected: Double { today?.expected_cash ?? 0 }
+    var opening: Double { today?.opening_cash ?? 0 }
 
     func load(date: Date) async {
         guard let companyID = SessionManager.shared.selectedCompanyId else {
@@ -166,7 +167,7 @@ final class CashClosingViewModel: ObservableObject {
         }
     }
 
-    func close(date: Date, counted: Double, note: String) async -> Bool {
+    func close(date: Date, counted: Double, opening: Double?, note: String) async -> Bool {
         guard let companyID = SessionManager.shared.selectedCompanyId else { return false }
 
         isWorking = true
@@ -174,7 +175,8 @@ final class CashClosingViewModel: ObservableObject {
 
         do {
             let closing = try await service.closeDay(
-                companyID: companyID, date: date, counted: counted, note: note
+                companyID: companyID, date: date, counted: counted,
+                opening: opening, note: note
             )
             today = closing
             message = closing.difference == 0

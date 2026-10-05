@@ -53,11 +53,16 @@ struct ClosingService {
         )
     }
 
+    /// `opening` is sent only when somebody typed one. Left out, the server carries
+    /// the drawer over from the last closing, which is what happens to a till overnight.
     func closeDay(
-        companyID: Int, date: Date, counted: Double, note: String
+        companyID: Int, date: Date, counted: Double, opening: Double?, note: String
     ) async throws -> DayClosing {
         try await send("POST", "/day-closing", companyID: companyID, body: CloseDayRequest(
-            date: AppDate.wireString(from: date), counted_cash: counted, note: note
+            date: AppDate.wireString(from: date),
+            counted_cash: counted,
+            opening_cash: opening,
+            note: note
         ))
     }
 
@@ -106,6 +111,9 @@ struct ClosingService {
 private struct CloseDayRequest: Encodable {
     let date: String
     let counted_cash: Double
+    /// Omitted entirely when nil, so the server can tell "carry it over" from "the
+    /// float really was zero".
+    let opening_cash: Double?
     let note: String
 }
 

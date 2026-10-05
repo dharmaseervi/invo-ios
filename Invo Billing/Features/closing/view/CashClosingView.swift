@@ -13,7 +13,12 @@ struct CashClosingView: View {
     @State private var date = Date()
     @State private var counted = ""
     @State private var note = ""
+    @State private var openingOverride = ""
+    @State private var showOpeningField = false
     @FocusState private var countFocused: Bool
+
+    /// The float in force: what was typed, or what the drawer carried over.
+    private var openingValue: Double { Double(openingOverride) ?? vm.opening }
 
     private var countedValue: Double? { Double(counted) }
 
@@ -21,7 +26,14 @@ struct CashClosingView: View {
     /// shows itself while the money is still on the table.
     private var liveDifference: Double? {
         guard let value = countedValue else { return nil }
-        return value - vm.expected
+        return value - liveExpected
+    }
+
+    /// What should be in the drawer, following any float typed in now rather than
+    /// waiting for the server to say so after saving.
+    private var liveExpected: Double {
+        guard let typed = Double(openingOverride) else { return vm.expected }
+        return vm.expected - vm.opening + typed
     }
 
     var body: some View {
@@ -61,6 +73,8 @@ struct CashClosingView: View {
         .onChange(of: date) { _ in
             counted = ""
             note = ""
+            openingOverride = ""
+            showOpeningField = false
             Task { await vm.load(date: date) }
         }
         .alert("Cash closing", isPresented: $vm.showError) {
@@ -77,15 +91,59 @@ struct CashClosingView: View {
 
             Divider().padding(.vertical, 8)
 
-            Text("Cash taken, by the books")
+            Text("Should be in the drawer")
                 .font(.scaled(13))
                 .foregroundColor(.sMutedFG)
-            Text(Money.text(vm.expected)).moneyLine()
+            Text(Money.text(liveExpected)).moneyLine()
                 .font(.scaled(26, weight: .bold))
                 .foregroundColor(.sForeground)
-            Text(paymentCountText)
-                .font(.scaled(12))
-                .foregroundColor(.sMutedFG)
+
+            // The arithmetic, not just its answer. A shopkeeper who disagrees with the
+            // figure needs to see which part they disagree with — and the single
+            // number this screen used to show was wrong for anybody who keeps a float
+            // or pays a supplier in cash.
+            VStack(spacing: 6) {
+                breakdownRow("In the drawer this morning", openingValue, isOut: false)
+
+                ForEach(vm.today?.cashIn ?? []) { line in
+                    breakdownRow(line.label, line.amount, isOut: false, count: line.count)
+                }
+                ForEach(vm.today?.cashOut ?? []) { line in
+                    breakdownRow(line.label, line.amount, isOut: true, count: line.count)
+                }
+
+                if (vm.today?.cashIn.isEmpty ?? true) && (vm.today?.cashOut.isEmpty ?? true) {
+                    Text("Nothing has gone in or out of the till today.")
+                        .font(.scaled(12))
+                        .foregroundColor(.sMutedFG)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .padding(.top, 10)
+
+            Button(showOpeningField ? "Use yesterday's figure" : "The float was different") {
+                if showOpeningField { openingOverride = "" }
+                showOpeningField.toggle()
+            }
+            .font(.scaled(12, weight: .medium))
+            .foregroundColor(.sAccent)
+            .padding(.top, 2)
+
+            if showOpeningField {
+                HStack {
+                    Text("₹")
+                        .font(.scaled(15))
+                        .foregroundColor(.sMutedFG)
+                    TextField("What was in it this morning", text: $openingOverride)
+                        .keyboardType(.decimalPad)
+                        .font(.scaled(15))
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color.sBackground)
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.sInput, lineWidth: 0.5))
+                .cornerRadius(8)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(18)
@@ -94,10 +152,19 @@ struct CashClosingView: View {
         .cornerRadius(16)
     }
 
-    private var paymentCountText: String {
-        let count = vm.today?.payment_count ?? 0
-        if count == 0 { return "No cash payments recorded for this day" }
-        return "From \(count) cash payment\(count == 1 ? "" : "s")"
+    /// One line of the drawer's arithmetic: what it was and which way it moved.
+    private func breakdownRow(
+        _ label: String, _ amount: Double, isOut: Bool, count: Int? = nil
+    ) -> some View {
+        HStack {
+            Text(count.map { "\(label) (\($0))" } ?? label)
+                .font(.scaled(12))
+                .foregroundColor(.sMutedFG)
+            Spacer()
+            Text((isOut ? "− " : "+ ") + Money.text(amount))
+                .font(.scaled(12, weight: .medium))
+                .foregroundColor(isOut ? .sDestructive : .sForeground)
+        }
     }
 
     private var countCard: some View {
@@ -153,9 +220,14 @@ struct CashClosingView: View {
                 guard let value = countedValue else { return }
                 countFocused = false
                 Task {
-                    if await vm.close(date: date, counted: value, note: note) {
+                    if await vm.close(
+                        date: date, counted: value,
+                        opening: Double(openingOverride), note: note
+                    ) {
                         counted = ""
                         note = ""
+                        openingOverride = ""
+                        showOpeningField = false
                     }
                 }
             } label: {
