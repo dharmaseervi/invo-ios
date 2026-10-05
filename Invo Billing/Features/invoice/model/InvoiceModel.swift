@@ -9,10 +9,12 @@ import Foundation
 
 // MARK: - UI-only Line Item (used while creating invoice)
 
-struct InvoiceLineItem: Identifiable {
-    
+/// Equatable so the form can tell when a line actually changed — that is what the
+/// autosave watches. ItemResponse is Hashable already, so the comparison is synthesised.
+struct InvoiceLineItem: Identifiable, Equatable {
+
     let id = UUID()
-    
+
     let item: ItemResponse
     var qty: Int
     var rate: Double

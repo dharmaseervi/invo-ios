@@ -640,3 +640,63 @@ class InvoiceViewModel: ObservableObject {
         showAlert = true
     }
 }
+
+// MARK: - Not losing a half-written invoice
+
+extension InvoiceViewModel {
+
+    /// The form as it stands, in the shape that is kept on disk.
+    private var currentDraft: InvoiceDraft? {
+        guard let companyID = SessionManager.shared.selectedCompanyId else { return nil }
+        return InvoiceDraft(
+            companyID: companyID,
+            client: selectedClient,
+            lines: items.map {
+                InvoiceDraft.Line(
+                    item: $0.item, qty: $0.qty, rate: $0.rate,
+                    discount: $0.discount, taxRate: $0.taxRate
+                )
+            },
+            invoiceDate: invoiceDate,
+            dueDate: dueDate,
+            discount: discount
+        )
+    }
+
+    /// Writes the invoice being typed to disk.
+    ///
+    /// Called as things change and when the app goes to the background. Cheap enough to
+    /// do on every change — one small file, written atomically — and that matters more
+    /// than being clever: the moment worth surviving is the one nobody saw coming, when
+    /// the app is killed on a low-memory phone with no chance to save anything.
+    func saveDraft() {
+        guard let draft = currentDraft else { return }
+        InvoiceDraftStore.save(draft)
+    }
+
+    /// Forgets the unfinished invoice for the company in hand.
+    func discardDraft() {
+        guard let companyID = SessionManager.shared.selectedCompanyId else { return }
+        InvoiceDraftStore.discard(companyID: companyID)
+    }
+
+    /// An unfinished invoice waiting for this company, if there is one worth offering.
+    func pendingDraft() -> InvoiceDraft? {
+        guard let companyID = SessionManager.shared.selectedCompanyId else { return nil }
+        return InvoiceDraftStore.load(companyID: companyID)
+    }
+
+    /// Puts a draft back on the screen, exactly as it was left.
+    func restore(_ draft: InvoiceDraft) {
+        items = draft.lines.map {
+            InvoiceLineItem(
+                item: $0.item, qty: $0.qty, rate: $0.rate,
+                discount: $0.discount, taxRate: $0.taxRate
+            )
+        }
+        invoiceDate = draft.invoiceDate
+        dueDate = draft.dueDate
+        discount = draft.discount
+        selectedClient = draft.client
+    }
+}
