@@ -176,6 +176,24 @@ struct MoreView: View {
 
                                 }
 
+                                if session.companyRole.canEditCatalogue {
+                                    NavigationLink {
+                                        StocktakeView()
+                                    } label: {
+                                        MoreViewRow(icon: "checklist", label: "Stock count")
+                                    }
+                                    rowDivider()
+                                }
+
+                                if session.companyRole.canSeeReports {
+                                    NavigationLink {
+                                        CashClosingView()
+                                    } label: {
+                                        MoreViewRow(icon: "indianrupeesign.square", label: "Cash closing")
+                                    }
+                                    rowDivider()
+                                }
+
                                 if session.companyRole.canManageStaff {
                                     NavigationLink {
                                         StaffView()
