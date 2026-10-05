@@ -118,6 +118,13 @@ struct MoreView: View {
                                 rowDivider()
 
                                 NavigationLink {
+                                    PurchasesView()
+                                } label: {
+                                    MoreViewRow(icon: "shippingbox.fill", label: "Purchases")
+                                }
+                                rowDivider()
+
+                                NavigationLink {
                                     LedgerView()
                                 } label: {
                                     MoreViewRow(icon: "book.fill", label: "Ledger")
