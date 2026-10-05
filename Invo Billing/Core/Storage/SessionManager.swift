@@ -16,6 +16,41 @@ final class SessionManager: ObservableObject {
     @Published var selectedCompanyId: Int? = nil {
         didSet {
             SessionManager.saveSelectedCompanyId(selectedCompanyId)
+            if selectedCompanyId != oldValue {
+                Task { await refreshCompanyRole() }
+            }
+        }
+    }
+
+    /// What this account is to the company currently selected.
+    ///
+    /// Only decides what the app draws. Every one of these is enforced on the server,
+    /// which answers 403 whatever this says — so the cost of getting it wrong is a
+    /// screen that shouldn't be offered, not a door left open.
+    ///
+    /// Owner until told otherwise: before staff existed every account owned its shop,
+    /// and an app that guessed "staff" would hide a person's own business from them
+    /// while the server was perfectly willing to show it.
+    @Published private(set) var companyRole: MemberRole = .owner
+
+    /// Reads the role back from the server's company list. Called when the selected
+    /// company changes and after signing in, because a role can be changed by the
+    /// owner while somebody is using the app.
+    @MainActor
+    func refreshCompanyRole() async {
+        guard let companyID = selectedCompanyId else {
+            companyRole = .owner
+            return
+        }
+        do {
+            let companies = try await CompanyService().getMyCompany()
+            guard let mine = companies?.first(where: { $0.id == companyID }) else { return }
+            // A server that does not send a role at all is one from before staff
+            // existed, where everybody is the owner of what they can see.
+            companyRole = mine.role.map { MemberRole($0) } ?? .owner
+        } catch {
+            // Leave it as it was. A failed refresh should not quietly take screens
+            // away from somebody mid-task.
         }
     }
 
@@ -66,6 +101,7 @@ final class SessionManager: ObservableObject {
             if let first = companies?.first {
                 self.selectedCompanyId = first.id
                 SessionManager.saveSelectedCompanyId(first.id)
+                self.companyRole = first.role.map { MemberRole($0) } ?? .owner
             }
         } catch {
             // No company yet, or request failed — user will be prompted to create one

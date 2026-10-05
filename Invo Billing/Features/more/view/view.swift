@@ -89,12 +89,15 @@ struct MoreView: View {
                             sectionHeader("Account")
 
                             VStack(spacing: 0) {
-                                NavigationLink {
-                                    CompanyView()
-                                } label: {
-                                    MoreViewRow(icon: "building.2.fill", label: "Company Details")
+                                if session.companyRole.canChangeSettings {
+                                    NavigationLink {
+                                        CompanyView()
+                                    } label: {
+                                        MoreViewRow(icon: "building.2.fill", label: "Company Details")
+                                    }
+                                    rowDivider()
+
                                 }
-                                rowDivider()
 
                                 NavigationLink {
                                     EstimateListView()
@@ -103,54 +106,84 @@ struct MoreView: View {
                                 }
                                 rowDivider()
 
-                                NavigationLink {
-                                    ExpenseView()
-                                } label: {
-                                    MoreViewRow(icon: "banknote.fill", label: "Expenses")
-                                }
-                                rowDivider()
+                                if session.companyRole.canSeeReports {
+                                    NavigationLink {
+                                        ExpenseView()
+                                    } label: {
+                                        MoreViewRow(icon: "banknote.fill", label: "Expenses")
+                                    }
+                                    rowDivider()
 
-                                NavigationLink {
-                                    PaymentsView()
-                                } label: {
-                                    MoreViewRow(icon: "indianrupeesign.circle.fill", label: "Payments")
                                 }
-                                rowDivider()
 
-                                NavigationLink {
-                                    PurchasesView()
-                                } label: {
-                                    MoreViewRow(icon: "shippingbox.fill", label: "Purchases")
-                                }
-                                rowDivider()
+                                if session.companyRole.canSeeReports {
+                                    NavigationLink {
+                                        PaymentsView()
+                                    } label: {
+                                        MoreViewRow(icon: "indianrupeesign.circle.fill", label: "Payments")
+                                    }
+                                    rowDivider()
 
-                                NavigationLink {
-                                    LedgerView()
-                                } label: {
-                                    MoreViewRow(icon: "book.fill", label: "Ledger")
                                 }
-                                rowDivider()
 
-                                NavigationLink {
-                                    GSTReportView()
-                                } label: {
-                                    MoreViewRow(icon: "doc.text.magnifyingglass", label: "GST Reports")
-                                }
-                                rowDivider()
+                                if session.companyRole.canSeeCosts {
+                                    NavigationLink {
+                                        PurchasesView()
+                                    } label: {
+                                        MoreViewRow(icon: "shippingbox.fill", label: "Purchases")
+                                    }
+                                    rowDivider()
 
-                                NavigationLink {
-                                    AgingReportView()
-                                } label: {
-                                    MoreViewRow(icon: "clock.badge.exclamationmark", label: "Client Aging")
                                 }
-                                rowDivider()
 
-                                NavigationLink {
-                                    StockReportView()
-                                } label: {
-                                    MoreViewRow(icon: "shippingbox.fill", label: "Stock Report")
+                                if session.companyRole.canSeeReports {
+                                    NavigationLink {
+                                        LedgerView()
+                                    } label: {
+                                        MoreViewRow(icon: "book.fill", label: "Ledger")
+                                    }
+                                    rowDivider()
+
                                 }
-                                rowDivider()
+
+                                if session.companyRole.canSeeReports {
+                                    NavigationLink {
+                                        GSTReportView()
+                                    } label: {
+                                        MoreViewRow(icon: "doc.text.magnifyingglass", label: "GST Reports")
+                                    }
+                                    rowDivider()
+
+                                }
+
+                                if session.companyRole.canSeeReports {
+                                    NavigationLink {
+                                        AgingReportView()
+                                    } label: {
+                                        MoreViewRow(icon: "clock.badge.exclamationmark", label: "Client Aging")
+                                    }
+                                    rowDivider()
+
+                                }
+
+                                if session.companyRole.canSeeReports {
+                                    NavigationLink {
+                                        StockReportView()
+                                    } label: {
+                                        MoreViewRow(icon: "shippingbox.fill", label: "Stock Report")
+                                    }
+                                    rowDivider()
+
+                                }
+
+                                if session.companyRole.canManageStaff {
+                                    NavigationLink {
+                                        StaffView()
+                                    } label: {
+                                        MoreViewRow(icon: "person.2.fill", label: "Staff")
+                                    }
+                                    rowDivider()
+                                }
 
                                 NavigationLink {
                                     CreditNoteListView()

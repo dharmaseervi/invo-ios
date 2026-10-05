@@ -13,7 +13,37 @@ struct HomeView: View {
 
     private func apiPeriod(_ ui: String) -> String { ui.lowercased() }
     private func fetch() {
+        // Not asked for at all when the role cannot have it. Calling it anyway would
+        // spend a request to be told 403 and leave an error on screen that is not a
+        // fault — the person simply does not do this part of the job.
+        guard SessionManager.shared.companyRole.canSeeReports else { return }
         Task { await viewModel.load(period: apiPeriod(selectedPeriod)) }
+    }
+
+    /// Home for somebody who bills at the counter: the work, and none of the money
+    /// figures they are not meant to see.
+    private var counterHome: some View {
+        VStack(spacing: 16) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Today")
+                    .font(.scaled(13))
+                    .foregroundColor(.sMutedFG)
+                Text(AppDate.text(Date()))
+                    .font(.scaled(22, weight: .bold))
+                    .foregroundColor(.sForeground)
+                Text("Write an invoice, take a payment, look someone up.")
+                    .font(.scaled(12))
+                    .foregroundColor(.sMutedFG)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(18)
+            .background(Color.sCard)
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.sBorder, lineWidth: 0.5))
+            .cornerRadius(16)
+
+            quickActionsCard
+        }
+        .padding(.horizontal, 16)
     }
     
     var body: some View {
@@ -24,7 +54,12 @@ struct HomeView: View {
                 VStack(spacing: 0) {
                     ScrollView(showsIndicators: false) {
                         VStack(spacing: 20) {
-                            if viewModel.isLoading {
+                            // Somebody who cannot see the shop's takings should not be
+                            // sent to a screen made of them, and certainly not to its
+                            // refusal. The counter boy opens on the work instead.
+                            if !session.companyRole.canSeeReports {
+                                counterHome
+                            } else if viewModel.isLoading {
                                 skeletonView
                             } else if let errorMessage = viewModel.errorMessage {
                                 errorView(errorMessage)
@@ -44,7 +79,7 @@ struct HomeView: View {
                     .refreshable { fetch() }
                 }
             }
-            .navigationTitle("Dashboard")
+            .navigationTitle(session.companyRole.canSeeReports ? "Dashboard" : "Today")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -78,6 +113,8 @@ struct HomeView: View {
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
+                    // The period only moves figures this role is never shown.
+                    if session.companyRole.canSeeReports {
                     Menu {
                         Picker("Period", selection: $selectedPeriod) {
                             ForEach(["Week", "Month", "Year"], id: \.self) { Text($0) }
@@ -89,6 +126,7 @@ struct HomeView: View {
                                 .font(.scaled(11, weight: .semibold))
                         }
                         .font(.scaled(14, weight: .medium))
+                    }
                     }
                 }
             }
@@ -289,14 +327,16 @@ struct HomeView: View {
                 destination: AnyView(ClientFormView())
             )
             
-            Rectangle().fill(Color.sBorder).frame(height: 0.5).padding(.leading, 52)
-            
-            HomeActionRow(
-                icon: "cube",
-                title: "Add item",
-                subtitle: "Product or service",
-                destination: AnyView(ItemFormView())
-            )
+            if session.companyRole.canEditCatalogue {
+                Rectangle().fill(Color.sBorder).frame(height: 0.5).padding(.leading, 52)
+
+                HomeActionRow(
+                    icon: "cube",
+                    title: "Add item",
+                    subtitle: "Product or service",
+                    destination: AnyView(ItemFormView())
+                )
+            }
         }
         .background(Color.sCard)
         .overlay(

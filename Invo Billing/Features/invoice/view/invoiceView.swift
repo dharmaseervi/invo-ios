@@ -120,7 +120,13 @@ struct InvoiceView: View {
                         ScrollView(showsIndicators: false) {
                             VStack(spacing: 0) {
                                 if vm.invoices.isEmpty == false || !searchText.isEmpty {
-                                    summaryCard.padding(.top, 16)
+                                    // What the shop is owed overall is the money view
+                                    // of the business, which a counter role is not
+                                    // shown. Left in, the card sits there asking them
+                                    // to retry something that will never work for them.
+                                    if SessionManager.shared.companyRole.canSeeReports {
+                                        summaryCard.padding(.top, 16)
+                                    }
                                 }
                                 searchBar.padding(.top, 16)
                                 filterRow.padding(.top, 12)

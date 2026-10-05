@@ -347,9 +347,17 @@ class InvoiceViewModel: ObservableObject {
         // The figures above the list are counted by the server over everything that
         // matches. Added up here they described the loaded page and called it the
         // business: "Outstanding" was the outstanding amount of the latest fifty.
-        async let summaryResult = try? service.getInvoiceSummary(
-            companyID: company, clientID: clientID, search: search
-        )
+        //
+        // Not asked for by a role that is refused it. The card is hidden for them
+        // anyway; making the request regardless would spend it to be told 403 and
+        // raise summaryFailed, which reads as a fault rather than as a part of the
+        // job somebody else does.
+        let maySeeTotals = SessionManager.shared.companyRole.canSeeReports
+        async let summaryResult = maySeeTotals
+            ? try? service.getInvoiceSummary(
+                companyID: company, clientID: clientID, search: search
+              )
+            : nil
 
         do {
             let response = try await service.getInvoices(
@@ -369,7 +377,7 @@ class InvoiceViewModel: ObservableObject {
             // A summary that failed is cleared rather than left behind: keeping the
             // previous one put one search's totals above another search's rows.
             summary = newSummary ?? .empty
-            summaryFailed = newSummary == nil
+            summaryFailed = maySeeTotals && newSummary == nil
             isFetchingList = false
         } catch let error as NSError {
             guard request == listRequestID else { return }
