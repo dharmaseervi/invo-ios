@@ -38,6 +38,7 @@ struct PurchasesView: View {
                                 supplierCard(supplier)
                             }
 
+
                             sectionHeader("Bills")
                             filterRow
                             if vm.bills.isEmpty {
@@ -157,33 +158,59 @@ struct PurchasesView: View {
     }
 
     private func supplierCard(_ supplier: Supplier) -> some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(supplier.name)
-                    .font(.scaled(14, weight: .medium))
-                    .foregroundColor(.sForeground)
-                Text(supplier.due > 0
-                     ? "\(supplier.open_bills) open bill\(supplier.open_bills == 1 ? "" : "s")"
-                     : "Nothing owing")
-                    .font(.scaled(12))
-                    .foregroundColor(.sMutedFG)
-            }
-            Spacer()
-            VStack(alignment: .trailing, spacing: 4) {
-                Text(Money.text(supplier.due)).moneyLine()
-                    .font(.scaled(14, weight: .semibold))
-                    .foregroundColor(supplier.due > 0 ? .sDestructive : .sMutedFG)
-                if supplier.due > 0 {
-                    Button("Pay") { payingSupplier = supplier }
-                        .font(.scaled(13, weight: .medium))
-                        .foregroundColor(.sAccent)
+        // The card opens their statement; Pay sits outside the link rather than inside
+        // it, because a button nested in a NavigationLink can fire both at once — the
+        // sheet opening on top of a screen that is already pushing.
+        HStack(spacing: 10) {
+            NavigationLink {
+                SupplierStatementView(supplier: supplier)
+            } label: {
+                HStack(spacing: 8) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(supplier.name)
+                            .font(.scaled(14, weight: .medium))
+                            .foregroundColor(.sForeground)
+                        Text(supplierSubtitle(supplier))
+                            .font(.scaled(12))
+                            .foregroundColor(.sMutedFG)
+                    }
+                    Spacer()
+                    Text(Money.text(supplier.due)).moneyLine()
+                        .font(.scaled(14, weight: .semibold))
+                        .foregroundColor(supplier.due > 0 ? .sDestructive : .sMutedFG)
+                    Image(systemName: "chevron.right")
+                        .font(.scaled(11, weight: .semibold))
+                        .foregroundColor(.sMutedFG)
                 }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            if supplier.due > 0 {
+                Button("Pay") { payingSupplier = supplier }
+                    .font(.scaled(13, weight: .medium))
+                    .foregroundColor(.sAccent)
             }
         }
         .padding(14)
         .background(Color.sCard)
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.sBorder, lineWidth: 0.5))
         .cornerRadius(14)
+    }
+
+    /// What is going on with this supplier, in one line. An advance is said out loud:
+    /// a supplier owed nothing while holding the shop's deposit reads as "nothing
+    /// owing" otherwise, and the money looks lost.
+    private func supplierSubtitle(_ supplier: Supplier) -> String {
+        if supplier.heldInAdvance > 0.004 {
+            let advance = Money.text(supplier.heldInAdvance)
+            return supplier.due > 0
+                ? "\(supplier.open_bills) open bill\(supplier.open_bills == 1 ? "" : "s") · \(advance) paid ahead"
+                : "\(advance) paid ahead"
+        }
+        return supplier.due > 0
+            ? "\(supplier.open_bills) open bill\(supplier.open_bills == 1 ? "" : "s")"
+            : "Nothing owing"
     }
 
     private func billCard(_ bill: PurchaseBill) -> some View {

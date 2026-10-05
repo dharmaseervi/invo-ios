@@ -19,12 +19,57 @@ struct Supplier: Codable, Identifiable {
     /// Outstanding across their unpaid and part-paid bills, worked out by the server.
     let due: Double
     let open_bills: Int
+    /// Money paid to them that no bill has claimed — a deposit they are holding.
+    /// Optional so an older server that does not send it still decodes.
+    let advance: Double?
+
+    var heldInAdvance: Double { advance ?? 0 }
 }
 
 struct SuppliersResponse: Codable {
     let data: [Supplier]
     /// Everything the shop owes, across all suppliers.
     let total_due: Double
+    let total_advance: Double?
+}
+
+// MARK: - A supplier's statement
+
+/// One line of a supplier's statement: a bill they sent or a payment made to them.
+struct SupplierLedgerEntry: Codable, Identifiable {
+    let kind: String
+    /// The id of the bill or payment behind this line — unique only within its kind.
+    let id: Int
+    let date: String
+    let reference: String
+    let description: String
+    /// What the shop took on, and what it settled.
+    let debit: Double
+    let credit: Double
+    /// What was owed after this line. Positive means the shop owes the supplier.
+    let balance: Double
+
+    var isBill: Bool { kind == "BILL" }
+
+    /// Unique across the statement, where `id` alone is not: a bill and a payment can
+    /// both be number 3, and a ForEach keyed on `id` would drop one of them.
+    var rowKey: String { "\(kind)-\(id)" }
+}
+
+/// Where a supplier stands over their whole history.
+struct SupplierLedgerSummary: Codable {
+    let supplier_id: Int
+    let name: String
+    let billed: Double
+    let paid: Double
+    /// Positive: the shop owes them. Negative: the shop has paid ahead.
+    let balance: Double
+    let entries: Int
+}
+
+struct SupplierLedgerResponse: Codable {
+    let data: [SupplierLedgerEntry]
+    let summary: SupplierLedgerSummary
 }
 
 /// A bill from a supplier.

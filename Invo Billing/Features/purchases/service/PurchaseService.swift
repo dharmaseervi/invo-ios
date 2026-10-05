@@ -50,6 +50,25 @@ struct PurchasesService {
         _ = try await post("/supplier-payments", companyID: companyID, body: request) as EmptyReply
     }
 
+    // MARK: - Statements
+
+    /// A supplier's statement: their bills, the payments made to them, and the running
+    /// balance. The summary comes back with the lines, so the figure at the top and the
+    /// entries under it are always the same read.
+    func ledger(
+        companyID: Int,
+        supplierID: Int,
+        limit: Int? = nil,
+        offset: Int = 0
+    ) async throws -> SupplierLedgerResponse {
+        var items = [URLQueryItem(name: "company_id", value: String(companyID))]
+        if let limit {
+            items.append(URLQueryItem(name: "limit", value: String(limit)))
+            items.append(URLQueryItem(name: "offset", value: String(offset)))
+        }
+        return try await get("/suppliers/\(supplierID)/ledger", items)
+    }
+
     // MARK: - Plumbing
 
     private func get<T: Decodable>(_ path: String, _ query: [URLQueryItem]) async throws -> T {
