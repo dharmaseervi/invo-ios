@@ -106,6 +106,23 @@ struct LedgerListView: View {
         }
         .navigationTitle("Ledger details")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                // The statement to send the customer. On this screen because this is
+                // where somebody is standing when the customer rings up to say they
+                // have paid everything.
+                NavigationLink {
+                    StatementShareView(
+                        clientID: vm.clientID,
+                        clientName: vm.entries.first?.clientName ?? "Customer"
+                    )
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                        .foregroundColor(.sAccent)
+                }
+                .disabled(vm.entries.isEmpty)
+            }
+        }
         .alert("Error", isPresented: $vm.showAlert) {
             Button("OK", role: .cancel) {}
         } message: {
