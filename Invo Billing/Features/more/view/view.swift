@@ -111,6 +111,13 @@ struct MoreView: View {
                                 rowDivider()
 
                                 NavigationLink {
+                                    PaymentsView()
+                                } label: {
+                                    MoreViewRow(icon: "indianrupeesign.circle.fill", label: "Payments")
+                                }
+                                rowDivider()
+
+                                NavigationLink {
                                     LedgerView()
                                 } label: {
                                     MoreViewRow(icon: "book.fill", label: "Ledger")
