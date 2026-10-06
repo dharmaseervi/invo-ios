@@ -14,6 +14,7 @@ struct MoreView: View {
     @State private var showDeleteConfirmation = false
     @State private var showFinalDeleteConfirmation = false
     @State private var showDeleteError = false
+    @State private var deletePassword = ""
     @State private var showSignOutConfirmation = false
     @State private var showTemplatePicker = false
     @State private var selectedTemplate = InvoiceTemplatePreference.load()
@@ -432,19 +433,26 @@ struct MoreView: View {
             .presentationCompactAdaptation(.sheet)
 
             // MARK: - Step 2 Final Confirmation
+            //
+            // The password, not just a second tap. A bearer token was the only thing
+            // standing in front of deleting a business's books, so a phone picked up
+            // off a counter was enough to wipe them.
             .alert(
-                "Are you absolutely sure?",
+                "Enter your password",
                 isPresented: $showFinalDeleteConfirmation
             ) {
+                SecureField("Password", text: $deletePassword)
                 Button("Delete My Account", role: .destructive) {
+                    let password = deletePassword
+                    deletePassword = ""
                     Task {
-                        let success = await authVM.deleteAccount()
+                        let success = await authVM.deleteAccount(password: password)
                         if !success {
                             showDeleteError = true
                         }
                     }
                 }
-                Button("Cancel", role: .cancel) {}
+                Button("Cancel", role: .cancel) { deletePassword = "" }
             } message: {
                 Text("Your account and all data will be permanently deleted immediately. This action cannot be reversed.")
             }
