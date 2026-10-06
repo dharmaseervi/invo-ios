@@ -7,15 +7,12 @@ struct ClientView: View {
     @StateObject var vm = ClientViewModel()
     @EnvironmentObject var session: SessionManager
 
-    @State private var searchText: String = ""
+    /// Searching is the server's job: filtering here only ever matched the customers
+    /// that happened to be on the loaded page, so a shop with three thousand customers
+    /// could not find half of them.
+    @State private var searchTask: Task<Void, Never>?
 
-    var filteredClients: [ClientModel] {
-        if searchText.isEmpty { return vm.clients }
-        return vm.clients.filter {
-            $0.name.lowercased().contains(searchText.lowercased()) ||
-            $0.email.lowercased().contains(searchText.lowercased())
-        }
-    }
+    var filteredClients: [ClientModel] { vm.clients }
 
     var body: some View {
         NavigationStack {
@@ -30,7 +27,7 @@ struct ClientView: View {
                             .font(.scaled(14))
                             .foregroundColor(.sMutedFG)
 
-                        TextField("Search name or email", text: $searchText)
+                        TextField("Search name or email", text: $vm.searchText)
                             .font(.scaled(14))
                             .foregroundColor(.sForeground)
                             .tint(.sAccent)
@@ -84,17 +81,17 @@ struct ClientView: View {
                                     .font(.scaled(40))
                                     .foregroundColor(.sMutedFG)
                                 VStack(spacing: 4) {
-                                    Text(searchText.isEmpty ? "No clients" : "No results")
+                                    Text(vm.searchText.isEmpty ? "No clients" : "No results")
                                         .font(.scaled(15, weight: .semibold))
                                         .foregroundColor(.sForeground)
-                                    Text(searchText.isEmpty
+                                    Text(vm.searchText.isEmpty
                                          ? "Add your first client to get started"
                                          : "Try a different search")
                                         .font(.scaled(13))
                                         .foregroundColor(.sMutedFG)
                                         .multilineTextAlignment(.center)
                                 }
-                                if searchText.isEmpty {
+                                if vm.searchText.isEmpty {
                                     NavigationLink(destination: ClientFormView()) {
                                         Text("Add client")
                                             .font(.scaled(13, weight: .semibold))
@@ -112,13 +109,31 @@ struct ClientView: View {
                         }
                         else {
                             ScrollView(.vertical, showsIndicators: false) {
-                                VStack(spacing: 10) {
+                                // Lazy on purpose. In a plain stack every row renders
+                                // at once, so the "near the end" trigger fires
+                                // immediately and walks the whole list in one go —
+                                // which is the thing paging was meant to stop.
+                                LazyVStack(spacing: 10) {
                                     ForEach(filteredClients) { client in
                                         NavigationLink {
                                             ClientDetailedView(client: client)
                                         } label: {
                                             ClientListRowView(client: client)
                                         }
+                                        .task {
+                                            // The next page is asked for as the last
+                                            // few rows appear, so scrolling does not
+                                            // stop at a page boundary.
+                                            if client.id == vm.clients.suffix(5).first?.id {
+                                                await vm.loadMoreClients()
+                                            }
+                                        }
+                                    }
+
+                                    if vm.isLoadingMoreClients {
+                                        ProgressView()
+                                            .tint(.sAccent)
+                                            .padding(.vertical, 12)
                                     }
                                 }
                                 .padding(20)
@@ -130,6 +145,15 @@ struct ClientView: View {
                 }
             }
             .navigationTitle("Clients")
+            .onChange(of: vm.searchText) { _ in
+                // Debounced, so a six-letter name is one request rather than six.
+                searchTask?.cancel()
+                searchTask = Task {
+                    try? await Task.sleep(nanoseconds: 300_000_000)
+                    guard !Task.isCancelled else { return }
+                    await vm.loadClients()
+                }
+            }
             #if DEBUG
             .navigationDestination(isPresented: $debugDetail) {
                 if let first = filteredClients.first { ClientDetailedView(client: first) }
