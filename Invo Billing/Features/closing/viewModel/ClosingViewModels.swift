@@ -135,6 +135,9 @@ final class CashClosingViewModel: ObservableObject {
     @Published private(set) var recent: [DayClosing] = []
     @Published private(set) var isLoading = false
     @Published private(set) var isWorking = false
+    /// The day's figures could not be fetched. Kept apart from "not loaded yet" so the
+    /// screen can offer another go instead of sitting blank.
+    @Published private(set) var loadFailed = false
 
     @Published var errorMessage: String?
     @Published var showError = false
@@ -142,8 +145,27 @@ final class CashClosingViewModel: ObservableObject {
 
     private let service = ClosingService()
 
+    /// Identifies the newest load. Switching days starts another while the first is
+    /// still out, and without this the slower reply wins — one day's figures landing
+    /// under another day's date.
+    private var requestID = 0
+
+    /// Which day the figures on screen actually describe. Nil means nothing trustworthy
+    /// is loaded, whatever is left in `today`.
+    private var loadedDate: Date?
+
     var expected: Double { today?.expected_cash ?? 0 }
     var opening: Double { today?.opening_cash ?? 0 }
+
+    /// True only when the figures belong to the day being looked at.
+    ///
+    /// Closing a drawer is writing a number somebody will be held to, and the three ways
+    /// this screen could previously be wrong all ended the same way: a count saved
+    /// against another day's expected figure. Saving waits for this.
+    func isReady(for date: Date) -> Bool {
+        guard !isLoading, !isWorking, today != nil, let loaded = loadedDate else { return false }
+        return Calendar.current.isDate(loaded, inSameDayAs: date)
+    }
 
     func load(date: Date) async {
         guard let companyID = SessionManager.shared.selectedCompanyId else {
@@ -151,8 +173,19 @@ final class CashClosingViewModel: ObservableObject {
             return
         }
 
+        requestID += 1
+        let request = requestID
+
+        // Figures for one day must never sit under another day's heading. Anything
+        // loaded for a different date goes now, before the wait, rather than lingering
+        // on screen while the new day is fetched.
+        if loadedDate.map({ !Calendar.current.isDate($0, inSameDayAs: date) }) ?? true {
+            today = nil
+            loadedDate = nil
+        }
+        loadFailed = false
         isLoading = true
-        defer { isLoading = false }
+        defer { if request == requestID { isLoading = false } }
 
         do {
             // Both together: the day being closed and the days behind it are read on
@@ -160,9 +193,17 @@ final class CashClosingViewModel: ObservableObject {
             async let day = service.dayClosing(companyID: companyID, date: date)
             async let history = service.recentClosings(companyID: companyID)
             let (loadedDay, loadedHistory) = try await (day, history)
+            guard request == requestID else { return }
             today = loadedDay
             recent = loadedHistory
+            loadedDate = date
         } catch {
+            guard request == requestID else { return }
+            // Cleared, not kept. Leaving the last day's figures up after a failure is
+            // how somebody counts a drawer against the wrong expectation.
+            today = nil
+            loadedDate = nil
+            loadFailed = true
             show(error.localizedDescription)
         }
     }
@@ -179,6 +220,7 @@ final class CashClosingViewModel: ObservableObject {
                 opening: opening, note: note
             )
             today = closing
+            loadedDate = date
             message = closing.difference == 0
                 ? "Counted and it tallies."
                 : "Counted. \(closing.differenceText)."

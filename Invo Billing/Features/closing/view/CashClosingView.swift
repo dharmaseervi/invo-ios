@@ -94,14 +94,31 @@ struct CashClosingView: View {
             Text("Should be in the drawer")
                 .font(.scaled(13))
                 .foregroundColor(.sMutedFG)
-            Text(Money.text(liveExpected)).moneyLine()
-                .font(.scaled(26, weight: .bold))
-                .foregroundColor(.sForeground)
+
+            if vm.loadFailed {
+                Text("Couldn't read this day")
+                    .font(.scaled(20, weight: .semibold))
+                    .foregroundColor(.sMutedFG)
+                Button("Try again") { Task { await vm.load(date: date) } }
+                    .font(.scaled(13, weight: .medium))
+                    .foregroundColor(.sAccent)
+            } else if vm.today == nil {
+                // Loading. A placeholder rather than a zero, which would read as a
+                // day that genuinely took nothing.
+                Text("—")
+                    .font(.scaled(26, weight: .bold))
+                    .foregroundColor(.sMutedFG)
+            } else {
+                Text(Money.text(liveExpected)).moneyLine()
+                    .font(.scaled(26, weight: .bold))
+                    .foregroundColor(.sForeground)
+            }
 
             // The arithmetic, not just its answer. A shopkeeper who disagrees with the
             // figure needs to see which part they disagree with — and the single
             // number this screen used to show was wrong for anybody who keeps a float
             // or pays a supplier in cash.
+            if vm.today != nil {
             VStack(spacing: 6) {
                 breakdownRow("In the drawer this morning", openingValue, isOut: false)
 
@@ -120,6 +137,7 @@ struct CashClosingView: View {
                 }
             }
             .padding(.top, 10)
+            }
 
             Button(showOpeningField ? "Use yesterday's figure" : "The float was different") {
                 if showOpeningField { openingOverride = "" }
@@ -157,7 +175,7 @@ struct CashClosingView: View {
         _ label: String, _ amount: Double, isOut: Bool, count: Int? = nil
     ) -> some View {
         HStack {
-            Text(count.map { "\(label) (\($0))" } ?? label)
+            Text(count.flatMap { $0 > 0 ? "\(label) (\($0))" : nil } ?? label)
                 .font(.scaled(12))
                 .foregroundColor(.sMutedFG)
             Spacer()
@@ -236,10 +254,16 @@ struct CashClosingView: View {
                     .foregroundColor(.sAccentFG)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 13)
-                    .background(countedValue == nil ? Color.sPrimary.opacity(0.4) : Color.sPrimary)
+                    .background(
+                        countedValue == nil || !vm.isReady(for: date)
+                            ? Color.sPrimary.opacity(0.4)
+                            : Color.sPrimary
+                    )
                     .cornerRadius(10)
             }
-            .disabled(countedValue == nil || vm.isWorking)
+            // Waits for the day's own figures. Counted against a stale or missing
+            // expectation, a closing records a difference that was never real.
+            .disabled(countedValue == nil || !vm.isReady(for: date))
         }
         .padding(18)
         .background(Color.sCard)
