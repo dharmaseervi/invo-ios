@@ -13,6 +13,7 @@ struct PurchasesView: View {
     @State private var showAddSupplier = false
     @State private var showRecordBill = false
     @State private var payingSupplier: Supplier?
+    @State private var returningBill: PurchaseBill?
 
     var body: some View {
         ZStack {
@@ -50,6 +51,13 @@ struct PurchasesView: View {
                             }
                             ForEach(vm.bills) { bill in
                                 billCard(bill)
+                                    .contextMenu {
+                                        Button {
+                                            returningBill = bill
+                                        } label: {
+                                            Label("Return to supplier", systemImage: "arrow.uturn.backward")
+                                        }
+                                    }
                             }
                         }
 
@@ -93,6 +101,9 @@ struct PurchasesView: View {
         }
         .sheet(item: $payingSupplier) { supplier in
             NavigationStack { PaySupplierSheet(supplier: supplier, vm: vm) }
+        }
+        .sheet(item: $returningBill) { bill in
+            NavigationStack { ReturnToSupplierSheet(bill: bill, vm: vm) }
         }
         .alert("Purchases", isPresented: $vm.showError) {
             Button("OK", role: .cancel) {}

@@ -50,6 +50,26 @@ struct PurchasesService {
         _ = try await post("/supplier-payments", companyID: companyID, body: request) as EmptyReply
     }
 
+    // MARK: - Returns
+
+    func returns(companyID: Int, supplierID: Int? = nil) async throws -> [PurchaseReturn] {
+        var items = [URLQueryItem(name: "company_id", value: String(companyID))]
+        if let supplierID {
+            items.append(URLQueryItem(name: "supplier_id", value: String(supplierID)))
+        }
+        let response: PurchaseReturnsResponse = try await get("/purchase-returns", items)
+        return response.data
+    }
+
+    func recordReturn(companyID: Int, request: NewPurchaseReturnRequest) async throws {
+        _ = try await post("/purchase-returns", companyID: companyID, body: request) as EmptyReply
+    }
+
+    /// What a bill contained, for choosing what to send back from it.
+    func billDetail(companyID: Int, billID: Int) async throws -> PurchaseBillDetail {
+        try await bill(companyID: companyID, billID: billID)
+    }
+
     // MARK: - Statements
 
     /// A supplier's statement: their bills, the payments made to them, and the running

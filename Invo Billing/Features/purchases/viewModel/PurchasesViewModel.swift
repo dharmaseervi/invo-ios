@@ -93,6 +93,22 @@ final class PurchasesViewModel: ObservableObject {
         }
     }
 
+    func recordReturn(_ request: NewPurchaseReturnRequest) async -> Bool {
+        guard let companyID = SessionManager.shared.selectedCompanyId else { return false }
+        isWorking = true
+        defer { isWorking = false }
+
+        do {
+            try await service.recordReturn(companyID: companyID, request: request)
+            message = "Sent back. Stock and the bill both updated."
+            await load()
+            return true
+        } catch {
+            show(error.localizedDescription)
+            return false
+        }
+    }
+
     func pay(_ request: SupplierPaymentRequestDTO) async -> Bool {
         guard let companyID = SessionManager.shared.selectedCompanyId else { return false }
         isWorking = true

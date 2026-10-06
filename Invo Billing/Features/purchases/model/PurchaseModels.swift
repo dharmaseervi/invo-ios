@@ -154,6 +154,44 @@ struct NewPurchaseBillRequest: Codable {
     var paid_method: String?
 }
 
+// MARK: - Sending stock back
+
+/// Goods returned to a supplier: the buying-side twin of a credit note.
+struct PurchaseReturn: Codable, Identifiable {
+    let id: Int
+    let supplier_id: Int
+    let supplier_name: String
+    let return_number: String
+    let return_date: String
+    let subtotal: Double
+    let tax: Double
+    let total: Double
+    let reason: String
+    /// The bill the goods came in on, where it was known.
+    let bill_number: String
+}
+
+struct PurchaseReturnsResponse: Codable {
+    let data: [PurchaseReturn]
+}
+
+struct PurchaseReturnLineRequest: Codable {
+    let item_id: Int
+    let qty: Int
+    let rate: Double
+    let tax_rate: Double
+}
+
+struct NewPurchaseReturnRequest: Codable {
+    let supplier_id: Int
+    var bill_id: Int?
+    let return_number: String
+    var return_date: String?
+    var reason: String?
+    var notes: String?
+    let items: [PurchaseReturnLineRequest]
+}
+
 struct SupplierPaymentRequestDTO: Codable {
     let supplier_id: Int
     var bill_id: Int?
