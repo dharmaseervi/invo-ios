@@ -12,6 +12,9 @@ struct CreditNoteDetailView: View {
     
     @Environment(\.dismiss) private var dismiss
     @StateObject private var vm: CreditNoteDetailViewModel
+
+    @State private var showApply = false
+    @State private var showRefund = false
     
     init(creditNoteID: Int) {
         _vm = StateObject(
@@ -57,6 +60,27 @@ struct CreditNoteDetailView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(vm.errorMessage ?? "")
+        }
+        .sheet(isPresented: $showApply) {
+            if let cn = vm.creditNote {
+                NavigationStack {
+                    ApplyCreditSheet(creditNote: cn) {
+                        // Reloaded rather than patched in place: the balance, the
+                        // status and the invoice it settled all move together, and the
+                        // server is the one that decided by how much.
+                        Task { await vm.load() }
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $showRefund) {
+            if let cn = vm.creditNote {
+                NavigationStack {
+                    RefundCreditSheet(creditNote: cn) {
+                        Task { await vm.load() }
+                    }
+                }
+            }
         }
     }
 }
@@ -165,17 +189,25 @@ private extension CreditNoteDetailView {
     func actionsSection(_ cn: CreditNoteDetailModel) -> some View {
         VStack(spacing: 16) {
             
-            if cn.balance > 0 {
-                Button("Apply to invoice") {
-                    // navigate to apply credit flow
-                }
-                .buttonStyle(PrimaryCNButton())
+            if vm.canApplyToInvoice {
+                Button("Apply to invoice") { showApply = true }
+                    .buttonStyle(PrimaryCNButton())
             }
 
-            Button("Refund credit") {
-                // navigate to refund flow
+            if vm.canRefund {
+                Button("Refund credit") { showRefund = true }
+                    .buttonStyle(OutlineCNButton())
             }
-            .buttonStyle(OutlineCNButton())
+
+            // Nothing left on it. Said rather than leaving a screen with no actions and
+            // no explanation for why.
+            if !vm.canApplyToInvoice && !vm.canRefund {
+                Text(cn.status == "cancelled"
+                     ? "This credit note was cancelled."
+                     : "This credit note has been used up.")
+                    .font(.scaled(12))
+                    .foregroundColor(.sMutedFG)
+            }
         }
         .padding(.horizontal, 24)
     }

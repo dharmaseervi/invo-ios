@@ -126,3 +126,102 @@ struct CreditNoteSummaryModel: Codable {
         total: 0, returns: 0, adjustments: 0, discounts: 0, amount: 0, balance: 0
     )
 }
+
+// MARK: - Spending a credit note
+
+extension CreditNoteService {
+
+    /// Puts a credit note's balance against one of the customer's unpaid invoices.
+    ///
+    /// `amount` of nil applies as much as the invoice can take, which is what somebody
+    /// means by "apply this to that".
+    @discardableResult
+    func applyToInvoice(
+        creditNoteID: Int,
+        invoiceID: Int,
+        amount: Double? = nil
+    ) async throws -> Double {
+        guard let companyID = SessionManager.shared.selectedCompanyId else {
+            throw CreditNoteActionError(message: "Select a company first.")
+        }
+
+        var body: [String: Any] = ["invoice_id": invoiceID]
+        if let amount { body["amount"] = amount }
+
+        let data = try await post(
+            path: "/credit-notes/\(creditNoteID)/apply",
+            companyID: companyID,
+            body: body
+        )
+
+        struct Reply: Decodable { let applied: Double }
+        return (try? JSONDecoder().decode(Reply.self, from: data))?.applied ?? 0
+    }
+
+    /// Hands the money back. The server reduces the credit note and writes the ledger
+    /// entry; this only has to say how much and how.
+    func refund(
+        creditNoteID: Int,
+        clientID: Int,
+        amount: Double,
+        method: String,
+        reference: String
+    ) async throws {
+        guard let companyID = SessionManager.shared.selectedCompanyId else {
+            throw CreditNoteActionError(message: "Select a company first.")
+        }
+
+        _ = try await post(path: "/refunds", companyID: companyID, body: [
+            "client_id": clientID,
+            "credit_note_id": creditNoteID,
+            "amount": amount,
+            "method": method,
+            "reference": reference,
+        ])
+    }
+
+    /// The customer's invoices that still owe something, for choosing one to put the
+    /// credit against.
+    func unpaidInvoices(clientID: Int) async throws -> [InvoiceSummaryModel] {
+        guard let companyID = SessionManager.shared.selectedCompanyId else {
+            throw CreditNoteActionError(message: "Select a company first.")
+        }
+        return try await InvoiceService().fetchUnpaidInvoices(
+            clientID: clientID, companyID: companyID
+        )
+    }
+
+    private func post(path: String, companyID: Int, body: [String: Any]) async throws -> Data {
+        guard let url = URL(string: "\(AppEnvironment.baseURL)\(path)?company_id=\(companyID)") else {
+            throw URLError(.badURL)
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(String(companyID), forHTTPHeaderField: "X-Company-ID")
+        if let token = KeychainManager.shared.loadToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse else { throw URLError(.badServerResponse) }
+        guard (200...299).contains(http.statusCode) else {
+            // The server's own sentence where there is one: "That's more than the
+            // credit note has left" tells somebody what to do next.
+            struct ErrorBody: Decodable { let error: String }
+            if let parsed = try? JSONDecoder().decode(ErrorBody.self, from: data),
+               !parsed.error.isEmpty {
+                throw CreditNoteActionError(message: parsed.error)
+            }
+            throw CreditNoteActionError(message: "That didn't work. Try again.")
+        }
+        return data
+    }
+}
+
+struct CreditNoteActionError: LocalizedError {
+    let message: String
+    var errorDescription: String? { message }
+}
