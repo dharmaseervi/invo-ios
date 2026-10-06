@@ -17,6 +17,7 @@ struct ExpenseFormView: View {
     @State private var amount = ""
     @State private var date = Date()
     @State private var description = ""
+    @State private var paymentMethod = ""
 
     private var formattedDate: String {
         let formatter = DateFormatter()
@@ -52,6 +53,8 @@ struct ExpenseFormView: View {
                                 text: $amount,
                                 keyboard: .decimalPad
                             )
+
+                            ExpensePaymentMethodPicker(selection: $paymentMethod)
 
                             // Date Picker
                             VStack(alignment: .leading, spacing: 6) {
@@ -103,7 +106,9 @@ struct ExpenseFormView: View {
                                 let success = await vm.createExpense(
                                     name: name,
                                     amount: Double(amount) ?? 0,
-                                    description: description.isEmpty ? nil : description, date: formattedDate
+                                    description: description.isEmpty ? nil : description,
+                                    date: formattedDate,
+                                    paymentMethod: paymentMethod
                                 )
 
                                 if success {
@@ -166,6 +171,33 @@ struct ExpenseFormView: View {
         amount = ""
         description = ""
         date = Date()
+        paymentMethod = ""
+    }
+}
+
+struct ExpensePaymentMethodPicker: View {
+    @Binding var selection: String
+    private let methods = ["Cash", "UPI", "Bank transfer", "Card", "Cheque", "Other"]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Picker("Paid by", selection: $selection) {
+                Text("Not recorded").tag("")
+                ForEach(methods, id: \.self) { method in
+                    Text(method).tag(method)
+                }
+                // Preserve values recorded by other clients, including older spellings.
+                if !selection.isEmpty && !methods.contains(selection) {
+                    Text(selection).tag(selection)
+                }
+            }
+            .pickerStyle(.menu)
+            .tint(.sAccent)
+
+            Text("Choose Cash if this expense was paid from the drawer.")
+                .font(.scaled(12))
+                .foregroundColor(.sMutedFG)
+        }
     }
 }
 

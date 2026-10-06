@@ -121,7 +121,8 @@ class ExpenseViewModel: ObservableObject {
         name: String,
         amount: Double,
         description: String?,
-        date: String
+        date: String,
+        paymentMethod: String
     ) async -> Bool {
         isLoading = true
         errorMessage = nil
@@ -139,7 +140,8 @@ class ExpenseViewModel: ObservableObject {
                 name: name,
                 amount: amount,
                 description: description,
-                date: date
+                date: date,
+                paymentMethod: paymentMethod
             )
             
             let success = try await service.createExpense(payload: payload)
@@ -165,7 +167,8 @@ class ExpenseViewModel: ObservableObject {
         name: String,
         amount: Double,
         description: String?,
-        date: String
+        date: String,
+        paymentMethod: String
     ) async -> Bool {
         isLoading = true
         errorMessage = nil
@@ -175,7 +178,8 @@ class ExpenseViewModel: ObservableObject {
                 name: name.isEmpty ? nil : name,
                 amount: amount > 0 ? amount : nil,
                 description: description,
-                date: date.isEmpty ? nil : date
+                date: date.isEmpty ? nil : date,
+                paymentMethod: paymentMethod
             )
             let success = try await service.updateExpense(id: id, payload: payload)
             

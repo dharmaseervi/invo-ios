@@ -10,6 +10,7 @@ struct ExpenseEditView: View {
     @State private var amount: String = ""
     @State private var description: String = ""
     @State private var date: Date = Date()
+    @State private var paymentMethod = ""
 
     var isFormValid: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty &&
@@ -27,9 +28,10 @@ struct ExpenseEditView: View {
         let newDateString = dateFormatter.string(from: date)
 
         return name != expense.name ||
-        amount != String(expense.amount) ||
+        amount != Money.editable(expense.amount) ||
         description != (expense.description ?? "") ||
-        newDateString != expense.date
+        paymentMethod != (expense.paymentMethod ?? "") ||
+        newDateString != AppDate.date(fromWire: expense.date).map(AppDate.wireString(from:))
     }
 
     var body: some View {
@@ -78,6 +80,8 @@ struct ExpenseEditView: View {
                                 )
                                 .cornerRadius(8)
                             }
+
+                            ExpensePaymentMethodPicker(selection: $paymentMethod)
 
                             // Date Field
                             VStack(alignment: .leading, spacing: 6) {
@@ -158,14 +162,11 @@ struct ExpenseEditView: View {
         name = expense.name
         amount = Money.editable(expense.amount)
         description = expense.description ?? ""
+        paymentMethod = expense.paymentMethod ?? ""
 
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        // Pinned: an unpinned formatter follows the device calendar, so a phone set
-        // to the Indian National calendar sent 1948-06-21 for 12 September 2026.
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.calendar = Calendar(identifier: .gregorian)
-        if let parsedDate = formatter.date(from: expense.date) {
+        // The API can return a timestamp; changing only the payment method must not
+        // accidentally move an older expense onto today's cash closing.
+        if let parsedDate = AppDate.date(fromWire: expense.date) {
             date = parsedDate
         }
     }
@@ -197,7 +198,8 @@ struct ExpenseEditView: View {
                 name: name.trimmingCharacters(in: .whitespaces),
                 amount: Double(amount) ?? 0,
                 description: description.isEmpty ? nil : description
-                    .trimmingCharacters(in: .whitespaces), date: dateString
+                    .trimmingCharacters(in: .whitespaces), date: dateString,
+                paymentMethod: paymentMethod
             )
 
             if success {
