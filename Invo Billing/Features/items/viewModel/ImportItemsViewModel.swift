@@ -16,6 +16,13 @@ final class ImportItemsViewModel: ObservableObject {
 
     // MARK: - State
     @Published private(set) var fileName: String?
+
+    /// The file as it was read, kept so the column mapping can be corrected without
+    /// asking for it again.
+    private var sourceText: String?
+    private var sourceWorkbook: Data?
+    /// Columns the person has reassigned by hand, which win over what was detected.
+    @Published private(set) var mappingOverride: [String: ImportColumn] = [:]
     @Published private(set) var preview: ImportPreview?
     @Published private(set) var isReading = false
     @Published private(set) var isImporting = false
@@ -89,28 +96,84 @@ final class ImportItemsViewModel: ObservableObject {
             return
         }
 
-        // Spreadsheets exported on Windows are often not UTF-8. Latin-1 is the common
-        // fallback and never fails, so a file with a ₹ sign or an accented name still
-        // reads rather than being rejected as unreadable.
-        guard let text = String(data: data, encoding: .utf8)
-            ?? String(data: data, encoding: .isoLatin1)
-        else {
-            show("That file isn't readable as text. Export it as CSV and try again.")
-            return
+        // An .xlsx is a zip, not text, and every zip starts "PK". Checked by content
+        // rather than by extension: people rename these files, in both directions.
+        let isWorkbook = data.count > 1 && data[data.startIndex] == 0x50
+            && data[data.index(after: data.startIndex)] == 0x4B
+
+        var text: String?
+        if !isWorkbook {
+            // Spreadsheets exported on Windows are often not UTF-8. Latin-1 is the
+            // common fallback and never fails, so a file with a ₹ sign or an accented
+            // name still reads rather than being rejected as unreadable.
+            text = String(data: data, encoding: .utf8)
+                ?? String(data: data, encoding: .isoLatin1)
+            if text == nil {
+                show("That file isn't readable. Export it as CSV or Excel and try again.")
+                return
+            }
         }
 
         fileName = url.lastPathComponent
         result = nil
         failures = [:]
+        // Kept so the mapping can be corrected without asking for the file again.
+        sourceText = text
+        sourceWorkbook = isWorkbook ? data : nil
+        mappingOverride = [:]
+
+        await loadPreview(companyID: companyID)
+    }
+
+    /// Asks the server what it makes of the file as it currently stands, including any
+    /// columns the person has reassigned by hand.
+    func loadPreview(companyID: Int? = nil) async {
+        guard let companyID = companyID ?? SessionManager.shared.selectedCompanyId else { return }
+        guard sourceText != nil || sourceWorkbook != nil else { return }
+
+        isReading = true
+        defer { isReading = false }
 
         do {
-            let preview = try await service.preview(companyID: companyID, csv: text)
+            let preview = try await service.preview(
+                companyID: companyID,
+                csv: sourceText,
+                workbook: sourceWorkbook,
+                mapping: mappingOverride
+            )
             self.preview = preview
             resetChoices(for: preview)
         } catch {
             self.preview = nil
             show(error.localizedDescription)
         }
+    }
+
+    /// Reassigns one of the file's columns, then asks the server to read it again.
+    ///
+    /// Re-read rather than patched here: which column feeds which field changes what
+    /// every row parses to, which rows are broken and which are duplicates. Working
+    /// that out in the app would be a second copy of the importer.
+    func remap(header: String, to column: ImportColumn?) async {
+        if let column {
+            mappingOverride[header] = column
+        } else {
+            // An explicit empty string is how the server is told to ignore a column;
+            // removing the key would just let it guess again.
+            mappingOverride[header] = .ignore
+        }
+        await loadPreview()
+    }
+
+    /// Every column in the file, in the order it appeared.
+    var allHeaders: [String] { preview?.headers ?? [] }
+
+    /// What a column currently feeds, following any correction made by hand.
+    func column(for header: String) -> ImportColumn? {
+        if let override = mappingOverride[header] {
+            return override == .ignore ? nil : override
+        }
+        return preview?.mapping[header]
     }
 
     /// The opening position: import what can be imported, leave broken rows alone, and

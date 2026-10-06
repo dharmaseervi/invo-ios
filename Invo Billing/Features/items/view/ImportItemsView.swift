@@ -67,9 +67,9 @@ struct ImportItemsView: View {
             isPresented: $showFilePicker,
             // .commaSeparatedText covers a .csv; plainText covers the ones exported
             // with a .txt extension, which spreadsheets do more often than you would
-            // think. An .xlsx is not a text file and cannot be read here, which the
-            // screen says before anybody goes looking for it.
-            allowedContentTypes: [.commaSeparatedText, .plainText],
+            // think; and spreadsheet covers .xlsx, which is what most shops actually
+            // have — "save as CSV, pick the right encoding" is where people gave up.
+            allowedContentTypes: [.commaSeparatedText, .plainText, .spreadsheet],
             allowsMultipleSelection: false
         ) { outcome in
             guard case .success(let urls) = outcome, let url = urls.first else { return }
@@ -96,7 +96,7 @@ struct ImportItemsView: View {
                 Text("Import your product list")
                     .font(.scaled(17, weight: .semibold))
                     .foregroundColor(.sForeground)
-                Text("Choose a CSV file. Export one from Excel, Google Sheets or your old billing app — the columns can be named anything.")
+                Text("Choose an Excel file or a CSV — straight from Excel, Google Sheets or your old billing app. The columns can be named anything, and you can correct any the app reads wrongly.")
                     .font(.scaled(13))
                     .foregroundColor(.sMutedFG)
                     .multilineTextAlignment(.center)
@@ -168,22 +168,47 @@ struct ImportItemsView: View {
             // What the app made of their columns. Worth showing plainly: if "Rate" was
             // read as the selling price when it was the purchase price, this is where
             // somebody notices, not after a thousand products have the wrong price.
-            if !vm.mappedFields.isEmpty {
-                VStack(alignment: .leading, spacing: 3) {
-                    ForEach(vm.mappedFields, id: \.header) { field in
-                        Text("\(field.column.label) ← \(field.header)")
-                            .font(.scaled(11))
-                            .foregroundColor(.sMutedFG)
+            // Every column, changeable. Reading is one thing; being able to say "no,
+            // that one is the purchase price" without editing the file and starting
+            // again is what makes a wrong guess survivable.
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(vm.allHeaders, id: \.self) { header in
+                    HStack {
+                        Text(header)
+                            .font(.scaled(12))
+                            .foregroundColor(.sForeground)
+                            .lineLimit(1)
+                        Spacer()
+                        Menu {
+                            ForEach(ImportColumn.allCases) { column in
+                                Button {
+                                    Task { await vm.remap(header: header, to: column) }
+                                } label: {
+                                    if vm.column(for: header) == column {
+                                        Label(column.label, systemImage: "checkmark")
+                                    } else {
+                                        Text(column.label)
+                                    }
+                                }
+                            }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Text(vm.column(for: header)?.label ?? "Don't import")
+                                    .font(.scaled(12, weight: .medium))
+                                Image(systemName: "chevron.up.chevron.down")
+                                    .font(.scaled(9))
+                            }
+                            .foregroundColor(.sAccent)
+                        }
+                    }
+                    .padding(.vertical, 6)
+
+                    if header != vm.allHeaders.last {
+                        Rectangle().fill(Color.sBorder).frame(height: 0.5)
                     }
                 }
-                .padding(.top, 2)
             }
-
-            if !vm.unmappedHeaders.isEmpty {
-                Text("Not used: \(vm.unmappedHeaders.joined(separator: ", "))")
-                    .font(.scaled(11))
-                    .foregroundColor(.sMutedFG)
-            }
+            .padding(.top, 6)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)

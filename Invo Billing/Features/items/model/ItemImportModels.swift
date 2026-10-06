@@ -14,6 +14,9 @@ import Foundation
 
 /// A field a column can feed.
 enum ImportColumn: String, Codable, CaseIterable, Identifiable {
+    /// Not imported. The empty string is how the server is told to leave a column
+    /// alone, as opposed to being left to guess at it.
+    case ignore = ""
     case name, sku
     case hsnCode = "hsn_code"
     case unit, price
@@ -27,6 +30,7 @@ enum ImportColumn: String, Codable, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
+        case .ignore: return "Don't import"
         case .name: return "Name"
         case .sku: return "SKU"
         case .hsnCode: return "HSN code"

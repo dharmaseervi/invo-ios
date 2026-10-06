@@ -11,12 +11,22 @@ struct ItemImportService {
     private let baseURL = AppEnvironment.baseURL
 
     /// What the server makes of the file. Writes nothing.
+    ///
+    /// A workbook is sent as bytes rather than as text: an .xlsx is a zip, and reading
+    /// it as a string produces nonsense. The server reads the first sheet and feeds it
+    /// to the same parser the CSV path uses.
     func preview(
         companyID: Int,
-        csv: String,
+        csv: String? = nil,
+        workbook: Data? = nil,
         mapping: [String: ImportColumn] = [:]
     ) async throws -> ImportPreview {
-        var body: [String: Any] = ["company_id": companyID, "csv": csv]
+        var body: [String: Any] = ["company_id": companyID]
+        if let workbook {
+            body["xlsx"] = workbook.base64EncodedString()
+        } else {
+            body["csv"] = csv ?? ""
+        }
         if !mapping.isEmpty {
             body["mapping"] = mapping.mapValues(\.rawValue)
         }
