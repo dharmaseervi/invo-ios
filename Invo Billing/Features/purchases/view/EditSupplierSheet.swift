@@ -17,6 +17,8 @@ struct EditSupplierSheet: View {
     @State private var gstin: String
     @State private var city: String
     @State private var state: String
+    @State private var address: String
+    @State private var pincode: String
     @State private var notes: String
 
     init(supplier: Supplier, vm: PurchasesViewModel) {
@@ -27,7 +29,9 @@ struct EditSupplierSheet: View {
         _gstin = State(initialValue: supplier.gstin)
         _city  = State(initialValue: supplier.city)
         _state = State(initialValue: supplier.state)
-        _notes = State(initialValue: "")
+        _notes = State(initialValue: supplier.notes ?? "")
+        _address = State(initialValue: supplier.address ?? "")
+        _pincode = State(initialValue: supplier.pincode ?? "")
     }
 
     private var hasChanges: Bool {
@@ -36,7 +40,8 @@ struct EditSupplierSheet: View {
         gstin != supplier.gstin ||
         city  != supplier.city  ||
         state != supplier.state ||
-        !notes.isEmpty
+        notes != (supplier.notes ?? "") ||
+        address != (supplier.address ?? "") || pincode != (supplier.pincode ?? "")
     }
 
     var body: some View {
@@ -53,6 +58,8 @@ struct EditSupplierSheet: View {
                 TextField("GSTIN", text: $gstin)
                     .textInputAutocapitalization(.characters)
                     .autocorrectionDisabled()
+                TextField("Address", text: $address)
+                TextField("Pincode", text: $pincode)
                 TextField("City", text: $city)
                 TextField("State", text: $state)
             }
@@ -62,6 +69,9 @@ struct EditSupplierSheet: View {
                     .lineLimit(3...5)
             }
         }
+        .alert("Supplier", isPresented: $vm.showError) {
+            Button("OK", role: .cancel) {}
+        } message: { Text(vm.errorMessage ?? "Please try again.") }
         .navigationTitle("Edit supplier")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -76,11 +86,11 @@ struct EditSupplierSheet: View {
                             phone: phone,
                             email: supplier.email,
                             gstin: gstin,
-                            address: "",
+                            address: supplier.address == nil && address.isEmpty ? nil : address,
                             city: city,
                             state: state,
-                            pincode: "",
-                            notes: notes
+                            pincode: supplier.pincode == nil && pincode.isEmpty ? nil : pincode,
+                            notes: supplier.notes == nil && notes.isEmpty ? nil : notes
                         )
                         if await vm.updateSupplier(id: supplier.id, request: req) {
                             dismiss()

@@ -555,9 +555,16 @@ struct ItemRowCardZara: View {
                         .font(.scaled(13, weight: .semibold))
                         .foregroundColor(.sForeground)
 
-                    Text("Qty: \(item.qty)")
-                        .font(.scaled(11))
-                        .foregroundColor(.sMutedFG)
+                    HStack(spacing: 8) {
+                        Text("Qty: \(item.qty)")
+                            .font(.scaled(11))
+                            .foregroundColor(.sMutedFG)
+                        if let hsn = item.hsn_code, !hsn.isEmpty {
+                            Text("HSN: \(hsn)")
+                                .font(.scaled(11))
+                                .foregroundColor(.sMutedFG)
+                        }
+                    }
                 }
 
                 Spacer()

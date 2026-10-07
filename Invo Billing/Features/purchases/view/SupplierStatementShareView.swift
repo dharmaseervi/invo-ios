@@ -15,6 +15,7 @@ struct SupplierStatementShareView: View {
     @State private var pdfURL: URL?
     @State private var isLoading = true
     @State private var errorMessage: String?
+    @State private var requestID = UUID()
     @State private var period: Period = .thisFinancialYear
     @State private var customFrom = Date().addingTimeInterval(-30 * 86400)
     @State private var customTo = Date()
@@ -97,8 +98,10 @@ struct SupplierStatementShareView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
-                    Button { shareStatement() } label: {
-                        Label("Send statement", systemImage: "square.and.arrow.up")
+                    if let pdfURL {
+                        ShareLink(item: pdfURL) {
+                            Label("Send statement", systemImage: "square.and.arrow.up")
+                        }
                     }
                     Button { printStatement() } label: {
                         Label("Print", systemImage: "printer")
@@ -144,19 +147,30 @@ struct SupplierStatementShareView: View {
     }
 
     private func fetch() {
+        let request = UUID()
+        requestID = request
+        pdfURL = nil
         guard let companyID = SessionManager.shared.selectedCompanyId else {
             errorMessage = "Select a company first."
             isLoading = false
             return
         }
 
+        let selectedRange = range
+        guard selectedRange.from <= selectedRange.to else {
+            errorMessage = "The start date must be on or before the end date."
+            isLoading = false
+            return
+        }
         isLoading = true
         errorMessage = nil
 
         let dateFormatter = DateFormatter()
+        dateFormatter.calendar = Calendar(identifier: .gregorian)
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
         dateFormatter.dateFormat = "yyyy-MM-dd"
-        let start = dateFormatter.string(from: range.from)
-        let end   = dateFormatter.string(from: range.to)
+        let start = dateFormatter.string(from: selectedRange.from)
+        let end   = dateFormatter.string(from: selectedRange.to)
 
         Task {
             do {
@@ -166,35 +180,27 @@ struct SupplierStatementShareView: View {
                     start: start,
                     end: end
                 )
+                guard requestID == request else { return }
+                guard PDFKit.PDFDocument(data: pdfData) != nil else {
+                    throw URLError(.cannotDecodeContentData)
+                }
                 // Write to a temp file so PDFView and the share sheet can both use a URL.
                 let dir = FileManager.default.temporaryDirectory
-                let file = dir.appendingPathComponent("SupplierStatement_\(supplier.id).pdf")
+                let file = dir.appendingPathComponent("SupplierStatement_\(supplier.id)_\(request.uuidString).pdf")
                 try pdfData.write(to: file)
                 await MainActor.run {
+                    guard requestID == request else { return }
                     pdfURL = file
                     isLoading = false
                 }
             } catch {
                 await MainActor.run {
+                    guard requestID == request else { return }
                     errorMessage = error.localizedDescription
                     isLoading = false
                 }
             }
         }
-    }
-
-    private func shareStatement() {
-        guard let pdfURL else { return }
-        let activity = UIActivityViewController(activityItems: [pdfURL], applicationActivities: nil)
-        guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-              let root = scene.windows.first?.rootViewController else { return }
-        if let popover = activity.popoverPresentationController {
-            popover.sourceView = root.view
-            popover.sourceRect = CGRect(
-                x: root.view.bounds.midX, y: root.view.bounds.maxY - 60, width: 0, height: 0
-            )
-        }
-        root.present(activity, animated: true)
     }
 
     private func printStatement() {

@@ -199,6 +199,15 @@ struct ClientDetailedView: View {
         .sheet(isPresented: $invoiceVM.showPDF) {
             if let url = invoiceVM.pdfURL { PDFLookView(pdfURL: url) }
         }
+        .sheet(isPresented: $invoiceVM.showEmailSheet) {
+            if let id = invoiceVM.selectedEmailInvoiceID,
+               let invoice = vm.invoices.first(where: { $0.id == id }) {
+                SendEmailSheet(invoiceID: id, invoiceNumber: invoice.invoice_number,
+                    vm: invoiceVM, onDismiss: { invoiceVM.showEmailSheet = false },
+                    isReminder: invoiceVM.emailIsReminder)
+                    .presentationDetents([.medium])
+            }
+        }
         .confirmationDialog("Select copy", isPresented: $invoiceVM.showCopyPicker) {
             ForEach(["original", "duplicate", "buyer"], id: \.self) { copy in
                 Button(copy.capitalized) {

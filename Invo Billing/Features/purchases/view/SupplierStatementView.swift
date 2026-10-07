@@ -70,7 +70,7 @@ struct SupplierStatementView: View {
                 .refreshable { await vm.load() }
             }
         }
-        .navigationTitle(supplier.name)
+        .navigationTitle(vm.summary?.name ?? supplier.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -93,8 +93,8 @@ struct SupplierStatementView: View {
         .sheet(isPresented: $showStatement) {
             NavigationStack { SupplierStatementShareView(supplier: supplier) }
         }
-        .sheet(isPresented: $showEdit) {
-            NavigationStack { EditSupplierSheet(supplier: supplier, vm: purchasesVM) }
+        .sheet(isPresented: $showEdit, onDismiss: { Task { await vm.load() } }) {
+            NavigationStack { EditSupplierSheet(supplier: purchasesVM.suppliers.first(where: { $0.id == supplier.id }) ?? supplier, vm: purchasesVM) }
         }
         .task { await vm.load() }
         .alert("Statement", isPresented: $vm.showError) {
@@ -129,7 +129,7 @@ struct SupplierStatementView: View {
             }
 
             if vm.loadFailed {
-                Text("Couldn't refresh — figures may be out of date")
+                Text(vm.summary == nil ? "Totals unavailable" : "Couldn't refresh — figures may be out of date")
                     .font(.scaled(12))
                     .foregroundColor(.sDestructive)
                 Button("Try again") { Task { await vm.load() } }
@@ -139,7 +139,7 @@ struct SupplierStatementView: View {
                 Text("\(Money.text(summary.billed)) billed · \(Money.text(summary.paid)) paid")
                     .font(.scaled(12))
                     .foregroundColor(.sMutedFG)
-            } else if !vm.isLoading {
+            } else if !vm.isLoading && !vm.loadFailed {
                 Button("Try again") { Task { await vm.load() } }
                     .font(.scaled(12, weight: .medium))
                     .foregroundColor(.sAccent)

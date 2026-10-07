@@ -48,14 +48,14 @@ struct PurchasesView: View {
                             ForEach(vm.bills) { bill in
                                 billCard(bill)
                                     .contextMenu {
-                                        if !bill.isAmountOnly {
+                                        if !bill.isAmountOnly && !bill.isCancelled {
                                             Button {
                                                 returningBill = bill
                                             } label: {
                                                 Label("Return to supplier", systemImage: "arrow.uturn.backward")
                                             }
                                         }
-                                        if !bill.isSettled {
+                                        if !bill.isCancelled {
                                             Button(role: .destructive) {
                                                 cancellingBill = bill
                                             } label: {
@@ -135,7 +135,7 @@ struct PurchasesView: View {
             Button("Keep it", role: .cancel) { cancellingBill = nil }
         } message: {
             if let bill = cancellingBill {
-                Text("This will void bill \(bill.bill_number) and reverse its stock. Any payments already applied to it will be kept as a supplier advance.")
+                Text("This will void bill \(bill.bill_number) and reverse its stock. Payments will settle other open bills; any remainder stays as a supplier advance.")
             }
         }
         .alert("Purchases", isPresented: $vm.showError) {
@@ -326,6 +326,7 @@ struct PurchasesView: View {
         let (label, colour): (String, Color) = {
             if bill.isOverdue { return ("Overdue", .sDestructive) }
             switch bill.status {
+            case "cancelled": return ("Cancelled", .sMutedFG)
             case "paid": return ("Paid", Color(red: 0.086, green: 0.639, blue: 0.341))
             case "partial": return ("Part paid", .sAccent)
             default: return ("Unpaid", .sMutedFG)

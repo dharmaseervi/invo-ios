@@ -48,7 +48,7 @@ final class PurchasesViewModel: ObservableObject {
     private var requestID = 0
 
     var oldestOutstanding: [PurchaseBill] {
-        bills.filter { !$0.isSettled }
+        bills.filter { !$0.isSettled && !$0.isCancelled }
     }
 
     func load() async {
@@ -203,7 +203,7 @@ final class PurchasesViewModel: ObservableObject {
         defer { isWorking = false }
         do {
             try await service.cancelBill(companyID: companyID, billID: id)
-            message = "Bill cancelled. Stock reversed."
+            message = "Bill cancelled. Supplier balance updated."
             await load()
             return true
         } catch {

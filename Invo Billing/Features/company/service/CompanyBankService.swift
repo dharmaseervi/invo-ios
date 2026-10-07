@@ -80,7 +80,7 @@ class CompanyBankService: ObservableObject {
         if http.statusCode == 200 || http.statusCode == 201 {
             return true
         } else {
-            return false
+            throw failure(data, status: http.statusCode)
         }
     }
     
@@ -103,7 +103,7 @@ class CompanyBankService: ObservableObject {
         
         request.httpBody = try JSONEncoder().encode(payload)
         
-        let (_, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request)
         
         guard let http = response as? HTTPURLResponse else {
             throw URLError(.badServerResponse)
@@ -112,7 +112,7 @@ class CompanyBankService: ObservableObject {
         if http.statusCode == 200 {
             return true
         } else {
-            return false
+            throw failure(data, status: http.statusCode)
         }
     }
     
@@ -134,13 +134,16 @@ class CompanyBankService: ObservableObject {
             throw URLError(.userAuthenticationRequired)
         }
         
-        let (_, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request)
         
         guard let http = response as? HTTPURLResponse else {
             throw URLError(.badServerResponse)
         }
         
-        return http.statusCode == 204 || http.statusCode == 200
+        guard http.statusCode == 204 || http.statusCode == 200 else {
+            throw failure(data, status: http.statusCode)
+        }
+        return true
     }
     
     // MARK: - Set Default Bank
@@ -159,12 +162,21 @@ class CompanyBankService: ObservableObject {
             throw URLError(.userAuthenticationRequired)
         }
         
-        let (_, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request)
         
         guard let http = response as? HTTPURLResponse else {
             throw URLError(.badServerResponse)
         }
         
-        return http.statusCode == 200
+        guard http.statusCode == 200 else { throw failure(data, status: http.statusCode) }
+        return true
     }
+    private func failure(_ data: Data, status: Int) -> NSError {
+        struct APIError: Decodable { let error: String }
+        let message = (try? JSONDecoder().decode(APIError.self, from: data))?.error
+            ?? "Couldn't update the bank account. Please try again."
+        return NSError(domain: "CompanyBankService", code: status,
+                       userInfo: [NSLocalizedDescriptionKey: message])
+    }
+
 }

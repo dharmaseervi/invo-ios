@@ -68,6 +68,12 @@ struct CompanyBankFormView: View {
                             .textContentType(.password)
                             .autocorrectionDisabled()
 
+                        if let message = vm.errorMessage {
+                            Text(message)
+                                .font(.scaled(12))
+                                .foregroundColor(.sDestructive)
+                        }
+
                         if showError {
                             Text("Please fill in all required fields.")
                                 .font(.scaled(12))
@@ -136,6 +142,7 @@ extension CompanyBankFormView {
     }
 
     private func handleSave() async {
+        vm.errorMessage = nil
         guard !holder.isEmpty, !bankName.isEmpty, !account.isEmpty else {
             showError = true
             return

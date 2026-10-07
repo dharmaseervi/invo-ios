@@ -167,6 +167,8 @@ struct InvoiceItemDetail: Codable, Identifiable {
     let item_id: Int
     /// Sent by the server all along; optional so an older response still decodes.
     let item_name: String?
+    /// Optional so invoices from an older server version still decode.
+    let hsn_code: String?
     let qty: Int
     let rate: Double
     let discount: Double

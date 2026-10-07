@@ -232,12 +232,14 @@ struct MoreView: View {
                 case "gst": AnyView(GSTReportView())
                 case "aging": AnyView(AgingReportView())
                 case "stock": AnyView(StockReportView())
+                case "pl": AnyView(ProfitLossView())
                 case "credit": AnyView(CreditNoteListView())
                 case "company": AnyView(CompanyView())
                 case "expenseform": AnyView(ExpenseFormView())
                 case "estimateform": AnyView(CreateEstimateView())
                 case "printinvoice": AnyView(DebugPrintPreviewLoader())
                 case "pdflook": AnyView(DebugPDFLookLoader())
+                case "invoice100": AnyView(DebugInvoice100View())
                 default: AnyView(EmptyView())
                 }
             }
@@ -426,6 +428,12 @@ struct MoreView: View {
     private var reportsSection: some View {
         if session.companyRole.canSeeReports {
             menuSection("Reports") {
+                NavigationLink {
+                    ProfitLossView()
+                } label: {
+                    MoreViewRow(icon: "chart.bar.doc.horizontal", label: "Profit & Loss")
+                }
+                rowDivider()
                 NavigationLink {
                     GSTReportView()
                 } label: {

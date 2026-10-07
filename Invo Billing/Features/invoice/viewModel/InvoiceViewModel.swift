@@ -19,6 +19,9 @@ class InvoiceViewModel: ObservableObject {
     @Published var showSuccessAlert = false
     @Published var successMessage = ""
 
+    /// Set true in debug preview views — suppresses all network fetches so injected mock data stays intact.
+    var previewMode = false
+
     // MARK: - Invoice Data
     @Published var invoices: [InvoiceResponse] = []
     @Published var invoiceDetail: InvoiceDetailResponse?
@@ -472,6 +475,7 @@ class InvoiceViewModel: ObservableObject {
 
     // MARK: - Fetch Invoice Detail
     func fetchInvoiceDetail(invoiceID: Int) async {
+        guard !previewMode else { return }
         isFetchingDetail = true
         defer { isFetchingDetail = false }
 

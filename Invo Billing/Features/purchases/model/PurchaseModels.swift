@@ -23,6 +23,10 @@ struct Supplier: Codable, Identifiable {
     /// Optional so an older server that does not send it still decodes.
     let advance: Double?
 
+    var address: String? = nil
+    var pincode: String? = nil
+    var notes: String? = nil
+
     var heldInAdvance: Double { advance ?? 0 }
 }
 
@@ -90,6 +94,7 @@ struct PurchaseBill: Codable, Identifiable {
     let amount_only: Bool?
 
     var isOverdue: Bool { is_overdue ?? false }
+    var isCancelled: Bool { status == "cancelled" }
     var isSettled: Bool { status == "paid" }
     var isAmountOnly: Bool { amount_only ?? false }
 }
@@ -221,9 +226,9 @@ struct UpdateSupplierRequest: Codable {
     var phone: String
     var email: String
     var gstin: String
-    var address: String
+    var address: String?
     var city: String
     var state: String
-    var pincode: String
-    var notes: String
+    var pincode: String?
+    var notes: String?
 }
