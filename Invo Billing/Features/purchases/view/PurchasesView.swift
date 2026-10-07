@@ -14,6 +14,7 @@ struct PurchasesView: View {
     @State private var showRecordBill = false
     @State private var payingSupplier: Supplier?
     @State private var returningBill: PurchaseBill?
+    @State private var cancellingBill: PurchaseBill?
 
     var body: some View {
         ZStack {
@@ -23,11 +24,6 @@ struct PurchasesView: View {
                 ProgressView().tint(.sAccent)
             } else {
                 ScrollView {
-                    // A plain stack, not a lazy one. Inside a LazyVStack the bill rows
-                    // were built but never laid out when they arrived after the first
-                    // render: the list stayed blank with the data sitting in it. The
-                    // server caps this list at 50 rows, so there is nothing to gain from
-                    // being lazy and a working screen to lose.
                     VStack(alignment: .leading, spacing: 14) {
                         dueCard
 
@@ -59,8 +55,24 @@ struct PurchasesView: View {
                                                 Label("Return to supplier", systemImage: "arrow.uturn.backward")
                                             }
                                         }
+                                        if !bill.isSettled {
+                                            Button(role: .destructive) {
+                                                cancellingBill = bill
+                                            } label: {
+                                                Label("Cancel bill", systemImage: "xmark.circle")
+                                            }
+                                        }
                                     }
                             }
+                            if vm.isLoadingMoreBills {
+                                ProgressView()
+                            } else if let error = vm.pageError {
+                                Text(error).foregroundColor(.sDestructive)
+                                Button("Try again") { Task { await vm.loadMoreBills(retry: true) } }
+                            } else if vm.hasMoreBills {
+                                Button("Load more bills") { Task { await vm.loadMoreBills() } }
+                            }
+
                         }
 
                         Spacer(minLength: 40)
@@ -93,7 +105,11 @@ struct PurchasesView: View {
                 }
             }
         }
-        .task { await vm.load() }
+        .searchable(text: $vm.search, prompt: "Invoice number or supplier")
+        .task(id: vm.search) {
+            do { try await Task.sleep(for: .milliseconds(300)) } catch { return }
+            await vm.load()
+        }
         .onChange(of: vm.billFilter) { _, _ in Task { await vm.load() } }
         .sheet(isPresented: $showAddSupplier) {
             NavigationStack { AddSupplierSheet(vm: vm) }
@@ -107,6 +123,21 @@ struct PurchasesView: View {
         .sheet(item: $returningBill) { bill in
             NavigationStack { ReturnToSupplierSheet(bill: bill, vm: vm) }
         }
+        .alert("Cancel bill?", isPresented: Binding(
+            get: { cancellingBill != nil },
+            set: { if !$0 { cancellingBill = nil } }
+        )) {
+            Button("Cancel bill", role: .destructive) {
+                guard let bill = cancellingBill else { return }
+                cancellingBill = nil
+                Task { await vm.cancelBill(id: bill.id) }
+            }
+            Button("Keep it", role: .cancel) { cancellingBill = nil }
+        } message: {
+            if let bill = cancellingBill {
+                Text("This will void bill \(bill.bill_number) and reverse its stock. Any payments already applied to it will be kept as a supplier advance.")
+            }
+        }
         .alert("Purchases", isPresented: $vm.showError) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -119,12 +150,39 @@ struct PurchasesView: View {
             Text("Owed to suppliers")
                 .font(.scaled(13))
                 .foregroundColor(.sMutedFG)
-            Text(Money.text(vm.totalDue)).moneyLine()
-                .font(.scaled(26, weight: .bold))
-                .foregroundColor(vm.totalDue > 0 ? .sDestructive : Color(red: 0.086, green: 0.639, blue: 0.341))
-            Text("Across \(vm.suppliers.filter { $0.due > 0 }.count) supplier\(vm.suppliers.filter { $0.due > 0 }.count == 1 ? "" : "s")")
-                .font(.scaled(12))
-                .foregroundColor(.sMutedFG)
+
+            if let due = vm.totalDue {
+                Text(Money.text(due)).moneyLine()
+                    .font(.scaled(26, weight: .bold))
+                    .foregroundColor(due > 0 ? .sDestructive : Color(red: 0.086, green: 0.639, blue: 0.341))
+                if vm.loadFailed {
+                    // The figure is real but it is the one from before the failed
+                    // refresh, and saying so is the difference between a stale number
+                    // and a wrong one.
+                    Text("Couldn't refresh — this may be out of date")
+                        .font(.scaled(12))
+                        .foregroundColor(.sDestructive)
+                } else {
+                    Text("Across \(vm.suppliers.filter { $0.due > 0 }.count) supplier\(vm.suppliers.filter { $0.due > 0 }.count == 1 ? "" : "s")")
+                        .font(.scaled(12))
+                        .foregroundColor(.sMutedFG)
+                }
+            } else {
+                // Never loaded. A dash, not ₹0.00 — the shop is not being told it owes
+                // nothing, it is being told we do not know.
+                Text("—").moneyLine()
+                    .font(.scaled(26, weight: .bold))
+                    .foregroundColor(.sMutedFG)
+                if vm.loadFailed {
+                    Button("Try again") { Task { await vm.load() } }
+                        .font(.scaled(12, weight: .medium))
+                        .foregroundColor(.sAccent)
+                } else {
+                    Text("Loading…")
+                        .font(.scaled(12))
+                        .foregroundColor(.sMutedFG)
+                }
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(18)

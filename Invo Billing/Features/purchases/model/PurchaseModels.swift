@@ -161,13 +161,11 @@ struct NewPurchaseBillRequest: Codable {
 /// Shared by the purchase form and its payload checks. Invalid text must never turn
 /// into a zero payment or a different invoice amount.
 enum PurchaseAmountInput {
+    /// Kept as the name the purchase screens already call, now that the rule it was
+    /// the only holder of lives in ``Money/parse(_:emptyAsZero:)`` where the rest of
+    /// the app can reach it.
     static func parse(_ text: String, emptyAsZero: Bool = false) -> Double? {
-        let value = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        if value.isEmpty { return emptyAsZero ? 0 : nil }
-        guard value.range(of: #"^[0-9]+(?:\.[0-9]{0,2})?$"#, options: .regularExpression) != nil,
-              let amount = Double(value), amount.isFinite,
-              amount <= 9_999_999_999.99 else { return nil }
-        return amount
+        Money.parse(text, emptyAsZero: emptyAsZero)
     }
 }
 
@@ -216,4 +214,16 @@ struct SupplierPaymentRequestDTO: Codable {
     let method: String
     var reference: String?
     var paid_on: String?
+}
+
+struct UpdateSupplierRequest: Codable {
+    var name: String
+    var phone: String
+    var email: String
+    var gstin: String
+    var address: String
+    var city: String
+    var state: String
+    var pincode: String
+    var notes: String
 }

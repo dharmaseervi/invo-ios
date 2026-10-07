@@ -45,7 +45,12 @@ struct ClientView: View {
 
                     // MARK: - Content
                     Group {
-                        if vm.isLoading {
+                        // Only when the list is empty. Search runs on the server, so
+                        // this replaced the rows with a centred spinner on every
+                        // search — losing what you were reading and where you were in
+                        // it. With rows on screen the reload is shown quietly in the
+                        // overlay below instead.
+                        if vm.isLoading && vm.clients.isEmpty {
                             VStack(spacing: 12) {
                                 ProgressView()
                                     .tint(.sAccent)
@@ -134,10 +139,34 @@ struct ClientView: View {
                                         ProgressView()
                                             .tint(.sAccent)
                                             .padding(.vertical, 12)
+                                    } else if vm.loadMoreClientsFailed {
+                                        VStack(spacing: 6) {
+                                            Text("Couldn't load more customers.")
+                                                .font(.scaled(13))
+                                                .foregroundColor(.sMutedFG)
+                                            Button("Try again") {
+                                                Task { await vm.retryLoadMoreClients() }
+                                            }
+                                            .font(.scaled(13, weight: .medium))
+                                            .foregroundColor(.sAccent)
+                                        }
+                                        .padding(.vertical, 12)
                                     }
                                 }
                                 .padding(20)
                             }
+                        }
+                    }
+                    // A reload over rows that are already there.
+                    .overlay(alignment: .top) {
+                        if vm.isLoading && !vm.clients.isEmpty {
+                            ProgressView()
+                                .tint(.sAccent)
+                                .scaleEffect(0.8)
+                                .padding(8)
+                                .background(.ultraThinMaterial, in: Capsule())
+                                .padding(.top, 8)
+                                .transition(.opacity)
                         }
                     }
 

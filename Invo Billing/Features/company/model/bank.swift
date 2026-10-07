@@ -18,6 +18,7 @@ struct CompanyBank: Identifiable, Codable {
 }
 
 struct CompanyBankRequestDTO: Codable {
+    var password: String? = nil
     let bank_name: String
     let company_id: Int
     let account_holder_name: String

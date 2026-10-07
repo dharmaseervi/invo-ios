@@ -47,7 +47,7 @@ class CompanyBankService: ObservableObject {
             // Return an empty array if not found
             return []
         } else {
-            return []
+            throw URLError(.badServerResponse)
         }
     }
     
@@ -77,7 +77,7 @@ class CompanyBankService: ObservableObject {
             throw URLError(.badServerResponse)
         }
         
-        if http.statusCode == 201 {
+        if http.statusCode == 200 || http.statusCode == 201 {
             return true
         } else {
             return false
@@ -117,7 +117,7 @@ class CompanyBankService: ObservableObject {
     }
     
     // MARK: - Delete Bank
-    func deleteBank(companyId: Int, bankId: Int) async throws -> Bool {
+    func deleteBank(companyId: Int, bankId: Int, password: String) async throws -> Bool {
         
         guard let url = URL(string: "\(baseURL)/companies/\(companyId)/banks/\(bankId)") else {
             throw URLError(.badURL)
@@ -125,6 +125,8 @@ class CompanyBankService: ObservableObject {
         
         var request = URLRequest(url: url)
         request.httpMethod = "DELETE"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONEncoder().encode(["password": password])
         
         if let token = KeychainManager.shared.loadToken() {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -138,7 +140,7 @@ class CompanyBankService: ObservableObject {
             throw URLError(.badServerResponse)
         }
         
-        return http.statusCode == 204
+        return http.statusCode == 204 || http.statusCode == 200
     }
     
     // MARK: - Set Default Bank

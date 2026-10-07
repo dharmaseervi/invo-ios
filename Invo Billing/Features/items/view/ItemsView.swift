@@ -66,7 +66,14 @@ struct ItemsView: View {
 
                     // MARK: - Content
                     Group {
-                        if vm.isLoading {
+                        // Only when there is nothing to show yet. Searching reloads from
+                        // the server, so this used to replace the whole list with a
+                        // centred spinner on every search — the rows you were reading
+                        // vanished, the scroll position went with them, and they
+                        // reappeared a moment later. A reload with rows already on
+                        // screen keeps them and says so quietly instead, in the
+                        // overlay below.
+                        if vm.isLoading && vm.items.isEmpty {
                             VStack(spacing: 12) {
                                 ProgressView()
                                     .tint(.sAccent)
@@ -187,6 +194,19 @@ struct ItemsView: View {
                                 .padding(20)
                                 .padding(.bottom, isSelectMode && !selectedItemIDs.isEmpty ? 70 : 0)
                             }
+                        }
+                    }
+                    // A reload happening over rows that are already there. Small,
+                    // and above the list rather than in place of it.
+                    .overlay(alignment: .top) {
+                        if vm.isLoading && !vm.items.isEmpty {
+                            ProgressView()
+                                .tint(.sAccent)
+                                .scaleEffect(0.8)
+                                .padding(8)
+                                .background(.ultraThinMaterial, in: Capsule())
+                                .padding(.top, 8)
+                                .transition(.opacity)
                         }
                     }
 

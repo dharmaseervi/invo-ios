@@ -62,7 +62,6 @@ class CompanyFormViewModel: ObservableObject {
                 await MainActor.run {
                     SessionManager.shared.selectedCompanyId = newCompanyID
                     SessionManager.saveSelectedCompanyId(newCompanyID)
-                    print("✅ Auto-selected new company ID: \(newCompanyID)")
                 }
                 return true
             }
@@ -73,7 +72,6 @@ class CompanyFormViewModel: ObservableObject {
                 await MainActor.run {
                     SessionManager.shared.selectedCompanyId = newest.id
                     SessionManager.saveSelectedCompanyId(newest.id)
-                    print("✅ Auto-selected company: \(newest.name) (ID: \(newest.id))")
                 }
             }
             

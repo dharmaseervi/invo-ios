@@ -29,16 +29,56 @@ struct PurchasesService {
         _ = try await post("/suppliers", companyID: companyID, body: request) as EmptyReply
     }
 
+    func updateSupplier(companyID: Int, supplierID: Int, request: UpdateSupplierRequest) async throws {
+        try await put("/suppliers/\(supplierID)", companyID: companyID, body: request)
+    }
+
+    func cancelBill(companyID: Int, billID: Int) async throws {
+        try await postNoBody("/purchase-bills/\(billID)/cancel", companyID: companyID)
+    }
+
+    func supplierStatementPDF(
+        companyID: Int, supplierID: Int, start: String, end: String
+    ) async throws -> Data {
+        let queryItems = [
+            URLQueryItem(name: "company_id", value: String(companyID)),
+            URLQueryItem(name: "start", value: start),
+            URLQueryItem(name: "end", value: end),
+        ]
+        var components = URLComponents(string: "\(baseURL)/suppliers/\(supplierID)/ledger/statement.pdf")
+        components?.queryItems = queryItems
+        guard let url = components?.url else { throw URLError(.badURL) }
+        var req = URLRequest(url: url)
+        req.httpMethod = "GET"
+        if let token = KeychainManager.shared.loadToken() {
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        let (data, response) = try await URLSession.shared.data(for: req)
+        guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+            struct ErrorBody: Decodable { let error: String }
+            if let body = try? JSONDecoder().decode(ErrorBody.self, from: data) {
+                throw PurchaseError(message: body.error)
+            }
+            throw PurchaseError(message: "Couldn't generate that statement.")
+        }
+        return data
+    }
+
     // MARK: - Bills
 
     /// status: unpaid, partial, paid, owed, overdue — or nil for everything.
-    func bills(companyID: Int, supplierID: Int? = nil, status: String? = nil) async throws -> [PurchaseBill] {
+    func bills(companyID: Int, supplierID: Int? = nil, status: String? = nil, search: String? = nil, limit: Int = 50, offset: Int = 0) async throws -> [PurchaseBill] {
         var items = [URLQueryItem(name: "company_id", value: String(companyID))]
         if let supplierID {
             items.append(URLQueryItem(name: "supplier_id", value: String(supplierID)))
         }
         if let status, !status.isEmpty {
             items.append(URLQueryItem(name: "status", value: status))
+        }
+        items.append(URLQueryItem(name: "limit", value: String(limit)))
+        items.append(URLQueryItem(name: "offset", value: String(offset)))
+        if let search, !search.isEmpty {
+            items.append(URLQueryItem(name: "search", value: search))
         }
         let response: PurchaseBillsResponse = try await get("/purchase-bills", items)
         return response.data
@@ -96,6 +136,34 @@ struct PurchasesService {
     }
 
     // MARK: - Plumbing
+
+    private func put<Body: Encodable>(_ path: String, companyID: Int, body: Body) async throws {
+        var components = URLComponents(string: "\(baseURL)\(path)")
+        components?.queryItems = [URLQueryItem(name: "company_id", value: String(companyID))]
+        guard let url = components?.url else { throw URLError(.badURL) }
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token = KeychainManager.shared.loadToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        request.httpBody = try JSONEncoder().encode(body)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try check(response, data)
+    }
+
+    private func postNoBody(_ path: String, companyID: Int) async throws {
+        var components = URLComponents(string: "\(baseURL)\(path)")
+        components?.queryItems = [URLQueryItem(name: "company_id", value: String(companyID))]
+        guard let url = components?.url else { throw URLError(.badURL) }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        if let token = KeychainManager.shared.loadToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try check(response, data)
+    }
 
     private func get<T: Decodable>(_ path: String, _ query: [URLQueryItem]) async throws -> T {
         var components = URLComponents(string: "\(baseURL)\(path)")

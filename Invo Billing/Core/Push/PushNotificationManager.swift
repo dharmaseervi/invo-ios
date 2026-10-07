@@ -26,7 +26,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         _ application: UIApplication,
         didFailToRegisterForRemoteNotificationsWithError error: Error
     ) {
+        #if DEBUG
         print("Push registration failed:", error.localizedDescription)
+        #endif
     }
 
     // Show the banner/sound even while the app is in the foreground.

@@ -12,6 +12,9 @@ struct SupplierStatementView: View {
     let supplier: Supplier
 
     @StateObject private var vm: SupplierStatementViewModel
+    @StateObject private var purchasesVM = PurchasesViewModel()
+    @State private var showStatement = false
+    @State private var showEdit = false
 
     init(supplier: Supplier) {
         self.supplier = supplier
@@ -69,6 +72,30 @@ struct SupplierStatementView: View {
         }
         .navigationTitle(supplier.name)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button {
+                        showStatement = true
+                    } label: {
+                        Label("Statement PDF", systemImage: "doc.text")
+                    }
+                    Button {
+                        showEdit = true
+                    } label: {
+                        Label("Edit supplier", systemImage: "pencil")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+            }
+        }
+        .sheet(isPresented: $showStatement) {
+            NavigationStack { SupplierStatementShareView(supplier: supplier) }
+        }
+        .sheet(isPresented: $showEdit) {
+            NavigationStack { EditSupplierSheet(supplier: supplier, vm: purchasesVM) }
+        }
         .task { await vm.load() }
         .alert("Statement", isPresented: $vm.showError) {
             Button("OK", role: .cancel) {}
@@ -86,18 +113,36 @@ struct SupplierStatementView: View {
                 .font(.scaled(13))
                 .foregroundColor(.sMutedFG)
 
-            Text(Money.text(abs(vm.balance))).moneyLine()
-                .font(.scaled(26, weight: .bold))
-                .foregroundColor(
-                    vm.balance > 0.004
-                        ? .sDestructive
-                        : Color(red: 0.086, green: 0.639, blue: 0.341)
-                )
+            if let balance = vm.balance {
+                Text(Money.text(abs(balance))).moneyLine()
+                    .font(.scaled(26, weight: .bold))
+                    .foregroundColor(
+                        balance > 0.004
+                            ? .sDestructive
+                            : Color(red: 0.086, green: 0.639, blue: 0.341)
+                    )
+            } else {
+                // Not known rather than nothing owed.
+                Text("—").moneyLine()
+                    .font(.scaled(26, weight: .bold))
+                    .foregroundColor(.sMutedFG)
+            }
+
+            if vm.loadFailed {
+                Text("Couldn't refresh — figures may be out of date")
+                    .font(.scaled(12))
+                    .foregroundColor(.sDestructive)
+                Button("Try again") { Task { await vm.load() } }
+            }
 
             if let summary = vm.summary {
                 Text("\(Money.text(summary.billed)) billed · \(Money.text(summary.paid)) paid")
                     .font(.scaled(12))
                     .foregroundColor(.sMutedFG)
+            } else if !vm.isLoading {
+                Button("Try again") { Task { await vm.load() } }
+                    .font(.scaled(12, weight: .medium))
+                    .foregroundColor(.sAccent)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

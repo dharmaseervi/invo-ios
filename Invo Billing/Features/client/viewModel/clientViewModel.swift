@@ -28,6 +28,9 @@ class ClientViewModel: ObservableObject {
     @Published var searchText = ""
     @Published private(set) var hasMoreClients = false
     @Published private(set) var isLoadingMoreClients = false
+    /// A page that failed to load. Paging pauses rather than ending, so the list can
+    /// say so and offer to go again.
+    @Published private(set) var loadMoreClientsFailed = false
 
     /// A page at a time. A shop with a few thousand customers used to download all of
     /// them to show the first screen.
@@ -124,6 +127,8 @@ class ClientViewModel: ObservableObject {
             guard request == clientRequestID else { return }
             clients = page
             hasMoreClients = page.count >= clientPageSize
+            // A fresh list starts without the previous one's paging failure.
+            loadMoreClientsFailed = false
         } catch let authErr as AuthErrorResponse {
             guard request == clientRequestID else { return }
             _ = showError(authErr.error)
@@ -136,7 +141,7 @@ class ClientViewModel: ObservableObject {
     /// The next page, appended. Asked for when the list nears its end.
     func loadMoreClients() async {
         guard let companyId = SessionManager.shared.selectedCompanyId,
-              hasMoreClients, !isLoadingMoreClients else { return }
+              hasMoreClients, !isLoadingMoreClients, !loadMoreClientsFailed else { return }
 
         isLoadingMoreClients = true
         defer { isLoadingMoreClients = false }
@@ -159,10 +164,25 @@ class ClientViewModel: ObservableObject {
             clients.append(contentsOf: page.filter { !known.contains($0.id) })
             hasMoreClients = page.count >= clientPageSize
         } catch {
-            // Quiet. The page already on screen is still good, and a failed scroll is
-            // not worth an alert over.
-            hasMoreClients = false
+            // A stale failure must not switch paging off for a search that has since
+            // moved on. The success path has always checked this; the failure path did
+            // not, so an old request failing late could end a newer list.
+            guard request == clientRequestID else { return }
+
+            // Quiet, but not final. `hasMoreClients = false` was the old answer and it
+            // said the wrong thing: after fifty customers a dropped connection made the
+            // rest of the shop's customers look like they did not exist, with nothing
+            // on screen to suggest otherwise and no way back but a reload. The rest are
+            // still there, so the list keeps its offer to fetch them and shows a Try
+            // again instead of ending.
+            loadMoreClientsFailed = true
         }
+    }
+
+    /// Clears a paging failure and asks for the same page again.
+    func retryLoadMoreClients() async {
+        loadMoreClientsFailed = false
+        await loadMoreClients()
     }
 
     // MARK: - Quick Sale Accounts (Cash / UPI)

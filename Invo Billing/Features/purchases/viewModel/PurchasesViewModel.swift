@@ -10,10 +10,19 @@ import Foundation
 final class PurchasesViewModel: ObservableObject {
 
     @Published private(set) var suppliers: [Supplier] = []
-    @Published private(set) var totalDue: Double = 0
+    /// What the shop owes its suppliers, or nil when that is not known yet.
+    ///
+    /// Optional rather than 0, because those are different facts and the screen has to
+    /// say which one it has. Starting at 0 meant a first load that failed left the
+    /// header reading "Owed to them ₹0.00" — a shop that owes four lakh being told, in
+    /// a perfectly confident typeface, that it owes nothing.
+    @Published private(set) var totalDue: Double?
     @Published private(set) var bills: [PurchaseBill] = []
     @Published private(set) var isLoading = false
     @Published private(set) var isWorking = false
+    /// Set when the last load failed, so totals already on screen can be marked as out
+    /// of date rather than silently passing for current.
+    @Published private(set) var loadFailed = false
 
     @Published var errorMessage: String?
     @Published var showError = false
@@ -21,6 +30,15 @@ final class PurchasesViewModel: ObservableObject {
 
     /// nil for every bill; otherwise "owed", "paid" or "overdue".
     @Published var billFilter: String?
+    @Published var search = ""
+    @Published private(set) var hasMoreBills = false
+    @Published private(set) var isLoadingMoreBills = false
+    @Published private(set) var pageError: String?
+    private let pageSize = 50
+    private var billOffset = 0
+    private var loadedCompanyID: Int?
+    private var loadedFilter: String?
+    private var loadedSearch = ""
 
     private let service = PurchasesService()
 
@@ -42,22 +60,58 @@ final class PurchasesViewModel: ObservableObject {
         requestID += 1
         let request = requestID
         isLoading = true
-        defer { isLoading = false }
+        hasMoreBills = false
+        pageError = nil
+        isLoadingMoreBills = false
+        if loadedCompanyID != companyID || loadedFilter != billFilter || loadedSearch != search {
+            bills = []
+        }
+        if loadedCompanyID != companyID { suppliers = []; totalDue = nil }
+        loadedCompanyID = companyID
+        loadedFilter = billFilter
+        loadedSearch = search
+        defer { if request == requestID { isLoading = false } }
 
         do {
             // Both at once: the screen shows what is owed overall beside the bills that
             // make it up, and they should never be a refresh apart.
             async let suppliersResult = service.suppliers(companyID: companyID)
-            async let billsResult = service.bills(companyID: companyID, status: billFilter)
+            async let billsResult = service.bills(companyID: companyID, status: billFilter, search: search, limit: pageSize)
 
             let (supplierPage, billPage) = try await (suppliersResult, billsResult)
             guard request == requestID else { return }
             suppliers = supplierPage.data
             totalDue = supplierPage.total_due
             bills = billPage
+            billOffset = billPage.count
+            hasMoreBills = billPage.count == pageSize
+            loadFailed = false
         } catch {
             guard request == requestID else { return }
+            loadFailed = true
             show(error.localizedDescription)
+        }
+    }
+
+    func loadMoreBills(retry: Bool = false) async {
+        guard let companyID = loadedCompanyID, companyID == SessionManager.shared.selectedCompanyId,
+              !isLoading, !isLoadingMoreBills, hasMoreBills,
+              pageError == nil || retry else { return }
+        let request = requestID
+        isLoadingMoreBills = true
+        pageError = nil
+        defer { if request == requestID { isLoadingMoreBills = false } }
+        do {
+            let page = try await service.bills(companyID: companyID, status: loadedFilter,
+                search: loadedSearch, limit: pageSize, offset: billOffset)
+            guard request == requestID else { return }
+            let known = Set(bills.map(\.id))
+            bills += page.filter { !known.contains($0.id) }
+            billOffset += page.count
+            hasMoreBills = page.count == pageSize
+        } catch {
+            guard request == requestID else { return }
+            pageError = error.localizedDescription
         }
     }
 
@@ -120,6 +174,36 @@ final class PurchasesViewModel: ObservableObject {
         do {
             try await service.paySupplier(companyID: companyID, request: request)
             message = "Payment recorded."
+            await load()
+            return true
+        } catch {
+            show(error.localizedDescription)
+            return false
+        }
+    }
+
+    func updateSupplier(id: Int, request: UpdateSupplierRequest) async -> Bool {
+        guard let companyID = SessionManager.shared.selectedCompanyId else { return false }
+        isWorking = true
+        defer { isWorking = false }
+        do {
+            try await service.updateSupplier(companyID: companyID, supplierID: id, request: request)
+            message = "Supplier updated."
+            await load()
+            return true
+        } catch {
+            show(error.localizedDescription)
+            return false
+        }
+    }
+
+    func cancelBill(id: Int) async -> Bool {
+        guard let companyID = SessionManager.shared.selectedCompanyId else { return false }
+        isWorking = true
+        defer { isWorking = false }
+        do {
+            try await service.cancelBill(companyID: companyID, billID: id)
+            message = "Bill cancelled. Stock reversed."
             await load()
             return true
         } catch {

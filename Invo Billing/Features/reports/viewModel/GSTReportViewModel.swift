@@ -12,6 +12,22 @@ final class GSTReportViewModel: ObservableObject {
 
     private let service = GSTReportService()
 
+    /// Identifies the newest load, so a reply that is no longer the one being waited
+    /// for can be thrown away.
+    ///
+    /// Tapping through months faster than the network answers left whichever reply
+    /// arrived last on the screen, under whatever month the header had got to by then.
+    /// On this screen in particular that is not a cosmetic muddle: these are the figures
+    /// a shop copies onto a GST return, and September's totals shown under "October" get
+    /// filed as October's. A counter rather than a comparison of the month, because
+    /// August → September → August makes two requests for August that look identical,
+    /// and the first one answering last would still be stale.
+    private var requestCounter = 0
+    private var currentRequest = 0
+
+    /// True when this reply is still the one being waited for.
+    private func isCurrent(_ request: Int) -> Bool { request == currentRequest }
+
     var monthLabel: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMMM yyyy"
@@ -56,17 +72,27 @@ final class GSTReportViewModel: ObservableObject {
             return
         }
 
+        requestCounter += 1
+        let request = requestCounter
+        currentRequest = request
+
         isLoading = true
         errorMessage = nil
-        defer { isLoading = false }
 
         let (start, end) = monthRange()
 
         do {
-            report = try await service.fetchGSTReport(companyID: companyID, start: start, end: end)
+            let result = try await service.fetchGSTReport(companyID: companyID, start: start, end: end)
+            // A superseded load leaves everything alone, including `isLoading`: the
+            // spinner belongs to the load still running.
+            guard isCurrent(request) else { return }
+            report = result
+            isLoading = false
         } catch {
+            guard isCurrent(request) else { return }
             errorMessage = "Couldn't load the GST report. Pull to retry."
             showAlert = true
+            isLoading = false
         }
     }
 

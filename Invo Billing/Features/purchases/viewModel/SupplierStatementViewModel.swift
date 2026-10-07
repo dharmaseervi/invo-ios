@@ -14,6 +14,7 @@ final class SupplierStatementViewModel: ObservableObject {
     @Published private(set) var isLoading = false
     @Published private(set) var isLoadingEarlier = false
     @Published private(set) var hasMore = false
+    @Published private(set) var loadFailed = false
 
     @Published var errorMessage: String?
     @Published var showError = false
@@ -36,8 +37,13 @@ final class SupplierStatementViewModel: ObservableObject {
     /// What the shop owes right now, from the summary rather than the last row: the
     /// last row is the end of the loaded page, which is the whole history only until
     /// somebody pages back.
-    var balance: Double { summary?.balance ?? 0 }
-    var isInCredit: Bool { balance < -0.004 }
+    ///
+    /// Nil until the summary has actually been read. It used to fall back to 0, so a
+    /// failed load — once its alert had been dismissed — left the statement reading
+    /// "Owed to them ₹0.00" beside an empty list, which is a settled account rather
+    /// than an unanswered question.
+    var balance: Double? { summary?.balance }
+    var isInCredit: Bool { (balance ?? 0) < -0.004 }
 
     func load() async {
         guard let companyID = SessionManager.shared.selectedCompanyId else {
@@ -48,7 +54,7 @@ final class SupplierStatementViewModel: ObservableObject {
         requestID += 1
         let request = requestID
         isLoading = true
-        defer { isLoading = false }
+        defer { if request == requestID { isLoading = false } }
 
         do {
             let page = try await service.ledger(
@@ -57,9 +63,11 @@ final class SupplierStatementViewModel: ObservableObject {
             guard request == requestID else { return }
             entries = page.data
             summary = page.summary
+            loadFailed = false
             hasMore = page.summary.entries > page.data.count
         } catch {
             guard request == requestID else { return }
+            loadFailed = true
             show(error.localizedDescription)
         }
     }
@@ -90,9 +98,11 @@ final class SupplierStatementViewModel: ObservableObject {
             let known = Set(entries.map(\.rowKey))
             entries.insert(contentsOf: page.data.filter { !known.contains($0.rowKey) }, at: 0)
             summary = page.summary
+            loadFailed = false
             hasMore = page.summary.entries > entries.count
         } catch {
             guard request == requestID else { return }
+            loadFailed = true
             show(error.localizedDescription)
         }
     }

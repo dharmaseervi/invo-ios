@@ -2,6 +2,8 @@ import SwiftUI
 import Combine
 
 struct InvoiceView: View {
+    var clientID: Int? = nil
+    var clientName: String? = nil
     @State private var showCreateInvoice = false
     @StateObject private var vm = InvoiceViewModel()
     @State private var searchText = ""
@@ -98,6 +100,7 @@ struct InvoiceView: View {
     /// on the filter bar.
     private func reload() async {
         await vm.fetchInvoices(
+            clientID: clientID,
             search: searchText.trimmingCharacters(in: .whitespaces),
             status: serverStatus
         )
@@ -105,7 +108,14 @@ struct InvoiceView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        if clientID == nil {
+            NavigationStack { screen }
+        } else {
+            screen
+        }
+    }
+
+    private var screen: some View {
             ZStack {
                 Color.sBackground.ignoresSafeArea()
                 VStack(spacing: 0) {
@@ -130,14 +140,31 @@ struct InvoiceView: View {
                                 }
                                 searchBar.padding(.top, 16)
                                 filterRow.padding(.top, 12)
-                                if vm.isFetchingList {
+                                // The spinner replaces the list only when there is no
+                                // list yet. Typing in the search box reloads from the
+                                // server, and this used to blank every row and the
+                                // scroll position with it on each search. A reload with
+                                // invoices already on screen keeps them and shows a
+                                // small indicator over them instead.
+                                if vm.isFetchingList && vm.invoices.isEmpty {
                                     ProgressView()
                                         .tint(.sAccent)
                                         .frame(minHeight: 360)
                                 } else if filteredInvoices.isEmpty {
                                     emptyState.frame(minHeight: 360)
                                 } else {
-                                    invoiceList.padding(.top, 18)
+                                    invoiceList
+                                        .padding(.top, 18)
+                                        .overlay(alignment: .top) {
+                                            if vm.isFetchingList {
+                                                ProgressView()
+                                                    .tint(.sAccent)
+                                                    .scaleEffect(0.8)
+                                                    .padding(8)
+                                                    .background(.ultraThinMaterial, in: Capsule())
+                                                    .transition(.opacity)
+                                            }
+                                        }
                                 }
                                 Spacer(minLength: 100)
                             }
@@ -148,7 +175,7 @@ struct InvoiceView: View {
                     }
                 }
             }
-            .navigationTitle("Invoices")
+            .navigationTitle(clientName.map { "\($0) invoices" } ?? "Invoices")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -225,7 +252,6 @@ struct InvoiceView: View {
                 Button("Cancel", role: .cancel) {}
             }
             .presentationCompactAdaptation(.sheet)
-        }
     }
     
     // MARK: - Search Bar
