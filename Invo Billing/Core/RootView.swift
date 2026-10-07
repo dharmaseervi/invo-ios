@@ -26,7 +26,12 @@ struct RootView: View {
 
     private var authenticatedRoot: some View {
         Group {
-            if session.isAuthenticated {
+            if !session.sessionReady {
+                // Blank screen in the app's background color while keychain is read.
+                // Prevents the one-frame flash of the login screen on every launch
+                // when the user already has a valid session.
+                Color.sBackground.ignoresSafeArea()
+            } else if session.isAuthenticated {
                 if session.isUnlocked {
                     TabViewMain()
                 } else {

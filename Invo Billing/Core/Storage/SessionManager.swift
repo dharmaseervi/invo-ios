@@ -12,6 +12,9 @@ final class SessionManager: ObservableObject {
 
     @Published var isAuthenticated = false
     @Published var token: String?
+    /// True once the initial keychain read is done. RootView waits on this to avoid
+    /// a one-frame flash of the login screen on every launch with a valid session.
+    @Published var sessionReady = false
 
     @Published var selectedCompanyId: Int? = nil {
         didSet {
@@ -116,13 +119,14 @@ final class SessionManager: ObservableObject {
 
             if isTokenExpired(saved) {
                 // Access token expired — try refreshing silently before giving up.
+                // sessionReady is set inside tryRefreshOrLogout when it finishes.
                 Task { await tryRefreshOrLogout(freshLogin: freshLogin) }
             } else {
                 isAuthenticated = true
                 isUnlocked = freshLogin || !isBiometricLockEnabled
+                sessionReady = true
                 loadSelectedCompany()
-                // Proactively refresh when within 24 h of expiry so the user never sees
-                // an "invalid token" error mid-session.
+                // Proactively refresh when within 24 h of expiry.
                 if tokenExpiresWithin(saved, seconds: 86_400) {
                     Task { try? await AuthService.shared.refreshAccessToken() }
                 }
@@ -140,9 +144,11 @@ final class SessionManager: ObservableObject {
             token = resp.token
             isAuthenticated = true
             isUnlocked = freshLogin || !isBiometricLockEnabled
+            sessionReady = true
             loadSelectedCompany()
         } catch {
             logout()
+            sessionReady = true
         }
     }
 
@@ -158,6 +164,7 @@ final class SessionManager: ObservableObject {
         token = nil
         isAuthenticated = false
         isUnlocked = true
+        sessionReady = true
         selectedCompanyId = nil
         Self.saveSelectedCompanyId(nil)
     }
