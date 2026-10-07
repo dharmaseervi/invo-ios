@@ -63,7 +63,7 @@ struct AddSupplierSheet: View {
 
 // MARK: - Recording a bill
 
-/// A supplier's bill: what arrived, at what cost, and what was paid for it.
+/// A supplier's bill, recorded as a final amount or with stock lines.
 struct RecordPurchaseBillSheet: View {
     @ObservedObject var vm: PurchasesViewModel
     @Environment(\.dismiss) private var dismiss
@@ -75,6 +75,14 @@ struct RecordPurchaseBillSheet: View {
     @State private var hasDueDate = true
     @State private var paidNow = ""
     @State private var paidMethod = "Cash"
+    @State private var entryMode = EntryMode.amountOnly
+    @State private var invoiceAmount = ""
+    @State private var notes = ""
+
+    private enum EntryMode: String, CaseIterable {
+        case amountOnly = "Amount only"
+        case items = "With items"
+    }
 
     @State private var lines: [DraftLine] = []
     @State private var showItemPicker = false
@@ -89,26 +97,52 @@ struct RecordPurchaseBillSheet: View {
     }
 
     private var subtotal: Double {
-        lines.reduce(0) { $0 + (Double($1.qty) ?? 0) * (Double($1.rate) ?? 0) }
+        lines.reduce(0) { $0 + (Double($1.qty) ?? 0) * (PurchaseAmountInput.parse($1.rate) ?? 0) }
     }
     private var tax: Double {
         lines.reduce(0) { sum, line in
-            let net = (Double(line.qty) ?? 0) * (Double(line.rate) ?? 0)
+            let net = (Double(line.qty) ?? 0) * (PurchaseAmountInput.parse(line.rate) ?? 0)
             return sum + net * line.taxRate / 100
         }
     }
-    private var total: Double { subtotal + tax }
-    private var paidValue: Double { Double(paidNow) ?? 0 }
+    private var invoiceAmountValue: Double? { PurchaseAmountInput.parse(invoiceAmount) }
+    private var total: Double {
+        entryMode == .amountOnly ? (invoiceAmountValue ?? 0) : subtotal + tax
+    }
+    private var parsedPaid: Double? { PurchaseAmountInput.parse(paidNow, emptyAsZero: true) }
+    private var paidValue: Double { parsedPaid ?? 0 }
+    private var validItems: Bool {
+        !lines.isEmpty && lines.allSatisfy { line in
+            guard let qty = Int(line.qty), qty > 0, qty <= Int(Int32.max),
+                  PurchaseAmountInput.parse(line.rate) != nil else { return false }
+            return line.taxRate.isFinite && (0...100).contains(line.taxRate)
+        }
+    }
     private var canSave: Bool {
         supplierID != nil
             && !billNumber.trimmingCharacters(in: .whitespaces).isEmpty
-            && !lines.isEmpty
+            && (entryMode == .amountOnly ? (invoiceAmountValue ?? 0) > 0 : validItems)
+            && total.isFinite && total <= 9_999_999_999.99
+            && parsedPaid != nil
             && paidValue <= total + 0.004
             && !vm.isWorking
     }
 
     var body: some View {
         Form {
+            Section {
+                Picker("Entry type", selection: $entryMode) {
+                    ForEach(EntryMode.allCases, id: \.self) { mode in
+                        Text(mode.rawValue).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+            } footer: {
+                Text(entryMode == .amountOnly
+                     ? "Record the invoice in the supplier ledger without changing stock."
+                     : "Record the items received and update stock and cost prices.")
+            }
+
             Section("Supplier") {
                 Picker("Supplier", selection: $supplierID) {
                     Text("Choose").tag(Int?.none)
@@ -116,7 +150,7 @@ struct RecordPurchaseBillSheet: View {
                         Text(supplier.name).tag(Int?.some(supplier.id))
                     }
                 }
-                TextField("Their bill number", text: $billNumber)
+                TextField("Supplier invoice number", text: $billNumber)
                     .autocorrectionDisabled()
                 DatePicker("Bill date", selection: $billDate, displayedComponents: .date)
                 Toggle("Payment due date", isOn: $hasDueDate)
@@ -125,52 +159,71 @@ struct RecordPurchaseBillSheet: View {
                 }
             }
 
-            Section {
-                ForEach($lines) { $line in
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(line.item.name)
-                            .font(.scaled(14, weight: .medium))
-                        HStack {
-                            Text("Qty").font(.scaled(12)).foregroundColor(.sMutedFG)
-                            TextField("0", text: $line.qty)
-                                .keyboardType(.numberPad)
-                                .frame(width: 60)
-                            Text("Rate").font(.scaled(12)).foregroundColor(.sMutedFG)
-                            TextField("0.00", text: $line.rate)
-                                .keyboardType(.decimalPad)
-                                .frame(width: 90)
-                            Spacer()
-                            Text(Money.text((Double(line.qty) ?? 0) * (Double(line.rate) ?? 0)))
-                                .font(.scaled(13, weight: .medium))
+            if entryMode == .amountOnly {
+                Section {
+                    TextField("Invoice amount (₹)", text: $invoiceAmount)
+                        .keyboardType(.decimalPad)
+                        .accessibilityLabel("Invoice amount in rupees")
+                    if !invoiceAmount.isEmpty && (invoiceAmountValue ?? 0) <= 0 {
+                        Text("Enter an amount greater than zero, using digits and up to two decimal places.")
+                            .font(.scaled(12))
+                            .foregroundColor(.sDestructive)
+                    }
+                } header: {
+                    Text("Invoice amount")
+                } footer: {
+                    Text("Enter the final total, including any GST. No item or GST breakdown is recorded.")
+                }
+            } else {
+                Section {
+                    ForEach($lines) { $line in
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(line.item.name)
+                                .font(.scaled(14, weight: .medium))
+                            HStack {
+                                Text("Qty").font(.scaled(12)).foregroundColor(.sMutedFG)
+                                TextField("0", text: $line.qty)
+                                    .keyboardType(.numberPad)
+                                    .frame(width: 60)
+                                Text("Rate").font(.scaled(12)).foregroundColor(.sMutedFG)
+                                TextField("0.00", text: $line.rate)
+                                    .keyboardType(.decimalPad)
+                                    .frame(width: 90)
+                                Spacer()
+                                Text(Money.text((Double(line.qty) ?? 0) * (PurchaseAmountInput.parse(line.rate) ?? 0)))
+                                    .font(.scaled(13, weight: .medium))
+                            }
                         }
                     }
-                }
-                .onDelete { lines.remove(atOffsets: $0) }
+                    .onDelete { lines.remove(atOffsets: $0) }
 
-                Button {
-                    showItemPicker = true
-                } label: {
-                    Label("Add item", systemImage: "plus")
-                }
-            } header: {
-                Text("Items")
-            } footer: {
-                if !lines.isEmpty {
-                    // Said plainly, because this is the part that surprises people: a
-                    // bill does not just record a debt, it brings the stock in and
-                    // changes what each item is costing them.
-                    Text("Saving adds this stock and updates each item's cost price to the rate here.")
+                    Button {
+                        showItemPicker = true
+                    } label: {
+                        Label("Add item", systemImage: "plus")
+                    }
+                } header: {
+                    Text("Items")
+                } footer: {
+                    if !lines.isEmpty {
+                        // Said plainly, because this is the part that surprises people: a
+                        // bill does not just record a debt, it brings the stock in and
+                        // changes what each item is costing them.
+                        Text("Saving adds this stock and updates each item's cost price to the rate here.")
+                    }
                 }
             }
 
-            if !lines.isEmpty {
+            if entryMode == .items && !lines.isEmpty {
                 Section("Total") {
                     LabeledContent("Subtotal", value: Money.text(subtotal))
                     LabeledContent("GST", value: Money.text(tax))
                     LabeledContent("Total", value: Money.text(total))
                         .font(.scaled(15, weight: .semibold))
                 }
+            }
 
+            if entryMode == .amountOnly || !lines.isEmpty {
                 Section("Paid now") {
                     TextField("0.00", text: $paidNow)
                         .keyboardType(.decimalPad)
@@ -179,7 +232,11 @@ struct RecordPurchaseBillSheet: View {
                             Text($0).tag($0)
                         }
                     }
-                    if paidValue > total + 0.004 {
+                    if parsedPaid == nil {
+                        Text("Enter a valid paid amount, or leave blank if unpaid.")
+                            .font(.scaled(12))
+                            .foregroundColor(.sDestructive)
+                    } else if paidValue > total + 0.004 {
                         Text("That's more than the bill comes to.")
                             .font(.scaled(12))
                             .foregroundColor(.sDestructive)
@@ -188,6 +245,16 @@ struct RecordPurchaseBillSheet: View {
                             .font(.scaled(12))
                             .foregroundColor(.sMutedFG)
                     }
+                }
+            }
+
+            Section("Notes") {
+                TextField("Optional note", text: $notes, axis: .vertical)
+            }
+
+            if let error = vm.errorMessage {
+                Section {
+                    Text(error).foregroundColor(.sDestructive)
                 }
             }
         }
@@ -216,7 +283,7 @@ struct RecordPurchaseBillSheet: View {
     }
 
     private func save() {
-        guard let supplierID else { return }
+        guard canSave, let supplierID else { return }
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -227,18 +294,19 @@ struct RecordPurchaseBillSheet: View {
             bill_number: billNumber.trimmingCharacters(in: .whitespaces),
             bill_date: formatter.string(from: billDate),
             due_date: hasDueDate ? formatter.string(from: dueDate) : nil,
-            notes: nil,
-            items: lines.compactMap { line in
+            notes: notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : notes,
+            items: entryMode == .amountOnly ? [] : lines.compactMap { line in
                 guard let qty = Int(line.qty), qty > 0 else { return nil }
                 return PurchaseLineRequest(
                     item_id: line.item.id,
                     qty: qty,
-                    rate: Double(line.rate) ?? 0,
+                    rate: PurchaseAmountInput.parse(line.rate) ?? 0,
                     tax_rate: line.taxRate
                 )
             },
             paid_amount: paidValue,
-            paid_method: paidValue > 0 ? paidMethod : nil
+            paid_method: paidValue > 0 ? paidMethod : nil,
+            bill_amount: entryMode == .amountOnly ? invoiceAmountValue : nil
         )
 
         Task {

@@ -79,12 +79,15 @@ final class PurchasesViewModel: ObservableObject {
 
     func recordBill(_ request: NewPurchaseBillRequest) async -> Bool {
         guard let companyID = SessionManager.shared.selectedCompanyId else { return false }
+        errorMessage = nil
         isWorking = true
         defer { isWorking = false }
 
         do {
             try await service.recordBill(companyID: companyID, request: request)
-            message = "Bill recorded. Stock updated."
+            message = request.bill_amount == nil
+                ? "Bill recorded. Stock updated."
+                : "Bill recorded in the supplier ledger."
             await load()
             return true
         } catch {

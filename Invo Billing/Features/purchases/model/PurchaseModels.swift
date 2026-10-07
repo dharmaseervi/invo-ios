@@ -87,9 +87,11 @@ struct PurchaseBill: Codable, Identifiable {
     let remaining_amount: Double
     let status: String
     let is_overdue: Bool?
+    let amount_only: Bool?
 
     var isOverdue: Bool { is_overdue ?? false }
     var isSettled: Bool { status == "paid" }
+    var isAmountOnly: Bool { amount_only ?? false }
 }
 
 struct PurchaseBillsResponse: Codable {
@@ -152,6 +154,21 @@ struct NewPurchaseBillRequest: Codable {
     /// Paid at the counter. The rest becomes what the shop owes.
     var paid_amount: Double
     var paid_method: String?
+    /// Final invoice amount, including any tax, when no stock lines are entered.
+    var bill_amount: Double? = nil
+}
+
+/// Shared by the purchase form and its payload checks. Invalid text must never turn
+/// into a zero payment or a different invoice amount.
+enum PurchaseAmountInput {
+    static func parse(_ text: String, emptyAsZero: Bool = false) -> Double? {
+        let value = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if value.isEmpty { return emptyAsZero ? 0 : nil }
+        guard value.range(of: #"^[0-9]+(?:\.[0-9]{0,2})?$"#, options: .regularExpression) != nil,
+              let amount = Double(value), amount.isFinite,
+              amount <= 9_999_999_999.99 else { return nil }
+        return amount
+    }
 }
 
 // MARK: - Sending stock back

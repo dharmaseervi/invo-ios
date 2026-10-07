@@ -86,178 +86,13 @@ struct MoreView: View {
                             .padding(.top, 20)
                             .padding(.bottom, 24)
 
-                            // MARK: - Account Section
-                            sectionHeader("Account")
-
-                            VStack(spacing: 0) {
-                                if session.companyRole.canChangeSettings {
-                                    NavigationLink {
-                                        CompanyView()
-                                    } label: {
-                                        MoreViewRow(icon: "building.2.fill", label: "Company Details")
-                                    }
-                                    rowDivider()
-
-                                }
-
-                                NavigationLink {
-                                    EstimateListView()
-                                } label: {
-                                    MoreViewRow(icon: "doc.badge.clock", label: "Estimates")
-                                }
-                                rowDivider()
-
-                                if session.companyRole.canSeeReports {
-                                    NavigationLink {
-                                        ExpenseView()
-                                    } label: {
-                                        MoreViewRow(icon: "banknote.fill", label: "Expenses")
-                                    }
-                                    rowDivider()
-
-                                }
-
-                                if session.companyRole.canSeeReports {
-                                    NavigationLink {
-                                        PaymentsView()
-                                    } label: {
-                                        MoreViewRow(icon: "indianrupeesign.circle.fill", label: "Payments")
-                                    }
-                                    rowDivider()
-
-                                }
-
-                                if session.companyRole.canSeeCosts {
-                                    NavigationLink {
-                                        PurchasesView()
-                                    } label: {
-                                        MoreViewRow(icon: "shippingbox.fill", label: "Purchases")
-                                    }
-                                    rowDivider()
-
-                                }
-
-                                if session.companyRole.canSeeReports {
-                                    NavigationLink {
-                                        LedgerView()
-                                    } label: {
-                                        MoreViewRow(icon: "book.fill", label: "Ledger")
-                                    }
-                                    rowDivider()
-
-                                }
-
-                                if session.companyRole.canSeeReports {
-                                    NavigationLink {
-                                        GSTReportView()
-                                    } label: {
-                                        MoreViewRow(icon: "doc.text.magnifyingglass", label: "GST Reports")
-                                    }
-                                    rowDivider()
-
-                                }
-
-                                if session.companyRole.canSeeReports {
-                                    NavigationLink {
-                                        AgingReportView()
-                                    } label: {
-                                        MoreViewRow(icon: "clock.badge.exclamationmark", label: "Client Aging")
-                                    }
-                                    rowDivider()
-
-                                }
-
-                                if session.companyRole.canSeeReports {
-                                    NavigationLink {
-                                        StockReportView()
-                                    } label: {
-                                        MoreViewRow(icon: "shippingbox.fill", label: "Stock Report")
-                                    }
-                                    rowDivider()
-
-                                }
-
-                                if session.companyRole.canEditCatalogue {
-                                    NavigationLink {
-                                        StocktakeView()
-                                    } label: {
-                                        MoreViewRow(icon: "checklist", label: "Stock count")
-                                    }
-                                    rowDivider()
-                                }
-
-                                if session.companyRole.canSeeReports {
-                                    NavigationLink {
-                                        CashClosingView()
-                                    } label: {
-                                        MoreViewRow(icon: "indianrupeesign.square", label: "Cash closing")
-                                    }
-                                    rowDivider()
-                                }
-
-                                if session.companyRole.canManageStaff {
-                                    NavigationLink {
-                                        StaffView()
-                                    } label: {
-                                        MoreViewRow(icon: "person.2.fill", label: "Staff")
-                                    }
-                                    rowDivider()
-                                }
-
-                                NavigationLink {
-                                    CreditNoteListView()
-                                } label: {
-                                    MoreViewRow(icon: "doc.text.fill", label: "Credit Notes")
-                                }
-                                rowDivider()
-
-                                Button {
-                                    showTemplatePicker = true
-                                } label: {
-                                    MoreViewRow(
-                                        icon: "paintpalette.fill",
-                                        label: "Invoice Template",
-                                        value: selectedTemplate.title
-                                    )
-                                }
-                                rowDivider()
-
-                                Menu {
-                                    ForEach(IndianStates.all, id: \.self) { state in
-                                        Button {
-                                            defaultState = state
-                                            IndianStates.defaultState = state
-                                        } label: {
-                                            if defaultState == state {
-                                                Label(state, systemImage: "checkmark")
-                                            } else {
-                                                Text(state)
-                                            }
-                                        }
-                                    }
-                                } label: {
-                                    MoreViewRow(
-                                        icon: "map.fill",
-                                        label: "Default State",
-                                        value: defaultState.isEmpty ? "Not set" : defaultState
-                                    )
-                                }
-
-                                rowDivider()
-
-                                // Apple requires an in-app way to change this choice:
-                                // "you must also provide an in-app settings screen that
-                                // lets people change their choice" (managing-notifications.md).
-                                // It is also where permission is now asked for, rather
-                                // than the moment an account is created.
-                                notificationRow
-                            }
-                            .padding(.horizontal, 14)
-                            .background(Color.sCard)
-                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
-                            .cornerRadius(12)
-                            .padding(.horizontal, 20)
-                            .padding(.bottom, 24)
+                            salesSection
+                            purchasesSection
+                            moneySection
+                            inventorySection
+                            reportsSection
+                            businessSection
+                            settingsSection
 
                             // MARK: - Security Section
                             if biometricKind != .none {
@@ -495,6 +330,179 @@ struct MoreView: View {
         }
     }
 
+    // MARK: - Modules
+    private var salesSection: some View {
+        menuSection("Sales") {
+            NavigationLink {
+                EstimateListView()
+            } label: {
+                MoreViewRow(icon: "doc.badge.clock", label: "Estimates")
+            }
+            rowDivider()
+            NavigationLink {
+                CreditNoteListView()
+            } label: {
+                MoreViewRow(icon: "doc.text.fill", label: "Credit notes")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var purchasesSection: some View {
+        if session.companyRole.canSeeCosts {
+            menuSection("Purchases") {
+                NavigationLink {
+                    PurchasesView()
+                } label: {
+                    MoreViewRow(icon: "shippingbox.fill", label: "Purchases")
+                }
+                rowDivider()
+                NavigationLink {
+                    PurchaseLedgerView()
+                } label: {
+                    MoreViewRow(icon: "text.book.closed.fill", label: "Purchase ledger")
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var moneySection: some View {
+        if session.companyRole.canSeeReports {
+            menuSection("Money") {
+                NavigationLink {
+                    PaymentsView()
+                } label: {
+                    MoreViewRow(icon: "indianrupeesign.circle.fill", label: "Payments")
+                }
+                rowDivider()
+                NavigationLink {
+                    ExpenseView()
+                } label: {
+                    MoreViewRow(icon: "banknote.fill", label: "Expenses")
+                }
+                rowDivider()
+                NavigationLink {
+                    LedgerView()
+                } label: {
+                    MoreViewRow(icon: "book.fill", label: "Customer ledger")
+                }
+                rowDivider()
+                NavigationLink {
+                    CashClosingView()
+                } label: {
+                    MoreViewRow(icon: "indianrupeesign.square", label: "Cash closing")
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var inventorySection: some View {
+        if session.companyRole.canEditCatalogue || session.companyRole.canSeeReports {
+            menuSection("Inventory") {
+                if session.companyRole.canEditCatalogue {
+                    NavigationLink {
+                        StocktakeView()
+                    } label: {
+                        MoreViewRow(icon: "checklist", label: "Stock count")
+                    }
+                }
+                if session.companyRole.canEditCatalogue && session.companyRole.canSeeReports {
+                    rowDivider()
+                }
+                if session.companyRole.canSeeReports {
+                    NavigationLink {
+                        StockReportView()
+                    } label: {
+                        MoreViewRow(icon: "shippingbox.fill", label: "Stock report")
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var reportsSection: some View {
+        if session.companyRole.canSeeReports {
+            menuSection("Reports") {
+                NavigationLink {
+                    GSTReportView()
+                } label: {
+                    MoreViewRow(icon: "doc.text.magnifyingglass", label: "GST reports")
+                }
+                rowDivider()
+                NavigationLink {
+                    AgingReportView()
+                } label: {
+                    MoreViewRow(icon: "clock.badge.exclamationmark", label: "Client aging")
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var businessSection: some View {
+        if session.companyRole.canChangeSettings || session.companyRole.canManageStaff {
+            menuSection("Business") {
+                if session.companyRole.canChangeSettings {
+                    NavigationLink {
+                        CompanyView()
+                    } label: {
+                        MoreViewRow(icon: "building.2.fill", label: "Company details")
+                    }
+                }
+                if session.companyRole.canChangeSettings && session.companyRole.canManageStaff {
+                    rowDivider()
+                }
+                if session.companyRole.canManageStaff {
+                    NavigationLink {
+                        StaffView()
+                    } label: {
+                        MoreViewRow(icon: "person.2.fill", label: "Staff")
+                    }
+                }
+            }
+        }
+    }
+
+    private var settingsSection: some View {
+        menuSection("Settings") {
+            Button {
+                showTemplatePicker = true
+            } label: {
+                MoreViewRow(
+                    icon: "paintpalette.fill",
+                    label: "Invoice template",
+                    value: selectedTemplate.title
+                )
+            }
+            rowDivider()
+            Menu {
+                ForEach(IndianStates.all, id: \.self) { state in
+                    Button {
+                        defaultState = state
+                        IndianStates.defaultState = state
+                    } label: {
+                        if defaultState == state {
+                            Label(state, systemImage: "checkmark")
+                        } else {
+                            Text(state)
+                        }
+                    }
+                }
+            } label: {
+                MoreViewRow(
+                    icon: "map.fill",
+                    label: "Default state",
+                    value: defaultState.isEmpty ? "Not set" : defaultState
+                )
+            }
+            rowDivider()
+            notificationRow
+        }
+    }
+
     // MARK: - Biometric toggle
     private func toggleBiometric(_ enable: Bool) {
         guard enable else {
@@ -580,6 +588,22 @@ struct MoreView: View {
     }
 
     // MARK: - Helpers
+    private func menuSection<Content: View>(
+        _ title: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(spacing: 0) {
+            sectionHeader(title)
+            VStack(spacing: 0, content: content)
+                .padding(.horizontal, 14)
+                .background(Color.sCard)
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
+                .cornerRadius(12)
+                .padding(.horizontal, 20)
+        }
+        .padding(.bottom, 24)
+    }
+
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
             .font(.scaled(13, weight: .medium))
@@ -587,6 +611,7 @@ struct MoreView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 20)
             .padding(.bottom, 10)
+            .accessibilityAddTraits(.isHeader)
     }
 
     private func rowDivider() -> some View {

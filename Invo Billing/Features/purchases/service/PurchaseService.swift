@@ -11,10 +11,16 @@ struct PurchasesService {
 
     // MARK: - Suppliers
 
-    func suppliers(companyID: Int, search: String? = nil) async throws -> SuppliersResponse {
+    func suppliers(
+        companyID: Int, search: String? = nil, limit: Int? = nil, offset: Int = 0
+    ) async throws -> SuppliersResponse {
         var items = [URLQueryItem(name: "company_id", value: String(companyID))]
         if let search, !search.isEmpty {
             items.append(URLQueryItem(name: "search", value: search))
+        }
+        if let limit, limit > 0 {
+            items.append(URLQueryItem(name: "limit", value: String(limit)))
+            items.append(URLQueryItem(name: "offset", value: String(offset)))
         }
         return try await get("/suppliers", items)
     }

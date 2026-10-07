@@ -52,10 +52,12 @@ struct PurchasesView: View {
                             ForEach(vm.bills) { bill in
                                 billCard(bill)
                                     .contextMenu {
-                                        Button {
-                                            returningBill = bill
-                                        } label: {
-                                            Label("Return to supplier", systemImage: "arrow.uturn.backward")
+                                        if !bill.isAmountOnly {
+                                            Button {
+                                                returningBill = bill
+                                            } label: {
+                                                Label("Return to supplier", systemImage: "arrow.uturn.backward")
+                                            }
                                         }
                                     }
                             }
@@ -234,6 +236,11 @@ struct PurchasesView: View {
                     Text("\(bill.bill_number) · \(AppDate.shortText(fromWire: bill.bill_date))")
                         .font(.scaled(12))
                         .foregroundColor(.sMutedFG)
+                    if bill.isAmountOnly {
+                        Text("Amount only · No stock entry")
+                            .font(.scaled(12))
+                            .foregroundColor(.sMutedFG)
+                    }
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 2) {
@@ -283,7 +290,7 @@ struct PurchasesView: View {
             Text("No suppliers yet")
                 .font(.scaled(15, weight: .medium))
                 .foregroundColor(.sForeground)
-            Text("Add the people you buy from, then record their bills — stock and cost prices update as you do.")
+            Text("Add the people you buy from, then record an invoice amount or add the items you received.")
                 .font(.scaled(12))
                 .foregroundColor(.sMutedFG)
                 .multilineTextAlignment(.center)
