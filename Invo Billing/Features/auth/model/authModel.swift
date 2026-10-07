@@ -7,6 +7,8 @@ struct User: Codable {
 
 struct AuthResponse: Codable {
     let token: String
+    let refresh_token: String?
+    let session_id: String?
     let user: User
 }
 
@@ -32,4 +34,24 @@ struct RegisterResponse: Codable {
     let user_id: Int
     let email: String
     let requires_verification: Bool
+}
+
+struct DeviceSession: Identifiable, Codable {
+    let id: String
+    let device_name: String
+    let platform: String
+    let ip_address: String
+    let last_seen: String
+    let created_at: String
+}
+
+struct SessionsListResponse: Codable {
+    let sessions: [DeviceSession]
+}
+
+struct TokenRefreshResponse: Codable {
+    let token: String
+    let refresh_token: String
+    let session_id: String?
+    let expires_in: Double
 }

@@ -115,13 +115,33 @@ final class SessionManager: ObservableObject {
             token = saved
 
             if isTokenExpired(saved) {
-                logout()
+                // Access token expired — try refreshing silently before giving up.
+                Task { await tryRefreshOrLogout(freshLogin: freshLogin) }
             } else {
                 isAuthenticated = true
                 isUnlocked = freshLogin || !isBiometricLockEnabled
                 loadSelectedCompany()
+                // Proactively refresh when within 24 h of expiry so the user never sees
+                // an "invalid token" error mid-session.
+                if tokenExpiresWithin(saved, seconds: 86_400) {
+                    Task { try? await AuthService.shared.refreshAccessToken() }
+                }
             }
         } else {
+            // No access token — try the refresh token path before forcing a login.
+            Task { await tryRefreshOrLogout(freshLogin: freshLogin) }
+        }
+    }
+
+    @MainActor
+    private func tryRefreshOrLogout(freshLogin: Bool) async {
+        do {
+            let resp = try await AuthService.shared.refreshAccessToken()
+            token = resp.token
+            isAuthenticated = true
+            isUnlocked = freshLogin || !isBiometricLockEnabled
+            loadSelectedCompany()
+        } catch {
             logout()
         }
     }
@@ -129,13 +149,12 @@ final class SessionManager: ObservableObject {
     func logout() {
         PushNotificationManager.shared.unregisterCurrentToken()
 
-        // Best-effort server-side logout — captured before the keychain token is
-        // cleared below, since this call needs to authenticate as the account
-        // being signed out of.
         let authToken = KeychainManager.shared.loadToken()
         Task { try? await userService.shared.logoutRequest(authToken: authToken) }
 
         _ = KeychainManager.shared.deleteToken()
+        _ = KeychainManager.shared.deleteRefreshToken()
+        _ = KeychainManager.shared.deleteSessionID()
         token = nil
         isAuthenticated = false
         isUnlocked = true
@@ -150,6 +169,18 @@ final class SessionManager: ObservableObject {
             UserDefaults.standard.removeObject(forKey: companyKey)
         }
     }
+}
+
+func tokenExpiresWithin(_ token: String, seconds: TimeInterval) -> Bool {
+    let parts = token.split(separator: ".")
+    if parts.count != 3 { return true }
+    var padded = String(parts[1])
+    padded = padded.padding(toLength: ((padded.count + 3) / 4) * 4, withPad: "=", startingAt: 0)
+    guard let data = Data(base64Encoded: padded),
+          let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+          let exp = json["exp"] as? Double
+    else { return true }
+    return Date().timeIntervalSince1970 > exp - seconds
 }
 
 func isTokenExpired(_ token: String) -> Bool {

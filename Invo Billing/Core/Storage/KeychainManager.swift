@@ -56,8 +56,19 @@ final class KeychainManager {
     }
     
     // Convenience keys
-    private let tokenKey = "auth_token"
+    private let tokenKey        = "auth_token"
+    private let refreshTokenKey = "auth_refresh_token"
+    private let sessionIDKey    = "auth_session_id"
+
     func saveToken(_ token: String) -> Bool { save(token, for: tokenKey) }
     func loadToken() -> String? { load(tokenKey) }
     func deleteToken() -> Bool { delete(tokenKey) }
+
+    func saveRefreshToken(_ token: String) -> Bool { save(token, for: refreshTokenKey) }
+    func loadRefreshToken() -> String? { load(refreshTokenKey) }
+    func deleteRefreshToken() -> Bool { delete(refreshTokenKey) }
+
+    func saveSessionID(_ id: String) -> Bool { save(id, for: sessionIDKey) }
+    func loadSessionID() -> String? { load(sessionIDKey) }
+    func deleteSessionID() -> Bool { delete(sessionIDKey) }
 }

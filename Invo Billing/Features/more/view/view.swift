@@ -95,10 +95,10 @@ struct MoreView: View {
                             settingsSection
 
                             // MARK: - Security Section
-                            if biometricKind != .none {
-                                sectionHeader("Security")
+                            sectionHeader("Security")
 
-                                VStack(spacing: 0) {
+                            VStack(spacing: 0) {
+                                if biometricKind != .none {
                                     HStack(spacing: 14) {
                                         Image(systemName: biometricKind.icon)
                                             .font(.scaled(14))
@@ -124,14 +124,40 @@ struct MoreView: View {
                                         .tint(.sAccent)
                                     }
                                     .padding(.vertical, 12)
+
+                                    Divider().padding(.leading, 38)
                                 }
-                                .padding(.horizontal, 14)
-                                .background(Color.sCard)
-                                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
-                                .cornerRadius(12)
-                                .padding(.horizontal, 20)
-                                .padding(.bottom, 24)
+
+                                NavigationLink {
+                                    ActiveSessionsView()
+                                } label: {
+                                    HStack(spacing: 14) {
+                                        Image(systemName: "person.2.badge.key")
+                                            .font(.scaled(14))
+                                            .foregroundColor(.sMutedFG)
+                                            .frame(width: 24)
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text("Active sessions")
+                                                .font(.scaled(14))
+                                                .foregroundColor(.sForeground)
+                                            Text("View and revoke logins on other devices")
+                                                .font(.scaled(11.5))
+                                                .foregroundColor(.sMutedFG)
+                                        }
+                                        Spacer()
+                                        Image(systemName: "chevron.right")
+                                            .font(.scaled(12))
+                                            .foregroundColor(.sMutedFG)
+                                    }
+                                    .padding(.vertical, 12)
+                                }
                             }
+                            .padding(.horizontal, 14)
+                            .background(Color.sCard)
+                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
+                            .cornerRadius(12)
+                            .padding(.horizontal, 20)
+                            .padding(.bottom, 24)
 
                             // MARK: - Support Section
                             sectionHeader("Support")
