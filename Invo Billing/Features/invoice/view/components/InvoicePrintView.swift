@@ -45,15 +45,20 @@ struct InvoicePrintView: View {
                         Button(action: printInvoice) {
                             Label("Print", systemImage: "printer")
                         }
+                        .disabled(pdfURL == nil)
                         Button(action: sharePDF) {
                             Label("Share PDF", systemImage: "square.and.arrow.up")
+                        }
+                        .disabled(pdfURL == nil)
+                        Divider()
+                        Button(action: printTestPage) {
+                            Label("Print test page", systemImage: "printer.dotmatrix")
                         }
                     } label: {
                         Image(systemName: "square.and.arrow.up")
                             .font(.scaled(14, weight: .semibold))
-                            .foregroundColor(pdfURL == nil ? .sMutedFG : .sAccent)
+                            .foregroundColor(.sAccent)
                     }
-                    .disabled(pdfURL == nil)
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 16)
@@ -221,6 +226,93 @@ struct InvoicePrintView: View {
         if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
             scene.windows.first?.rootViewController?.present(activityVC, animated: true)
         }
+    }
+
+    private func printTestPage() {
+        guard let url = generateTestPDF() else { return }
+        let printController = UIPrintInteractionController.shared
+        let printInfo = UIPrintInfo(dictionary: nil)
+        printInfo.jobName = "Invo Billing – Test Page"
+        printInfo.outputType = .general
+        printController.printInfo = printInfo
+        printController.printingItem = url
+        printController.present(animated: true)
+    }
+
+    private func generateTestPDF() -> URL? {
+        let pageSize = CGSize(width: 595.2, height: 841.8)
+        let renderer = UIGraphicsPDFRenderer(bounds: CGRect(origin: .zero, size: pageSize))
+
+        let df = DateFormatter()
+        df.dateStyle = .medium
+        df.timeStyle = .none
+        let dateStr = df.string(from: Date())
+
+        let data = renderer.pdfData { ctx in
+            ctx.beginPage()
+            let margin: CGFloat = 60
+            var y: CGFloat = margin
+
+            let headerAttrs: [NSAttributedString.Key: Any] = [
+                .font: UIFont.boldSystemFont(ofSize: 38),
+                .foregroundColor: UIColor.systemGray
+            ]
+            ("TEST PRINT" as NSString).draw(at: CGPoint(x: margin, y: y), withAttributes: headerAttrs)
+            y += 56
+
+            let subAttrs: [NSAttributedString.Key: Any] = [
+                .font: UIFont.systemFont(ofSize: 13),
+                .foregroundColor: UIColor.systemGray2
+            ]
+            ("Printer connection test · Invo Billing" as NSString)
+                .draw(at: CGPoint(x: margin, y: y), withAttributes: subAttrs)
+            y += 30
+
+            UIColor.systemGray4.setFill()
+            UIRectFill(CGRect(x: margin, y: y, width: pageSize.width - margin * 2, height: 1))
+            y += 24
+
+            let labelAttrs: [NSAttributedString.Key: Any] = [
+                .font: UIFont.systemFont(ofSize: 12),
+                .foregroundColor: UIColor.systemGray
+            ]
+            let valueAttrs: [NSAttributedString.Key: Any] = [
+                .font: UIFont.boldSystemFont(ofSize: 12),
+                .foregroundColor: UIColor.darkGray
+            ]
+
+            let rows: [(String, String)] = [
+                ("Invoice number", "TEST-001"),
+                ("Date", dateStr),
+                ("Client", "Test Client"),
+                ("Item", "Sample Product × 1"),
+                ("Rate", "₹1,000.00"),
+                ("Tax (18% GST)", "₹180.00"),
+                ("Total", "₹1,180.00"),
+            ]
+            for (label, value) in rows {
+                (label as NSString).draw(at: CGPoint(x: margin, y: y), withAttributes: labelAttrs)
+                (value as NSString).draw(at: CGPoint(x: 240, y: y), withAttributes: valueAttrs)
+                y += 26
+            }
+
+            y += 16
+            UIColor.systemGray4.setFill()
+            UIRectFill(CGRect(x: margin, y: y, width: pageSize.width - margin * 2, height: 1))
+            y += 22
+
+            let noteAttrs: [NSAttributedString.Key: Any] = [
+                .font: UIFont.italicSystemFont(ofSize: 11),
+                .foregroundColor: UIColor.systemGray2
+            ]
+            ("If you can read this clearly, your printer is connected correctly." as NSString)
+                .draw(at: CGPoint(x: margin, y: y), withAttributes: noteAttrs)
+        }
+
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("invo_test_print.pdf")
+        try? data.write(to: url)
+        return url
     }
 }
 

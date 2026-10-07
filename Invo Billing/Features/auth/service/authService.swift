@@ -199,7 +199,13 @@ class AuthService {
         }
     }
     
-    func deleteAccount() async throws {
+    /// Deletes the account, confirming with the password.
+    ///
+    /// Deleting is the most destructive thing this app can do, and a bearer token was
+    /// the only thing standing in front of it — so a phone picked up off a counter was
+    /// enough to wipe a business's books. The password proves the person holding the
+    /// token is the owner.
+    func deleteAccount(password: String) async throws {
         guard let url = URL(string: "\(baseURL)/account") else {
             throw URLError(.badURL)
         }
@@ -211,6 +217,7 @@ class AuthService {
             throw AuthErrorResponse(error: "No active session")
         }
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.httpBody = try JSONEncoder().encode(["password": password])
 
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse else {

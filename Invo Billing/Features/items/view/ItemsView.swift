@@ -13,6 +13,7 @@ struct ItemsView: View {
     @State private var lookupResult: ItemResponse?
     @State private var lookupNotFoundCode: String?
     @State private var isSelectMode = false
+    @State private var showImport = false
     @State private var selectedItemIDs: Set<Int> = []
     @State private var showBulkPrint = false
 
@@ -65,7 +66,14 @@ struct ItemsView: View {
 
                     // MARK: - Content
                     Group {
-                        if vm.isLoading {
+                        // Only when there is nothing to show yet. Searching reloads from
+                        // the server, so this used to replace the whole list with a
+                        // centred spinner on every search — the rows you were reading
+                        // vanished, the scroll position went with them, and they
+                        // reappeared a moment later. A reload with rows already on
+                        // screen keeps them and says so quietly instead, in the
+                        // overlay below.
+                        if vm.isLoading && vm.items.isEmpty {
                             VStack(spacing: 12) {
                                 ProgressView()
                                     .tint(.sAccent)
@@ -132,7 +140,11 @@ struct ItemsView: View {
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                         } else {
                             ScrollView(.vertical, showsIndicators: false) {
-                                VStack(spacing: 10) {
+                                // Lazy: a plain VStack builds every row up front, and
+                                // each row's .task fires with it — so the whole
+                                // catalogue was constructed, and the next page asked
+                                // for, before anything had been scrolled.
+                                LazyVStack(spacing: 10) {
                                     ForEach(filteredItems) { item in
                                         ItemListRowView(
                                             item: item,
@@ -162,6 +174,16 @@ struct ItemsView: View {
                                         ProgressView()
                                             .tint(.sAccent)
                                             .padding(.vertical, 12)
+                                    } else if vm.loadMoreFailed {
+                                        VStack(spacing: 6) {
+                                            Text("Couldn't load more items.")
+                                                .font(.scaled(13))
+                                                .foregroundColor(.sMutedFG)
+                                            Button("Try again") { Task { await vm.retryLoadMore() } }
+                                                .font(.scaled(13, weight: .medium))
+                                                .foregroundColor(.sAccent)
+                                        }
+                                        .padding(.vertical, 12)
                                     } else if !vm.hasMore && filteredItems.count > 20 {
                                         Text("All \(filteredItems.count) items loaded")
                                             .font(.scaled(12))
@@ -172,6 +194,19 @@ struct ItemsView: View {
                                 .padding(20)
                                 .padding(.bottom, isSelectMode && !selectedItemIDs.isEmpty ? 70 : 0)
                             }
+                        }
+                    }
+                    // A reload happening over rows that are already there. Small,
+                    // and above the list rather than in place of it.
+                    .overlay(alignment: .top) {
+                        if vm.isLoading && !vm.items.isEmpty {
+                            ProgressView()
+                                .tint(.sAccent)
+                                .scaleEffect(0.8)
+                                .padding(8)
+                                .background(.ultraThinMaterial, in: Capsule())
+                                .padding(.top, 8)
+                                .transition(.opacity)
                         }
                     }
 
@@ -215,8 +250,17 @@ struct ItemsView: View {
                         HStack(spacing: 16) {
                             Button("Select") { isSelectMode = true }
                                 .font(.scaled(15))
-                            NavigationLink {
-                                ItemFormView()
+                            Menu {
+                                NavigationLink {
+                                    ItemFormView()
+                                } label: {
+                                    Label("New product", systemImage: "plus")
+                                }
+                                Button {
+                                    showImport = true
+                                } label: {
+                                    Label("Import from CSV", systemImage: "tablecells")
+                                }
                             } label: {
                                 Image(systemName: "plus")
                             }
@@ -235,6 +279,13 @@ struct ItemsView: View {
             }
             .navigationDestination(item: $itemToPrint) { item in
                 PrintLabelScreen(item: item)
+            }
+            // A whole catalogue arriving at once changes the list underneath, so it
+            // reloads when the import closes — but only if something was written.
+            .navigationDestination(isPresented: $showImport) {
+                ImportItemsView { imported in
+                    if imported { Task { await vm.loadItems() } }
+                }
             }
             .navigationDestination(isPresented: $showBulkPrint) {
                 BulkPrintLabelsScreen(items: vm.items.filter { selectedItemIDs.contains($0.id) })

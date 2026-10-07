@@ -9,10 +9,12 @@ import Foundation
 
 // MARK: - UI-only Line Item (used while creating invoice)
 
-struct InvoiceLineItem: Identifiable {
-    
+/// Equatable so the form can tell when a line actually changed — that is what the
+/// autosave watches. ItemResponse is Hashable already, so the comparison is synthesised.
+struct InvoiceLineItem: Identifiable, Equatable {
+
     let id = UUID()
-    
+
     let item: ItemResponse
     var qty: Int
     var rate: Double
@@ -72,6 +74,28 @@ enum InvoiceStatus: String, Codable {
 }
 
 // MARK: - Invoice List Response
+
+/// What the list screen shows above the rows, counted by the server over every invoice
+/// that matches — not over the page that happens to be loaded.
+struct InvoiceSummary: Codable {
+    let total: Int
+    let draft: Int
+    let issued: Int
+    let partial: Int
+    let paid: Int
+    let cancelled: Int
+    let overdue: Int
+    /// Issued and part-paid: the invoices a customer still owes something on.
+    let owed: Int
+    let outstanding: Double
+    let overdue_amount: Double
+    let invoiced: Double
+
+    static let empty = InvoiceSummary(
+        total: 0, draft: 0, issued: 0, partial: 0, paid: 0, cancelled: 0,
+        overdue: 0, owed: 0, outstanding: 0, overdue_amount: 0, invoiced: 0
+    )
+}
 
 struct InvoiceListResponse: Codable {
     let data: [InvoiceResponse]
@@ -141,6 +165,10 @@ struct ClientSummary: Codable {
 struct InvoiceItemDetail: Codable, Identifiable {
     let id: Int
     let item_id: Int
+    /// Sent by the server all along; optional so an older response still decodes.
+    let item_name: String?
+    /// Optional so invoices from an older server version still decode.
+    let hsn_code: String?
     let qty: Int
     let rate: Double
     let discount: Double

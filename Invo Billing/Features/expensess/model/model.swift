@@ -18,6 +18,7 @@ struct Expense: Codable, Identifiable {
     let amount: Double
     let description: String?
     let date: String
+    let paymentMethod: String?
     let createdAt: String?
     let updatedAt: String?
     
@@ -29,6 +30,7 @@ struct Expense: Codable, Identifiable {
         case amount
         case description
         case date
+        case paymentMethod = "payment_method"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
     }
@@ -41,6 +43,7 @@ struct ExpenseCreatePayload: Codable {
     let amount: Double
     let description: String?
     let date: String
+    let paymentMethod: String?
     
     enum CodingKeys: String, CodingKey {
         case companyId = "company_id"
@@ -48,6 +51,7 @@ struct ExpenseCreatePayload: Codable {
         case amount
         case description
         case date
+        case paymentMethod = "payment_method"
     }
     
     init(
@@ -55,13 +59,15 @@ struct ExpenseCreatePayload: Codable {
         name: String,
         amount: Double,
         description: String? = nil,
-        date: String
+        date: String,
+        paymentMethod: String? = nil
     ) {
         self.companyId = companyId
         self.name = name
         self.amount = amount
         self.description = description
         self.date = date
+        self.paymentMethod = paymentMethod
     }
 }
 
@@ -71,17 +77,25 @@ struct ExpenseUpdatePayload: Codable {
     let amount: Double?
     let description: String?
     let date: String?
+    let paymentMethod: String?
+
+    enum CodingKeys: String, CodingKey {
+        case name, amount, description, date
+        case paymentMethod = "payment_method"
+    }
     
     init(
         name: String? = nil,
         amount: Double? = nil,
         description: String? = nil,
-        date: String? = nil
+        date: String? = nil,
+        paymentMethod: String? = nil
     ) {
         self.name = name
         self.amount = amount
         self.description = description
         self.date = date
+        self.paymentMethod = paymentMethod
     }
 }
 

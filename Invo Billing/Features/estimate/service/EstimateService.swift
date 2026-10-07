@@ -39,11 +39,25 @@ final class EstimateService {
         }
     }
 
-    func getEstimates(companyID: Int?, clientID: Int? = nil) async throws -> [EstimateResponse] {
+    /// One page of estimates, newest first.
+    ///
+    /// The limit and offset are sent explicitly. Sending neither did not mean "all of
+    /// them" — the server's own default is 50, so a shop with more than fifty estimates
+    /// simply never saw the rest, and nothing on the screen said so.
+    func getEstimates(
+        companyID: Int?,
+        clientID: Int? = nil,
+        search: String? = nil,
+        limit: Int,
+        offset: Int
+    ) async throws -> [EstimateResponse] {
         var components = URLComponents(string: "\(baseURL)/estimates")!
         var query: [URLQueryItem] = []
         if let companyID { query.append(URLQueryItem(name: "company_id", value: String(companyID))) }
         if let clientID { query.append(URLQueryItem(name: "client_id", value: String(clientID))) }
+        if let search, !search.isEmpty { query.append(URLQueryItem(name: "search", value: search)) }
+        query.append(URLQueryItem(name: "limit", value: String(limit)))
+        query.append(URLQueryItem(name: "offset", value: String(offset)))
         components.queryItems = query
         guard let url = components.url else { throw URLError(.badURL) }
 

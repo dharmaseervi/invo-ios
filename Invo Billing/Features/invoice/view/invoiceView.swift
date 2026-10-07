@@ -2,6 +2,8 @@ import SwiftUI
 import Combine
 
 struct InvoiceView: View {
+    var clientID: Int? = nil
+    var clientName: String? = nil
     @State private var showCreateInvoice = false
     @StateObject private var vm = InvoiceViewModel()
     @State private var searchText = ""
@@ -18,36 +20,34 @@ struct InvoiceView: View {
         case issued = "Issued"
     }
     
-    var filteredInvoices: [InvoiceResponse] {
-        var invoices = vm.invoices
-        if !searchText.isEmpty {
-            invoices = invoices.filter {
-                $0.invoice_number.localizedCaseInsensitiveContains(searchText)
-                || ($0.client_name ?? "").localizedCaseInsensitiveContains(searchText)
-            }
-        }
+    /// The rows as the server returned them: the search box and the filter are query
+    /// parameters now, so there is nothing left to filter here.
+    ///
+    /// Filtering the loaded rows meant searching only what had been scrolled past, and
+    /// the counts beside the filters described that handful of rows while looking like
+    /// the state of the whole business.
+    var filteredInvoices: [InvoiceResponse] { vm.invoices }
+
+    /// What the server's status filter is called for each tab.
+    private var serverStatus: String? {
         switch selectedFilter {
-        case .all: break
-        case .paid: invoices = invoices.filter { $0.status == .paid }
-        case .draft: invoices = invoices.filter { $0.status == .draft }
-        case .overdue: invoices = invoices.filter { isOverdue($0) }
-        case .partial: invoices = invoices.filter { $0.status == .partial }
-        case .issued: invoices = invoices.filter { $0.status == .issued }
+        case .all: return nil
+        case .paid: return "paid"
+        case .draft: return "draft"
+        case .overdue: return "overdue"
+        case .partial: return "partial"
+        case .issued: return "issued"
         }
-        return invoices
     }
-    
-    var totalAmount: Double { filteredInvoices.reduce(0) { $0 + $1.total } }
-    var outstandingAmount: Double {
-        vm.invoices
-            .filter { $0.status != .paid && $0.status != .cancelled }
-            .reduce(0) { $0 + $1.remaining_amount }
-    }
-    var overdueCount: Int { vm.invoices.filter { isOverdue($0) }.count }
-    var paidCount: Int { vm.invoices.filter { $0.status == .paid }.count }
-    var draftCount: Int { vm.invoices.filter { $0.status == .draft && !isOverdue($0) }.count }
-    var partialCount: Int { vm.invoices.filter { $0.status == .partial && !isOverdue($0) }.count }
-    var issuedCount: Int { vm.invoices.filter { $0.status == .issued }.count }
+
+    var totalAmount: Double { vm.summary.invoiced }
+    /// What customers owe across every matching invoice: issued and part-paid only.
+    var outstandingAmount: Double { vm.summary.outstanding }
+    var overdueCount: Int { vm.summary.overdue }
+    var paidCount: Int { vm.summary.paid }
+    var draftCount: Int { vm.summary.draft }
+    var partialCount: Int { vm.summary.partial }
+    var issuedCount: Int { vm.summary.issued }
     
     /// Overdue means the due date has *passed*, not that it has arrived.
     ///
@@ -56,16 +56,28 @@ struct InvoiceView: View {
     /// red badge, the "6 overdue" count and the Overdue filter, so customers were being
     /// chased a day before they were late, and the row could read "Due today" beside an
     /// Overdue badge.
+    ///
+    /// And only an invoice that is actually owed can be late. "Not paid" also caught
+    /// drafts, which nobody has been sent, and cancelled invoices — a draft read "7 days
+    /// overdue" and swelled the overdue count.
     private func isOverdue(_ invoice: InvoiceResponse) -> Bool {
-        guard invoice.status != .paid,
+        guard Self.isOwed(invoice.status),
               let due = AppDate.date(fromWire: invoice.due_date) else { return false }
         let calendar = Calendar.current
         return calendar.startOfDay(for: due) < calendar.startOfDay(for: Date())
     }
+
+    /// Issued to the customer and not yet settled — the same rule the server uses.
+    static func isOwed(_ status: InvoiceStatus) -> Bool {
+        switch status {
+        case .issued, .partial, .sent, .pending, .overdue: return true
+        case .draft, .paid, .cancelled: return false
+        }
+    }
     
     private func countFor(_ filter: InvoiceFilter) -> Int {
         switch filter {
-        case .all: return vm.invoices.count
+        case .all: return vm.summary.total
         case .paid: return paidCount
         case .draft: return draftCount
         case .overdue: return overdueCount
@@ -74,36 +86,96 @@ struct InvoiceView: View {
         }
     }
     
+    /// The very first load, where there is nothing on screen yet to keep. Later loads
+    /// leave the controls in place.
+    ///
+    /// Tracked rather than guessed from an empty list: a search that matched nothing
+    /// leaves the list empty, so clearing that search made this true again and the
+    /// search box disappeared under the placeholder exactly when it was being used.
+    @State private var hasLoadedOnce = false
+
+    private var isFirstLoad: Bool { vm.isFetchingList && !hasLoadedOnce }
+
+    /// Fetches the list and its figures for whatever is in the search box and selected
+    /// on the filter bar.
+    private func reload() async {
+        await vm.fetchInvoices(
+            clientID: clientID,
+            search: searchText.trimmingCharacters(in: .whitespaces),
+            status: serverStatus
+        )
+        hasLoadedOnce = true
+    }
+
     var body: some View {
-        NavigationStack {
+        if clientID == nil {
+            NavigationStack { screen }
+        } else {
+            screen
+        }
+    }
+
+    private var screen: some View {
             ZStack {
                 Color.sBackground.ignoresSafeArea()
                 VStack(spacing: 0) {
-                    if vm.isFetchingList {
+                    // The search field and the filters stay mounted while a search
+                    // runs. They used to be inside the branch that the loading
+                    // placeholder replaced, so every keystroke tore the field off the
+                    // screen, the keyboard went with it, and the next character had
+                    // nowhere to go. Only the results area waits.
+                    if isFirstLoad {
                         loadingView
                     } else {
                         ScrollView(showsIndicators: false) {
                             VStack(spacing: 0) {
                                 if vm.invoices.isEmpty == false || !searchText.isEmpty {
-                                    summaryCard.padding(.top, 16)
+                                    // What the shop is owed overall is the money view
+                                    // of the business, which a counter role is not
+                                    // shown. Left in, the card sits there asking them
+                                    // to retry something that will never work for them.
+                                    if SessionManager.shared.companyRole.canSeeReports {
+                                        summaryCard.padding(.top, 16)
+                                    }
                                 }
                                 searchBar.padding(.top, 16)
                                 filterRow.padding(.top, 12)
-                                if filteredInvoices.isEmpty {
+                                // The spinner replaces the list only when there is no
+                                // list yet. Typing in the search box reloads from the
+                                // server, and this used to blank every row and the
+                                // scroll position with it on each search. A reload with
+                                // invoices already on screen keeps them and shows a
+                                // small indicator over them instead.
+                                if vm.isFetchingList && vm.invoices.isEmpty {
+                                    ProgressView()
+                                        .tint(.sAccent)
+                                        .frame(minHeight: 360)
+                                } else if filteredInvoices.isEmpty {
                                     emptyState.frame(minHeight: 360)
                                 } else {
-                                    invoiceList.padding(.top, 18)
+                                    invoiceList
+                                        .padding(.top, 18)
+                                        .overlay(alignment: .top) {
+                                            if vm.isFetchingList {
+                                                ProgressView()
+                                                    .tint(.sAccent)
+                                                    .scaleEffect(0.8)
+                                                    .padding(8)
+                                                    .background(.ultraThinMaterial, in: Capsule())
+                                                    .transition(.opacity)
+                                            }
+                                        }
                                 }
                                 Spacer(minLength: 100)
                             }
                             .opacity(appearAnimation ? 1 : 0)
                             .offset(y: appearAnimation ? 0 : 10)
                         }
-                        .refreshable { await vm.fetchInvoices() }
+                        .refreshable { await reload() }
                     }
                 }
             }
-            .navigationTitle("Invoices")
+            .navigationTitle(clientName.map { "\($0) invoices" } ?? "Invoices")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -113,8 +185,25 @@ struct InvoiceView: View {
                 }
             }
             .onAppear {
-                Task { await vm.fetchInvoices() }
+                Task { await reload() }
                 withAnimation(.easeOut(duration: 0.3)) { appearAnimation = true }
+            }
+            // The filter is a query parameter, so changing tab asks the server.
+            .onChange(of: selectedFilter) { _, _ in
+                Task { await reload() }
+            }
+            // Typing is debounced: a request per keystroke would be a request per
+            // keystroke, and the one that answers last is not necessarily the one for
+            // what is now in the box.
+            .task(id: searchText) {
+                // Only skip the run before the first load, which onAppear performs.
+                // Testing for an empty box and an empty list also skipped the state
+                // after clearing a search that matched nothing, so the full list never
+                // came back.
+                guard hasLoadedOnce else { return }
+                try? await Task.sleep(nanoseconds: 300_000_000)
+                guard !Task.isCancelled else { return }
+                await reload()
             }
             // Creating an invoice is a multistep task, and Apple's guidance is that
             // those belong in a full-screen modal rather than pushed inside a tab
@@ -163,7 +252,6 @@ struct InvoiceView: View {
                 Button("Cancel", role: .cancel) {}
             }
             .presentationCompactAdaptation(.sheet)
-        }
     }
     
     // MARK: - Search Bar
@@ -244,9 +332,16 @@ struct InvoiceView: View {
                     Text("Outstanding")
                         .font(.scaled(13))
                         .foregroundColor(.sMutedFG)
-                    Text(Money.compact(outstandingAmount)).moneyLine()
+                    // A dash, not ₹0, when the figures could not be fetched: zero reads
+                    // as "nothing is owed", which is the opposite of "we don't know".
+                    Text(vm.summaryFailed ? "—" : Money.compact(outstandingAmount)).moneyLine()
                         .font(.scaled(28, weight: .bold))
                         .foregroundColor(.sForeground)
+                    if vm.summaryFailed {
+                        Button("Totals unavailable — retry") { Task { await reload() } }
+                            .font(.scaled(12))
+                            .foregroundColor(.sAccent)
+                    }
                 }
                 Spacer()
                 if overdueCount > 0 {
@@ -311,7 +406,11 @@ struct InvoiceView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 10)
 
-            VStack(spacing: 10) {
+            // Lazy: a plain VStack builds every row as soon as the list is drawn, and
+            // each row's .task fires with it — so opening the screen asked for the next
+            // page immediately, however little had been scrolled, and a long list paid
+            // for rows nobody had looked at.
+            LazyVStack(spacing: 10) {
                 ForEach(filteredInvoices) { invoice in
                     NavigationLink(destination: InvoiceDetailView(invoiceID: invoice.id, vm: vm)) {
                         InvoiceRowCard(invoice: invoice, vm: vm, isOverdue: isOverdue(invoice))
@@ -326,6 +425,19 @@ struct InvoiceView: View {
                     ProgressView()
                         .tint(.sAccent)
                         .padding(.vertical, 12)
+                } else if vm.loadMoreFailed {
+                    // A failed page used to end the list silently: the older invoices
+                    // were simply unreachable until the screen was reopened, with
+                    // nothing on screen to say anything had gone wrong.
+                    VStack(spacing: 6) {
+                        Text("Couldn't load more invoices.")
+                            .font(.scaled(13))
+                            .foregroundColor(.sMutedFG)
+                        Button("Try again") { Task { await vm.retryLoadMore() } }
+                            .font(.scaled(13, weight: .medium))
+                            .foregroundColor(.sAccent)
+                    }
+                    .padding(.vertical, 12)
                 }
             }
             .padding(.horizontal, 20)
@@ -457,6 +569,9 @@ struct InvoiceRowCard: View {
         if days == 0 { return "Due today" }
         if days == 1 { return "Due tomorrow" }
         if days < 0 {
+            // Past the date but not owed (a draft, a cancelled invoice): it isn't late,
+            // so it says nothing rather than "7 days overdue" beside a Draft badge.
+            guard isOverdue else { return "" }
             let late = abs(days)
             return late == 1 ? "1 day overdue" : "\(late) days overdue"
         }
@@ -491,12 +606,14 @@ struct InvoiceRowCard: View {
                     let meta = ViewThatFits(in: .horizontal) {
                         HStack(spacing: 6) {
                             invoiceNumberText
-                            Text("·").font(.scaled(12)).foregroundColor(.sMutedFG)
-                            dueText
+                            if !daysInfo.isEmpty {
+                                Text("·").font(.scaled(12)).foregroundColor(.sMutedFG)
+                                dueText
+                            }
                         }
                         VStack(alignment: .leading, spacing: 2) {
                             invoiceNumberText
-                            dueText
+                            if !daysInfo.isEmpty { dueText }
                         }
                     }
                     meta

@@ -208,13 +208,13 @@ final class AuthViewModel: ObservableObject {
     }
     
     // MARK: - Delete Account
-    func deleteAccount() async -> Bool {
+    func deleteAccount(password: String) async -> Bool {
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
 
         do {
-            try await authService.deleteAccount()
+            try await authService.deleteAccount(password: password)
             _ = keychain.deleteToken()
             authService.setAuthToken(nil)
             SessionManager.shared.loadTokenFromKeychain(freshLogin: true)

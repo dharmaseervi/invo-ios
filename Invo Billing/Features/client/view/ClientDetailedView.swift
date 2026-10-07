@@ -17,6 +17,7 @@ struct ClientDetailedView: View {
         String(client.name.prefix(1)).uppercased()
     }
     @StateObject private var vm = ClientViewModel()
+    @StateObject private var invoiceVM = InvoiceViewModel()
 
     var body: some View {
         ZStack {
@@ -92,9 +93,11 @@ struct ClientDetailedView: View {
                                 .font(.scaled(13, weight: .medium))
                                 .foregroundColor(.sMutedFG)
                             Spacer()
-                            Text("View all")
-                                .font(.scaled(13))
-                                .foregroundColor(.sAccent)
+                            NavigationLink("View all") {
+                                InvoiceView(clientID: client.id, clientName: client.name)
+                            }
+                            .font(.scaled(13))
+                            .foregroundColor(.sAccent)
                         }
                         .padding(.horizontal, 16)
                         .padding(.top, 14)
@@ -116,6 +119,9 @@ struct ClientDetailedView: View {
                         } else {
                             VStack(spacing: 0) {
                                 ForEach(Array(vm.invoices.prefix(3).enumerated()), id: \.element.id) { idx, invoice in
+                                    NavigationLink {
+                                        InvoiceDetailView(invoiceID: invoice.id, vm: invoiceVM)
+                                    } label: {
                                     HStack {
                                         Text(invoice.invoice_number)
                                             .font(.scaled(13))
@@ -127,6 +133,7 @@ struct ClientDetailedView: View {
                                     }
                                     .padding(.horizontal, 16)
                                     .padding(.vertical, 12)
+                                    }
 
                                     if idx < min(vm.invoices.count, 3) - 1 {
                                         Rectangle().fill(Color.sBorder).frame(height: 0.5).padding(.leading, 16)
@@ -188,9 +195,33 @@ struct ClientDetailedView: View {
         }
         .navigationTitle(client.name)
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear {
-            Task { await vm.load(clientID: client.id) }
+        .task { await vm.load(clientID: client.id) }
+        .sheet(isPresented: $invoiceVM.showPDF) {
+            if let url = invoiceVM.pdfURL { PDFLookView(pdfURL: url) }
         }
+        .sheet(isPresented: $invoiceVM.showEmailSheet) {
+            if let id = invoiceVM.selectedEmailInvoiceID,
+               let invoice = vm.invoices.first(where: { $0.id == id }) {
+                SendEmailSheet(invoiceID: id, invoiceNumber: invoice.invoice_number,
+                    vm: invoiceVM, onDismiss: { invoiceVM.showEmailSheet = false },
+                    isReminder: invoiceVM.emailIsReminder)
+                    .presentationDetents([.medium])
+            }
+        }
+        .confirmationDialog("Select copy", isPresented: $invoiceVM.showCopyPicker) {
+            ForEach(["original", "duplicate", "buyer"], id: \.self) { copy in
+                Button(copy.capitalized) {
+                    Task {
+                        if let id = invoiceVM.selectedInvoiceID {
+                            await invoiceVM.generateInvoicePDFFromServer(invoiceID: id, copy: copy)
+                        }
+                    }
+                }
+            }
+        }
+        .alert("Error", isPresented: $invoiceVM.showAlert) {
+            Button("OK", role: .cancel) {}
+        } message: { Text(invoiceVM.errorMessage ?? "Please try again.") }
     }
 }
 

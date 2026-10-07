@@ -83,6 +83,35 @@ enum Money {
         plain.string(from: NSNumber(value: value)) ?? String(format: "%.2f", value)
     }
 
+    /// Reads what somebody typed into a money field, or returns nil if it cannot be
+    /// read as an amount.
+    ///
+    /// The counterpart to ``editable(_:)``, and the only way a typed amount should be
+    /// turned into a number. `Double(text) ?? something` is the shape to avoid: the
+    /// fallback decides what an unreadable amount means, and every choice of fallback
+    /// is wrong in a way the user cannot see. `?? 0` quietly saved a price typed as
+    /// "1,200" as ₹0. `?? cap` was worse — in the credit-note sheets an amount that
+    /// would not parse became the *largest* amount allowed, so a mistyped refund paid
+    /// out the whole credit note with the button still looking perfectly happy.
+    ///
+    /// Deliberately strict, and deliberately not locale-aware: plain digits with at
+    /// most two decimals, which is exactly what ``editable(_:)`` produces and what the
+    /// decimal keypad offers. A grouped "1,200" is refused rather than guessed at,
+    /// because guessing is how "1,200" becomes 1.2 somewhere else in the world.
+    ///
+    /// - Parameters:
+    ///   - text: what is in the field.
+    ///   - emptyAsZero: whether an empty field means zero. It usually does not — an
+    ///     untouched field is an unanswered question, not an answer of nothing.
+    static func parse(_ text: String, emptyAsZero: Bool = false) -> Double? {
+        let value = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if value.isEmpty { return emptyAsZero ? 0 : nil }
+        guard value.range(of: #"^[0-9]+(?:\.[0-9]{0,2})?$"#, options: .regularExpression) != nil,
+              let amount = Double(value), amount.isFinite,
+              amount <= 9_999_999_999.99 else { return nil }
+        return amount
+    }
+
     /// One decimal place, but `5.0L` reads better as `5L`.
     private static func trimZero(_ value: Double) -> String {
         let rounded = (value * 10).rounded() / 10

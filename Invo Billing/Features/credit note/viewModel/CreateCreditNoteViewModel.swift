@@ -6,7 +6,13 @@ final class CreateCreditNoteViewModel: ObservableObject {
 
     // MARK: - Context
     let companyID: Int
-    let invoiceID: Int?
+    /// The invoice this credit note reduces. It was always nil — nothing opened this
+    /// form with an invoice — so a credit note credited the client's ledger but left the
+    /// invoice fully owed, and the ageing report went on showing it.
+    @Published private(set) var invoiceID: Int?
+    @Published private(set) var linkedInvoiceNumber: String?
+    /// How many of each item the linked invoice sold, so a return can't exceed it.
+    private var soldQty: [Int: Int] = [:]
 
     // MARK: - Inputs
     @Published var selectedClient: ClientModel?
@@ -40,7 +46,68 @@ final class CreateCreditNoteViewModel: ObservableObject {
         self.invoiceID = invoiceID
     }
 
+    // MARK: - Starting from an invoice
+
+    /// Fills the form from the invoice it reduces: its client, and for a return its lines,
+    /// priced at what the customer was actually charged (the line rate less its share of
+    /// the line discount). The server prices a return as qty × rate and ignores any
+    /// discount sent, so starting from the charged rate keeps the total shown here and
+    /// the total saved the same.
+    func link(to invoice: InvoiceDetailResponse) {
+        invoiceID = invoice.id
+        linkedInvoiceNumber = invoice.invoice_number
+        selectedClient = ClientModel(
+            id: invoice.client.id, company_id: companyID, name: invoice.client.name,
+            address: "", email: "", phone: "", city: "", state: "", pincode: ""
+        )
+        creditType = .returnItems
+
+        var order: [Int] = []
+        var qty: [Int: Int] = [:], charged: [Int: Double] = [:]
+        var tax: [Int: Double] = [:], name: [Int: String] = [:]
+        for line in invoice.items {
+            if qty[line.item_id] == nil { order.append(line.item_id) }
+            qty[line.item_id, default: 0] += line.qty
+            charged[line.item_id, default: 0] += Double(line.qty) * line.rate - line.discount
+            tax[line.item_id] = line.tax_rate
+            name[line.item_id] = line.item_name ?? "Item \(line.item_id)"
+        }
+        soldQty = qty
+        items = order.map { id in
+            let sold = qty[id] ?? 0
+            let unit = sold > 0 ? ((charged[id] ?? 0) / Double(sold) * 100).rounded() / 100 : 0
+            let item = ItemResponse(
+                id: id, name: name[id] ?? "", category_id: nil, hsn_code: nil, sku: nil,
+                unit: nil, description: nil, cost_price: nil, price: unit, quantity: 0,
+                low_stock_alert: nil, tax_rate: tax[id], company_id: companyID, user_id: 0
+            )
+            return InvoiceLineItem(item: item, qty: sold, rate: unit, discount: 0, taxRate: tax[id] ?? 0)
+        }
+    }
+
+    /// Why a return against the linked invoice can't be saved, if it can't.
+    private var linkProblem: String? {
+        guard invoiceID != nil, creditType == .returnItems else { return nil }
+        let number = linkedInvoiceNumber ?? "the invoice"
+        for line in items {
+            guard let sold = soldQty[line.item.id] else {
+                return "\(line.item.name) isn't on \(number) — only items it sold can be returned against it."
+            }
+            if line.qty > sold { return "Only \(sold) of \(line.item.name) were sold on \(number)." }
+            if line.qty < 1 { return "Remove \(line.item.name), or return at least one." }
+        }
+        return nil
+    }
+
     // MARK: - Derived Values
+
+    /// The typed credit amount. "1,200" read as nothing, which left Save greyed out with
+    /// no reason, so the thousands separator people type is ignored.
+    private var amountValue: Double {
+        let t = amount.replacingOccurrences(of: ",", with: "").trimmingCharacters(in: .whitespaces)
+        guard let v = Double(t), v.isFinite, v >= 0 else { return 0 }
+        return v
+    }
 
     var subtotal: Double {
         switch creditType {
@@ -49,7 +116,7 @@ final class CreateCreditNoteViewModel: ObservableObject {
                 partial + (line.rate * Double(line.qty) - line.discount)
             }
         case .adjustment, .discount:
-            return Double(amount) ?? 0
+            return amountValue
         }
     }
 
@@ -72,7 +139,7 @@ final class CreateCreditNoteViewModel: ObservableObject {
         case .returnItems:
             return !items.isEmpty
         case .adjustment, .discount:
-            return (Double(amount) ?? 0) > 0
+            return amountValue > 0
         }
     }
 
@@ -81,6 +148,10 @@ final class CreateCreditNoteViewModel: ObservableObject {
     func submit() async -> Bool {
         guard let client = selectedClient else {
             showError("Select a client")
+            return false
+        }
+        if let problem = linkProblem {
+            showError(problem)
             return false
         }
 

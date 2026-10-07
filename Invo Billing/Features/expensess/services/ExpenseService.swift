@@ -41,11 +41,13 @@ final class ExpenseService {
     }
     
     // MARK: - Get All Expenses
-    func getExpenses(companyId: Int) async throws -> [Expense] {
-        
-        guard
-            let url = URL(string: "\(baseURL)/companies/\(companyId)/expenses")
-        else {
+    /// One page of expenses. limit 0 asks for every expense the company has ever
+    /// recorded, which is what this screen used to do on every visit.
+    func getExpenses(companyId: Int, limit: Int = 0, offset: Int = 0) async throws -> [Expense] {
+
+        var path = "\(baseURL)/companies/\(companyId)/expenses"
+        if limit > 0 { path += "?limit=\(limit)&offset=\(offset)" }
+        guard let url = URL(string: path) else {
             throw URLError(.badURL)
         }
         
@@ -230,4 +232,35 @@ final class ExpenseService {
         )
         return decoded
     }
+
+    /// This month, last month and the total, counted by the server over every expense.
+    ///
+    /// The screen added up the rows it had, which is a page — so the figures described
+    /// the page rather than the business.
+    func getExpenseSummary(companyId: Int) async throws -> ExpenseSummaryModel {
+        guard let url = URL(string: "\(baseURL)/companies/\(companyId)/expenses/summary") else {
+            throw URLError(.badURL)
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        if let token = KeychainManager.shared.loadToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+        return try JSONDecoder().decode(ExpenseSummaryModel.self, from: data)
+    }
+}
+
+/// The figures above the expense list, from the server.
+struct ExpenseSummaryModel: Codable {
+    let this_month: Double
+    let last_month: Double
+    let total: Double
+    let count: Int
+
+    static let empty = ExpenseSummaryModel(this_month: 0, last_month: 0, total: 0, count: 0)
 }

@@ -3,6 +3,11 @@ import SwiftUI
 struct LedgerView: View {
 
     @StateObject private var vm = LedgerListViewModel()
+    /// Tracked rather than guessed from an empty list: a search that matched nothing
+    /// leaves the list empty, and inferring it would take the search box away again.
+    @State private var hasLoadedOnce = false
+
+    private var isFirstLoad: Bool { vm.isLoading && !hasLoadedOnce }
 
     var body: some View {
         Group {
@@ -11,12 +16,18 @@ struct LedgerView: View {
 
                 VStack(spacing: 0) {
 
-                    if vm.isLoading {
+                    // Once the first load is done the summary and the search box stay
+                    // mounted, whatever the rows are doing — empty, loading, or being
+                    // searched. Everything else renders underneath them.
+                    //
+                    // Each earlier version of this took the field away at a different
+                    // moment: first on every keystroke, then on an empty box with an
+                    // empty list, which is the state during the debounce right after a
+                    // no-results search is cleared.
+                    if isFirstLoad {
                         Spacer()
                         ProgressView().tint(.sAccent)
                         Spacer()
-                    } else if vm.clients.isEmpty {
-                        emptyState
                     } else {
                         ScrollView {
                             VStack(spacing: 0) {
@@ -53,10 +64,22 @@ struct LedgerView: View {
                                 .padding(.horizontal, 20)
                                 .padding(.top, 16)
 
-                                if vm.filteredClients.isEmpty {
-                                    noResultsState.padding(.top, 60)
+                                if vm.isLoading {
+                                    ProgressView()
+                                        .tint(.sAccent)
+                                        .frame(minHeight: 240)
+                                } else if vm.filteredClients.isEmpty {
+                                    // "No customers yet" when there is genuinely
+                                    // nothing, "no matches" when a search found
+                                    // nothing — both below the search box, which stays
+                                    // where it is either way.
+                                    if vm.searchText.isEmpty {
+                                        emptyState.frame(minHeight: 320)
+                                    } else {
+                                        noResultsState.padding(.top, 60)
+                                    }
                                 } else {
-                                    VStack(spacing: 10) {
+                                    LazyVStack(spacing: 10) {
                                         ForEach(vm.filteredClients) { client in
                                             NavigationLink {
                                                 LedgerListView(clientID: client.clientID)
@@ -64,6 +87,23 @@ struct LedgerView: View {
                                                 LedgerRow(client: client)
                                             }
                                             .buttonStyle(.plain)
+                                            .task { await vm.loadMoreIfNeeded(currentItem: client) }
+                                        }
+
+                                        if vm.isLoadingMore {
+                                            ProgressView()
+                                                .tint(.sAccent)
+                                                .padding(.vertical, 12)
+                                        } else if vm.loadMoreFailed {
+                                            VStack(spacing: 6) {
+                                                Text("Couldn't load more customers.")
+                                                    .font(.scaled(13))
+                                                    .foregroundColor(.sMutedFG)
+                                                Button("Try again") { Task { await vm.retryLoadMore() } }
+                                                    .font(.scaled(13, weight: .medium))
+                                                    .foregroundColor(.sAccent)
+                                            }
+                                            .padding(.vertical, 12)
                                         }
                                     }
                                     .padding(20)
@@ -76,7 +116,23 @@ struct LedgerView: View {
             .navigationTitle("Ledger")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
-                Task { await vm.fetchCompanyLedger() }
+                Task {
+                    await vm.fetchCompanyLedger()
+                    hasLoadedOnce = true
+                }
+            }
+            // The search box asks the server, debounced — it used to filter only the
+            // customers whose entries happened to have been downloaded.
+            .task(id: vm.searchText) {
+                // Only skip the run before the first load, which onAppear performs.
+                // The old guard also skipped an empty box with an empty list — the
+                // state after clearing a search that matched nothing — so the full
+                // list never came back.
+                guard hasLoadedOnce else { return }
+                try? await Task.sleep(nanoseconds: 300_000_000)
+                guard !Task.isCancelled else { return }
+                await vm.fetchCompanyLedger()
+                hasLoadedOnce = true
             }
             .alert("Error", isPresented: $vm.showAlert) {
                 Button("OK", role: .cancel) {}
@@ -92,12 +148,34 @@ struct LedgerView: View {
             Text("Total receivable")
                 .font(.scaled(13))
                 .foregroundColor(.sMutedFG)
-            Text(Money.text(vm.totalReceivable)).moneyLine()
+            // A dash when the figure could not be fetched: ₹0 reads as "nobody owes
+            // anything", which is the opposite of "we could not check".
+            Text(vm.totalsFailed ? "—" : Money.text(vm.totalReceivable)).moneyLine()
                 .font(.scaled(26, weight: .bold))
-                .foregroundColor(vm.totalReceivable > 0 ? .sDestructive : Color(red: 0.086, green: 0.639, blue: 0.341))
-            Text("Across \(vm.clients.count) client\(vm.clients.count == 1 ? "" : "s")")
+                .foregroundColor(
+                    vm.totalsFailed ? .sMutedFG
+                        : (vm.totalReceivable > 0 ? .sDestructive : Color(red: 0.086, green: 0.639, blue: 0.341))
+                )
+            if vm.totalsFailed {
+                Button("Totals unavailable — retry") {
+                    Task { await vm.fetchCompanyLedger() }
+                }
                 .font(.scaled(12))
-                .foregroundColor(.sMutedFG)
+                .foregroundColor(.sAccent)
+            } else {
+                // Every customer with history, counted by the server — not the rows
+                // that happen to be loaded.
+                Text("Across \(vm.totals.clients) client\(vm.totals.clients == 1 ? "" : "s")")
+                    .font(.scaled(12))
+                    .foregroundColor(.sMutedFG)
+                if vm.totalPayable > 0 {
+                    // Advances and credit balances, which netting into the receivable
+                    // would hide.
+                    Text("\(Money.text(vm.totalPayable)) in customer credit")
+                        .font(.scaled(12))
+                        .foregroundColor(.sMutedFG)
+                }
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(18)

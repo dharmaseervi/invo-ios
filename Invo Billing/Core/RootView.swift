@@ -13,15 +13,27 @@ struct RootView: View {
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
+        #if DEBUG
+        if UserDefaults.standard.string(forKey: "startScreen") == "invoice100" {
+            NavigationStack { DebugInvoice100View() }
+        } else {
+            authenticatedRoot
+        }
+        #else
+        authenticatedRoot
+        #endif
+    }
+
+    private var authenticatedRoot: some View {
         Group {
             if session.isAuthenticated {
                 if session.isUnlocked {
-                    TabViewMain() // your main tab navigation
+                    TabViewMain()
                 } else {
                     BiometricLockView()
                 }
             } else {
-                AuthView() // shows login/signup
+                AuthView()
                     .environmentObject(authViewModel)
             }
         }

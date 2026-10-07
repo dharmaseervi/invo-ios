@@ -10,13 +10,21 @@ import SwiftUI
 struct CreateCreditNoteView: View {
 
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var vm = CreateCreditNoteViewModel()
+    @StateObject private var vm: CreateCreditNoteViewModel
     @StateObject private var vmInvoice: InvoiceViewModel = InvoiceViewModel()
     @State private var showClientPicker = false
     @State private var showItemPicker = false
     @State private var showBillingSheet = false
     @State private var showShippingSheet = false
     @State private var editingItem: InvoiceLineItem?
+
+    /// Opened from an invoice, the credit note is against that invoice: its client is
+    /// fixed and a return starts from its lines. From the list, nothing is fixed.
+    init(invoice: InvoiceDetailResponse? = nil) {
+        let model = CreateCreditNoteViewModel()
+        if let invoice { model.link(to: invoice) }
+        _vm = StateObject(wrappedValue: model)
+    }
 
     var body: some View {
         ZStack {
@@ -46,12 +54,20 @@ struct CreateCreditNoteView: View {
                         .padding(.top, 16)
 
                         VStack(alignment: .leading) {
+                            if let number = vm.linkedInvoiceNumber {
+                                Text("Against \(number) — its balance goes down by this credit.")
+                                    .font(.scaled(13))
+                                    .foregroundColor(.sMutedFG)
+                                    .padding(.horizontal, 20)
+                                    .padding(.top, 16)
+                            }
                             InvoiceCustomerSection(
                                 selectedClient: vm.selectedClient,
                                 billingAddress: vm.billingAddress,
                                 shippingAddress: vm.shippingAddress,
                                 isShippingSameAsBilling: $vm.isShippingSameAsBilling,
-                                onSelectClient: { showClientPicker = true },
+                                // The client of the invoice it's against can't change.
+                                onSelectClient: { if vm.linkedInvoiceNumber == nil { showClientPicker = true } },
                                 onEditBilling: { showBillingSheet = true },
                                 onEditShipping: { showShippingSheet = true }
                             )

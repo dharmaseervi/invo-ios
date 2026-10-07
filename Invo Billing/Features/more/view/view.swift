@@ -14,6 +14,7 @@ struct MoreView: View {
     @State private var showDeleteConfirmation = false
     @State private var showFinalDeleteConfirmation = false
     @State private var showDeleteError = false
+    @State private var deletePassword = ""
     @State private var showSignOutConfirmation = false
     @State private var showTemplatePicker = false
     @State private var selectedTemplate = InvoiceTemplatePreference.load()
@@ -85,113 +86,13 @@ struct MoreView: View {
                             .padding(.top, 20)
                             .padding(.bottom, 24)
 
-                            // MARK: - Account Section
-                            sectionHeader("Account")
-
-                            VStack(spacing: 0) {
-                                NavigationLink {
-                                    CompanyView()
-                                } label: {
-                                    MoreViewRow(icon: "building.2.fill", label: "Company Details")
-                                }
-                                rowDivider()
-
-                                NavigationLink {
-                                    EstimateListView()
-                                } label: {
-                                    MoreViewRow(icon: "doc.badge.clock", label: "Estimates")
-                                }
-                                rowDivider()
-
-                                NavigationLink {
-                                    ExpenseView()
-                                } label: {
-                                    MoreViewRow(icon: "banknote.fill", label: "Expenses")
-                                }
-                                rowDivider()
-
-                                NavigationLink {
-                                    LedgerView()
-                                } label: {
-                                    MoreViewRow(icon: "book.fill", label: "Ledger")
-                                }
-                                rowDivider()
-
-                                NavigationLink {
-                                    GSTReportView()
-                                } label: {
-                                    MoreViewRow(icon: "doc.text.magnifyingglass", label: "GST Reports")
-                                }
-                                rowDivider()
-
-                                NavigationLink {
-                                    AgingReportView()
-                                } label: {
-                                    MoreViewRow(icon: "clock.badge.exclamationmark", label: "Client Aging")
-                                }
-                                rowDivider()
-
-                                NavigationLink {
-                                    StockReportView()
-                                } label: {
-                                    MoreViewRow(icon: "shippingbox.fill", label: "Stock Report")
-                                }
-                                rowDivider()
-
-                                NavigationLink {
-                                    CreditNoteListView()
-                                } label: {
-                                    MoreViewRow(icon: "doc.text.fill", label: "Credit Notes")
-                                }
-                                rowDivider()
-
-                                Button {
-                                    showTemplatePicker = true
-                                } label: {
-                                    MoreViewRow(
-                                        icon: "paintpalette.fill",
-                                        label: "Invoice Template",
-                                        value: selectedTemplate.title
-                                    )
-                                }
-                                rowDivider()
-
-                                Menu {
-                                    ForEach(IndianStates.all, id: \.self) { state in
-                                        Button {
-                                            defaultState = state
-                                            IndianStates.defaultState = state
-                                        } label: {
-                                            if defaultState == state {
-                                                Label(state, systemImage: "checkmark")
-                                            } else {
-                                                Text(state)
-                                            }
-                                        }
-                                    }
-                                } label: {
-                                    MoreViewRow(
-                                        icon: "map.fill",
-                                        label: "Default State",
-                                        value: defaultState.isEmpty ? "Not set" : defaultState
-                                    )
-                                }
-
-                                rowDivider()
-
-                                // Apple requires an in-app way to change this choice:
-                                // "you must also provide an in-app settings screen that
-                                // lets people change their choice" (managing-notifications.md).
-                                // It is also where permission is now asked for, rather
-                                // than the moment an account is created.
-                                notificationRow
-                            }
-                            .padding(.horizontal, 14)
-                            .background(Color.sCard)
-                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
-                            .cornerRadius(12)
-                            .padding(.horizontal, 20)
-                            .padding(.bottom, 24)
+                            salesSection
+                            purchasesSection
+                            moneySection
+                            inventorySection
+                            reportsSection
+                            businessSection
+                            settingsSection
 
                             // MARK: - Security Section
                             if biometricKind != .none {
@@ -331,12 +232,14 @@ struct MoreView: View {
                 case "gst": AnyView(GSTReportView())
                 case "aging": AnyView(AgingReportView())
                 case "stock": AnyView(StockReportView())
+                case "pl": AnyView(ProfitLossView())
                 case "credit": AnyView(CreditNoteListView())
                 case "company": AnyView(CompanyView())
                 case "expenseform": AnyView(ExpenseFormView())
                 case "estimateform": AnyView(CreateEstimateView())
                 case "printinvoice": AnyView(DebugPrintPreviewLoader())
                 case "pdflook": AnyView(DebugPDFLookLoader())
+                case "invoice100": AnyView(DebugInvoice100View())
                 default: AnyView(EmptyView())
                 }
             }
@@ -367,19 +270,26 @@ struct MoreView: View {
             .presentationCompactAdaptation(.sheet)
 
             // MARK: - Step 2 Final Confirmation
+            //
+            // The password, not just a second tap. A bearer token was the only thing
+            // standing in front of deleting a business's books, so a phone picked up
+            // off a counter was enough to wipe them.
             .alert(
-                "Are you absolutely sure?",
+                "Enter your password",
                 isPresented: $showFinalDeleteConfirmation
             ) {
+                SecureField("Password", text: $deletePassword)
                 Button("Delete My Account", role: .destructive) {
+                    let password = deletePassword
+                    deletePassword = ""
                     Task {
-                        let success = await authVM.deleteAccount()
+                        let success = await authVM.deleteAccount(password: password)
                         if !success {
                             showDeleteError = true
                         }
                     }
                 }
-                Button("Cancel", role: .cancel) {}
+                Button("Cancel", role: .cancel) { deletePassword = "" }
             } message: {
                 Text("Your account and all data will be permanently deleted immediately. This action cannot be reversed.")
             }
@@ -419,6 +329,185 @@ struct MoreView: View {
             } message: {
                 Text(biometricError ?? "")
             }
+        }
+    }
+
+    // MARK: - Modules
+    private var salesSection: some View {
+        menuSection("Sales") {
+            NavigationLink {
+                EstimateListView()
+            } label: {
+                MoreViewRow(icon: "doc.badge.clock", label: "Estimates")
+            }
+            rowDivider()
+            NavigationLink {
+                CreditNoteListView()
+            } label: {
+                MoreViewRow(icon: "doc.text.fill", label: "Credit notes")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var purchasesSection: some View {
+        if session.companyRole.canSeeCosts {
+            menuSection("Purchases") {
+                NavigationLink {
+                    PurchasesView()
+                } label: {
+                    MoreViewRow(icon: "shippingbox.fill", label: "Purchases")
+                }
+                rowDivider()
+                NavigationLink {
+                    PurchaseLedgerView()
+                } label: {
+                    MoreViewRow(icon: "text.book.closed.fill", label: "Purchase ledger")
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var moneySection: some View {
+        if session.companyRole.canSeeReports {
+            menuSection("Money") {
+                NavigationLink {
+                    PaymentsView()
+                } label: {
+                    MoreViewRow(icon: "indianrupeesign.circle.fill", label: "Payments")
+                }
+                rowDivider()
+                NavigationLink {
+                    ExpenseView()
+                } label: {
+                    MoreViewRow(icon: "banknote.fill", label: "Expenses")
+                }
+                rowDivider()
+                NavigationLink {
+                    LedgerView()
+                } label: {
+                    MoreViewRow(icon: "book.fill", label: "Customer ledger")
+                }
+                rowDivider()
+                NavigationLink {
+                    CashClosingView()
+                } label: {
+                    MoreViewRow(icon: "indianrupeesign.square", label: "Cash closing")
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var inventorySection: some View {
+        if session.companyRole.canEditCatalogue || session.companyRole.canSeeReports {
+            menuSection("Inventory") {
+                if session.companyRole.canEditCatalogue {
+                    NavigationLink {
+                        StocktakeView()
+                    } label: {
+                        MoreViewRow(icon: "checklist", label: "Stock count")
+                    }
+                }
+                if session.companyRole.canEditCatalogue && session.companyRole.canSeeReports {
+                    rowDivider()
+                }
+                if session.companyRole.canSeeReports {
+                    NavigationLink {
+                        StockReportView()
+                    } label: {
+                        MoreViewRow(icon: "shippingbox.fill", label: "Stock report")
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var reportsSection: some View {
+        if session.companyRole.canSeeReports {
+            menuSection("Reports") {
+                NavigationLink {
+                    ProfitLossView()
+                } label: {
+                    MoreViewRow(icon: "chart.bar.doc.horizontal", label: "Profit & Loss")
+                }
+                rowDivider()
+                NavigationLink {
+                    GSTReportView()
+                } label: {
+                    MoreViewRow(icon: "doc.text.magnifyingglass", label: "GST reports")
+                }
+                rowDivider()
+                NavigationLink {
+                    AgingReportView()
+                } label: {
+                    MoreViewRow(icon: "clock.badge.exclamationmark", label: "Client aging")
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var businessSection: some View {
+        if session.companyRole.canChangeSettings || session.companyRole.canManageStaff {
+            menuSection("Business") {
+                if session.companyRole.canChangeSettings {
+                    NavigationLink {
+                        CompanyView()
+                    } label: {
+                        MoreViewRow(icon: "building.2.fill", label: "Company details")
+                    }
+                }
+                if session.companyRole.canChangeSettings && session.companyRole.canManageStaff {
+                    rowDivider()
+                }
+                if session.companyRole.canManageStaff {
+                    NavigationLink {
+                        StaffView()
+                    } label: {
+                        MoreViewRow(icon: "person.2.fill", label: "Staff")
+                    }
+                }
+            }
+        }
+    }
+
+    private var settingsSection: some View {
+        menuSection("Settings") {
+            Button {
+                showTemplatePicker = true
+            } label: {
+                MoreViewRow(
+                    icon: "paintpalette.fill",
+                    label: "Invoice template",
+                    value: selectedTemplate.title
+                )
+            }
+            rowDivider()
+            Menu {
+                ForEach(IndianStates.all, id: \.self) { state in
+                    Button {
+                        defaultState = state
+                        IndianStates.defaultState = state
+                    } label: {
+                        if defaultState == state {
+                            Label(state, systemImage: "checkmark")
+                        } else {
+                            Text(state)
+                        }
+                    }
+                }
+            } label: {
+                MoreViewRow(
+                    icon: "map.fill",
+                    label: "Default state",
+                    value: defaultState.isEmpty ? "Not set" : defaultState
+                )
+            }
+            rowDivider()
+            notificationRow
         }
     }
 
@@ -507,6 +596,22 @@ struct MoreView: View {
     }
 
     // MARK: - Helpers
+    private func menuSection<Content: View>(
+        _ title: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(spacing: 0) {
+            sectionHeader(title)
+            VStack(spacing: 0, content: content)
+                .padding(.horizontal, 14)
+                .background(Color.sCard)
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
+                .cornerRadius(12)
+                .padding(.horizontal, 20)
+        }
+        .padding(.bottom, 24)
+    }
+
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
             .font(.scaled(13, weight: .medium))
@@ -514,6 +619,7 @@ struct MoreView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 20)
             .padding(.bottom, 10)
+            .accessibilityAddTraits(.isHeader)
     }
 
     private func rowDivider() -> some View {

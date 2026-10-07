@@ -23,6 +23,22 @@ class ClientViewModel: ObservableObject {
     @Published var invoices: [InvoiceResponse] = []
     // Loaded list
     @Published var clients: [ClientModel] = []
+    /// Searching happens on the server, so a search covers every customer rather than
+    /// the page that happens to be loaded.
+    @Published var searchText = ""
+    @Published private(set) var hasMoreClients = false
+    @Published private(set) var isLoadingMoreClients = false
+    /// A page that failed to load. Paging pauses rather than ending, so the list can
+    /// say so and offer to go again.
+    @Published private(set) var loadMoreClientsFailed = false
+
+    /// A page at a time. A shop with a few thousand customers used to download all of
+    /// them to show the first screen.
+    private let clientPageSize = 50
+
+    /// Identifies the newest load, so a slow first page cannot land on top of a search
+    /// typed after it.
+    private var clientRequestID = 0
 
     // 🔥 Reset fields
     func resetForm() {
@@ -98,13 +114,75 @@ class ClientViewModel: ObservableObject {
         showAlert = false
         defer { isLoading = false }
 
+        clientRequestID += 1
+        let request = clientRequestID
+
         do {
-            clients = try await service.loadClients(for: companyId)
+            let page = try await service.loadClients(
+                for: companyId,
+                search: searchText,
+                limit: clientPageSize,
+                offset: 0
+            )
+            guard request == clientRequestID else { return }
+            clients = page
+            hasMoreClients = page.count >= clientPageSize
+            // A fresh list starts without the previous one's paging failure.
+            loadMoreClientsFailed = false
         } catch let authErr as AuthErrorResponse {
+            guard request == clientRequestID else { return }
             _ = showError(authErr.error)
         } catch {
+            guard request == clientRequestID else { return }
             _ = showError(error.localizedDescription)
         }
+    }
+
+    /// The next page, appended. Asked for when the list nears its end.
+    func loadMoreClients() async {
+        guard let companyId = SessionManager.shared.selectedCompanyId,
+              hasMoreClients, !isLoadingMoreClients, !loadMoreClientsFailed else { return }
+
+        isLoadingMoreClients = true
+        defer { isLoadingMoreClients = false }
+
+        let request = clientRequestID
+        do {
+            let page = try await service.loadClients(
+                for: companyId,
+                search: searchText,
+                limit: clientPageSize,
+                offset: clients.count
+            )
+            // A search started while this page was in flight wins; appending now would
+            // put one search's customers under another's.
+            guard request == clientRequestID else { return }
+
+            // Skipping what is already held: a customer added while the list was open
+            // shifts the offsets, and the same row would otherwise arrive twice.
+            let known = Set(clients.map(\.id))
+            clients.append(contentsOf: page.filter { !known.contains($0.id) })
+            hasMoreClients = page.count >= clientPageSize
+        } catch {
+            // A stale failure must not switch paging off for a search that has since
+            // moved on. The success path has always checked this; the failure path did
+            // not, so an old request failing late could end a newer list.
+            guard request == clientRequestID else { return }
+
+            // Quiet, but not final. `hasMoreClients = false` was the old answer and it
+            // said the wrong thing: after fifty customers a dropped connection made the
+            // rest of the shop's customers look like they did not exist, with nothing
+            // on screen to suggest otherwise and no way back but a reload. The rest are
+            // still there, so the list keeps its offer to fetch them and shows a Try
+            // again instead of ending.
+            loadMoreClientsFailed = true
+        }
+    }
+
+    /// Clears a paging failure and asks for the same page again.
+    func retryLoadMoreClients() async {
+        loadMoreClientsFailed = false
+        await loadMoreClients()
     }
 
     // MARK: - Quick Sale Accounts (Cash / UPI)
@@ -116,36 +194,19 @@ class ClientViewModel: ObservableObject {
             return nil
         }
 
-        if clients.isEmpty {
-            await loadClients()
+        // Asked of the server by name, found or created in one go. Looking for it in
+        // the loaded list is what kept this list unpaged — the account might be on a
+        // page nobody had fetched — and two tills asking at once each made their own.
+        let client: ClientModel
+        do {
+            client = try await service.quickSaleClient(companyId: companyId, account: account)
+        } catch let authErr as AuthErrorResponse {
+            _ = showError(authErr.error)
+            return nil
+        } catch {
+            _ = showError("Failed to set up \(account.rawValue) account")
+            return nil
         }
-
-        var quickSaleClient = clients.first(where: { $0.quickSaleAccount == account })
-
-        if quickSaleClient == nil {
-            let payload = CreateClientRequest(
-                company_id: companyId,
-                name: account.rawValue,
-                address: "",
-                email: "",
-                phone: "",
-                city: "",
-                state: "",
-                pincode: ""
-            )
-
-            do {
-                try await service.CreateClient(clientPayload: payload)
-            } catch {
-                _ = showError("Failed to set up \(account.rawValue) account")
-                return nil
-            }
-
-            await loadClients()
-            quickSaleClient = clients.first(where: { $0.quickSaleAccount == account })
-        }
-
-        guard let client = quickSaleClient else { return nil }
 
         // The backend requires a billing address row to exist before any invoice
         // can reference this client. Ensure one exists (covers both a fresh

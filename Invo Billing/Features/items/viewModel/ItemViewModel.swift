@@ -44,6 +44,12 @@ class ItemViewModel: ObservableObject {
     /// Paging state. nextCursor is nil once the catalogue is exhausted, which is also
     /// what stops the list asking for more forever at the bottom.
     @Published var isLoadingMore = false
+    /// True when the last page failed, so the list can offer another go rather than
+    /// looking as though the catalogue ended there.
+    @Published var loadMoreFailed = false
+    /// Identifies the newest list request, so a reply for an older search — or a page
+    /// belonging to a list that has since been replaced — is thrown away.
+    private var listRequestID = 0
     private var nextCursor: String?
     private var activeSearch = ""
     private var searchTask: Task<Void, Never>?
@@ -70,8 +76,50 @@ class ItemViewModel: ObservableObject {
     var isValid: Bool {
         !name.isEmpty && !price.isEmpty
     }
+
+    // MARK: - Number fields
+    //
+    // These were converted with `Int(quantity) ?? 0` and `Double(price) ?? 0`, so anything
+    // that didn't parse was saved as zero without a word: stock typed as "2.5" became 0,
+    // and a price typed as "1,200" became ₹0. Now a value that can't be read is refused
+    // with a reason, and the thousands separator people type is accepted.
+
+    /// A money field: blank is 0, commas are ignored, anything else must be a number ≥ 0.
+    private static func money(_ text: String) -> Double? {
+        let t = text.replacingOccurrences(of: ",", with: "").trimmingCharacters(in: .whitespaces)
+        if t.isEmpty { return 0 }
+        guard let v = Double(t), v >= 0, v.isFinite else { return nil }
+        return v
+    }
+
+    /// A count: blank is 0, otherwise a whole number ≥ 0. Stock is counted in whole units
+    /// on the server, so "2.5" can't be stored — it has to be refused, not rounded.
+    private static func count(_ text: String) -> Int? {
+        let t = text.replacingOccurrences(of: ",", with: "").trimmingCharacters(in: .whitespaces)
+        if t.isEmpty { return 0 }
+        guard let v = Int(t), v >= 0 else { return nil }
+        return v
+    }
+
+    /// The first number field that can't be saved, as something to show the person.
+    private var numberProblem: String? {
+        if Self.money(price) == nil { return "Enter the selling price as a number, like 450 or 1,200.50." }
+        if Self.money(costPrice) == nil { return "Enter the cost price as a number, or leave it blank." }
+        if Self.count(quantity) == nil { return "Stock is counted in whole units — enter a whole number, like 12." }
+        if Self.count(lowStockAlert) == nil { return "The low-stock alert must be a whole number, like 5." }
+        if Double(taxRate) == nil && !taxRate.isEmpty { return "Choose a GST rate." }
+        return nil
+    }
+
+    private func refuseBadNumbers() -> Bool {
+        guard let problem = numberProblem else { return false }
+        errorMessage = problem
+        showAlert = true
+        return true
+    }
     
     func createItem() async -> Bool {
+        if refuseBadNumbers() { return false }
         guard let companyId = SessionManager.shared.selectedCompanyId else {
             errorMessage = "Select company first"
             showAlert = true
@@ -86,10 +134,10 @@ class ItemViewModel: ObservableObject {
             hsn_code: hsnCode,
             unit: unit,
             description: description,
-            cost_price: Double(costPrice) ?? 0,
-            price: Double(price) ?? 0,
-            quantity: Int(quantity) ?? 0,
-            low_stock_alert: Int(lowStockAlert) ?? 0,
+            cost_price: Self.money(costPrice) ?? 0,
+            price: Self.money(price) ?? 0,
+            quantity: Self.count(quantity) ?? 0,
+            low_stock_alert: Self.count(lowStockAlert) ?? 0,
             tax_rate: Double(taxRate) ?? 0
         )
 
@@ -140,6 +188,7 @@ class ItemViewModel: ObservableObject {
     }
 
     func updateItem() async -> Bool {
+        if refuseBadNumbers() { return false }
         guard let itemId = editingItemId else { return false }
         guard let companyId = SessionManager.shared.selectedCompanyId else {
             errorMessage = "Select company first"
@@ -155,10 +204,10 @@ class ItemViewModel: ObservableObject {
             hsn_code: hsnCode,
             unit: unit,
             description: description,
-            cost_price: Double(costPrice) ?? 0,
-            price: Double(price) ?? 0,
-            quantity: Int(quantity) ?? 0,
-            low_stock_alert: Int(lowStockAlert) ?? 0,
+            cost_price: Self.money(costPrice) ?? 0,
+            price: Self.money(price) ?? 0,
+            quantity: Self.count(quantity) ?? 0,
+            low_stock_alert: Self.count(lowStockAlert) ?? 0,
             tax_rate: Double(taxRate) ?? 0
         )
 
@@ -210,6 +259,14 @@ class ItemViewModel: ObservableObject {
     func loadItems() async {
         guard let companyId = SessionManager.shared.selectedCompanyId else { return }
 
+        // A fresh load is a new list: the request number moves on so a page still out
+        // from the previous one cannot append its rows here, and loadMoreFailed is
+        // cleared — left set, it kept blocking automatic paging after a successful
+        // reload, so the list silently stopped growing.
+        listRequestID += 1
+        let request = listRequestID
+        loadMoreFailed = false
+
         isLoading = true
         items = []
         nextCursor = nil
@@ -227,13 +284,16 @@ class ItemViewModel: ObservableObject {
                 limit: Self.pageSize,
                 search: activeSearch.isEmpty ? nil : activeSearch
             )
+            guard request == listRequestID else { return }
             items = page.items
             nextCursor = page.next_cursor
         } catch is SessionExpiredError {
+            guard request == listRequestID else { return }
             errorMessage = "Your session has expired. Sign out and sign in again."
             sessionExpired = true
             showAlert = true
         } catch {
+            guard request == listRequestID else { return }
             errorMessage = "Couldn't reach the server. Check your connection and try again."
             showAlert = true
         }
@@ -242,7 +302,8 @@ class ItemViewModel: ObservableObject {
     /// Fetches the next page when the list nears its end. Guarded so overlapping
     /// scroll events cannot fire several identical requests.
     func loadMoreIfNeeded(currentItem item: ItemResponse) async {
-        guard !isLoadingMore, let cursor = nextCursor,
+        // Not while a page is failing: the Try again row drives that.
+        guard !isLoadingMore, !loadMoreFailed, let cursor = nextCursor,
               let companyId = SessionManager.shared.selectedCompanyId else { return }
 
         // Trigger a few rows early so the next page is usually already there by the
@@ -253,6 +314,8 @@ class ItemViewModel: ObservableObject {
         isLoadingMore = true
         defer { isLoadingMore = false }
 
+        let request = listRequestID
+
         do {
             let page = try await ItemService().loadItems(
                 companyId: companyId,
@@ -260,14 +323,47 @@ class ItemViewModel: ObservableObject {
                 cursor: cursor,
                 search: activeSearch.isEmpty ? nil : activeSearch
             )
+            guard request == listRequestID else { return }
             // Guard against duplicates if a reload landed while this was in flight.
             let existing = Set(items.map(\.id))
             items.append(contentsOf: page.items.filter { !existing.contains($0.id) })
             nextCursor = page.next_cursor
+            loadMoreFailed = false
         } catch {
-            // A failed page is not worth an error screen over a list that already has
-            // content; the user can scroll again to retry.
-            nextCursor = nil
+            guard request == listRequestID else { return }
+            // The cursor is kept. Clearing it ended the list: there was no page left to
+            // ask for, so scrolling again did nothing and the rest of the catalogue was
+            // unreachable until the screen was reopened — with nothing on screen to say
+            // so. The Try again row drives the retry instead.
+            loadMoreFailed = true
+        }
+    }
+
+    /// Another go at the page that failed, from the row at the end of the list.
+    func retryLoadMore() async {
+        guard !isLoadingMore, let cursor = nextCursor,
+              let companyId = SessionManager.shared.selectedCompanyId else { return }
+
+        loadMoreFailed = false
+        isLoadingMore = true
+        defer { isLoadingMore = false }
+
+        let request = listRequestID
+
+        do {
+            let page = try await ItemService().loadItems(
+                companyId: companyId,
+                limit: Self.pageSize,
+                cursor: cursor,
+                search: activeSearch.isEmpty ? nil : activeSearch
+            )
+            guard request == listRequestID else { return }
+            let existing = Set(items.map(\.id))
+            items.append(contentsOf: page.items.filter { !existing.contains($0.id) })
+            nextCursor = page.next_cursor
+        } catch {
+            guard request == listRequestID else { return }
+            loadMoreFailed = true
         }
     }
 

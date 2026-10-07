@@ -89,14 +89,20 @@ class CompanyBankViewModel: ObservableObject {
     
     // MARK: - Delete Bank
     
-    func deleteBank(companyId: Int, bankId: Int) async {
+    func deleteBank(companyId: Int, bankId: Int, password: String) async {
         isLoading = true
         defer { isLoading = false }
         
         do {
-            let success = try await service.deleteBank(companyId: companyId, bankId: bankId)
+            let success = try await service.deleteBank(companyId: companyId, bankId: bankId, password: password)
             if success {
                 banks.removeAll { $0.id == bankId }
+            } else {
+                // A non-success used to be dropped on the floor. The route it calls did
+                // not exist for a while, so every swipe to delete failed and the row
+                // just sprang back with no explanation at all.
+                errorMessage = "Couldn't remove that account. Please try again."
+                showError = true
             }
         } catch {
             handle(error)
@@ -124,6 +130,5 @@ class CompanyBankViewModel: ObservableObject {
     private func handle(_ error: Error) {
         errorMessage = error.localizedDescription
         showError = true
-        print("❌ CompanyBankViewModel Error:", error.localizedDescription)
     }
 }

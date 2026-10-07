@@ -21,6 +21,16 @@ final class EstimateViewModel: ObservableObject {
     @Published var isFetchingList = false
     @Published var isFetchingDetail = false
 
+    /// What the list is searched for. Sent to the server, because the phone only holds
+    /// the pages it has loaded and filtering those locally would answer "no results"
+    /// for an estimate that is simply further down.
+    @Published var searchQuery = ""
+    /// A failed list load, kept on screen so it is not mistaken for an empty shop.
+    @Published var listError: String?
+    @Published var isLoadingMore = false
+    @Published var loadMoreFailed = false
+    @Published var hasMoreEstimates = false
+
     // MARK: - UI State
     @Published var isLoading = false
     @Published var showAlert = false
@@ -35,9 +45,22 @@ final class EstimateViewModel: ObservableObject {
     var onEstimateCreated: (() -> Void)?
 
     // MARK: - Computed Totals
-    var subtotal: Double { items.reduce(0) { $0 + $1.totalBeforeTax } }
-    var tax: Double { items.reduce(0) { $0 + $1.taxAmount } }
-    var total: Double { max(subtotal + tax - discount, 0) }
+    // The server's arithmetic, shared with invoices: an estimate's discount is applied
+    // before tax, apportioned across the lines. It matters doubly here, because an
+    // estimate turns into an invoice — a quote that added up differently from the bill
+    // that followed it is a conversation with a customer nobody wants to have.
+    private var computed: InvoiceTotals {
+        Totals.compute(
+            lines: items.map {
+                Totals.Line(qty: $0.qty, rate: $0.rate, discount: $0.discount, taxRate: $0.taxRate)
+            },
+            invoiceDiscount: discount
+        )
+    }
+
+    var subtotal: Double { computed.subtotal }
+    var tax: Double { computed.tax }
+    var total: Double { computed.total }
 
     var isValid: Bool {
         selectedClient != nil && !items.isEmpty
@@ -236,19 +259,92 @@ final class EstimateViewModel: ObservableObject {
     }
 
     // MARK: - Fetch List
+
+    /// How many estimates a page holds. Enough that most shops never reach the end of
+    /// the first one, small enough that opening the screen is not a wait.
+    private static let pageSize = 25
+
+    /// The newest list load, so a reply for an old search is not shown under a new one.
+    private var listRequestCounter = 0
+    private var currentListRequest = 0
+
+    /// Reloads the list from the top. Called on appear and whenever the search changes.
     func fetchEstimates() async {
+        listRequestCounter += 1
+        let request = listRequestCounter
+        currentListRequest = request
+
         isFetchingList = true
-        defer { isFetchingList = false }
+        listError = nil
+
         do {
-            estimates = try await service.getEstimates(companyID: SessionManager.shared.selectedCompanyId)
-        } catch let error as NSError {
-            if error.code == 404 {
-                estimates = []
-                return
-            }
-            showError(error.localizedDescription)
+            let page = try await service.getEstimates(
+                companyID: SessionManager.shared.selectedCompanyId,
+                search: searchQuery.isEmpty ? nil : searchQuery,
+                limit: Self.pageSize,
+                offset: 0
+            )
+            guard request == currentListRequest else { return }
+            estimates = page
+            hasMoreEstimates = page.count == Self.pageSize
+            loadMoreFailed = false
+            isFetchingList = false
+        } catch let error as NSError where error.code == 404 {
+            guard request == currentListRequest else { return }
+            estimates = []
+            hasMoreEstimates = false
+            isFetchingList = false
         } catch {
-            showError(error.localizedDescription)
+            guard request == currentListRequest else { return }
+            // Kept on the screen rather than only in an alert. A dismissed alert left
+            // the empty state behind, so a dropped connection read as "no estimates
+            // yet" to a shop that has hundreds.
+            listError = error.localizedDescription
+            isFetchingList = false
+        }
+    }
+
+    /// Fetches the next page when the list is nearly scrolled to the end.
+    func loadMoreIfNeeded(currentEstimate estimate: EstimateResponse) async {
+        // Five from the bottom, so the next page is usually there before it is needed.
+        guard estimate.id == estimates.suffix(5).first?.id else { return }
+        await loadNextPage()
+    }
+
+    /// Clears the paging failure and tries the same page again.
+    func retryLoadMore() async {
+        loadMoreFailed = false
+        await loadNextPage()
+    }
+
+    private func loadNextPage() async {
+        guard hasMoreEstimates, !isLoadingMore, !loadMoreFailed else { return }
+
+        let request = currentListRequest
+        isLoadingMore = true
+
+        do {
+            let page = try await service.getEstimates(
+                companyID: SessionManager.shared.selectedCompanyId,
+                search: searchQuery.isEmpty ? nil : searchQuery,
+                limit: Self.pageSize,
+                offset: estimates.count
+            )
+            // A page that belongs to a search that has since changed is dropped; the
+            // reload for the new search is already on its way.
+            guard request == currentListRequest else { return }
+            // Appending by id rather than wholesale, so a row that both pages happened
+            // to contain is not shown twice.
+            let known = Set(estimates.map(\.id))
+            estimates.append(contentsOf: page.filter { !known.contains($0.id) })
+            hasMoreEstimates = page.count == Self.pageSize
+            isLoadingMore = false
+        } catch {
+            guard request == currentListRequest else { return }
+            // Paging stops but is not given up on: the rest is still there, and the
+            // list offers to try again rather than quietly ending.
+            loadMoreFailed = true
+            isLoadingMore = false
         }
     }
 

@@ -19,6 +19,9 @@ class InvoiceViewModel: ObservableObject {
     @Published var showSuccessAlert = false
     @Published var successMessage = ""
 
+    /// Set true in debug preview views — suppresses all network fetches so injected mock data stays intact.
+    var previewMode = false
+
     // MARK: - Invoice Data
     @Published var invoices: [InvoiceResponse] = []
     @Published var invoiceDetail: InvoiceDetailResponse?
@@ -26,6 +29,14 @@ class InvoiceViewModel: ObservableObject {
     @Published var isFetchingList = false
     @Published var isLoadingMoreInvoices = false
     @Published var hasMoreInvoices = false
+    /// True when the last attempt at the next page failed, so the list can offer
+    /// another go instead of looking as though it had reached the end.
+    @Published var loadMoreFailed = false
+    /// Counts and totals for the whole list, from the server.
+    @Published var summary: InvoiceSummary = .empty
+    /// True when the figures could not be fetched, so the header can say so instead of
+    /// showing zeroes as though the business had nothing outstanding.
+    @Published var summaryFailed = false
     @Published var isFetchingDetail = false
     @Published var showScanner = false
     @Published var invoiceNumber: String = "Auto-generated"
@@ -70,17 +81,25 @@ class InvoiceViewModel: ObservableObject {
     private let service = InvoiceService()
 
     // MARK: - Computed Totals (UI ONLY)
-    var subtotal: Double {
-        items.reduce(0) { $0 + $1.totalBeforeTax }
+    //
+    // Worked out by the shared Totals code, which mirrors the server line for line. The
+    // old sum here was subtotal + tax - discount, but the server applies an invoice
+    // discount before tax and spreads it across the lines — so with any discount the
+    // figure quoted on this screen was not the figure saved on the invoice.
+    private var computed: InvoiceTotals {
+        Totals.compute(
+            lines: items.map {
+                Totals.Line(qty: $0.qty, rate: $0.rate, discount: $0.discount, taxRate: $0.taxRate)
+            },
+            invoiceDiscount: discount
+        )
     }
 
-    var tax: Double {
-        items.reduce(0) { $0 + $1.taxAmount }
-    }
+    var subtotal: Double { computed.subtotal }
 
-    var total: Double {
-        max(subtotal + tax - discount, 0)
-    }
+    var tax: Double { computed.tax }
+
+    var total: Double { computed.total }
 
     // MARK: - Validation
     var isValid: Bool {
@@ -169,18 +188,27 @@ class InvoiceViewModel: ObservableObject {
         guard let client = selectedClient else { return }
         guard !client.isQuickSaleAccount else { return }
 
+        // Cleared first, and only filled from a reply that still matches the client on
+        // screen. Before, a client with no address on file left the previous client's
+        // address in the fields — and createInvoice then saved it onto the new client,
+        // so one customer's address was written into another's record and printed on
+        // their invoice. Switching clients quickly could do the same with a reply that
+        // arrived late.
+        let requested = client.id
+        billingAddress = .empty(type: "billing")
+        shippingAddress = .empty(type: "shipping")
+        isShippingSameAsBilling = true
+
         do {
-            if let billing = try await addressService.getClientAddress(
-                clientID: client.id,
-                type: "billing"
-            ) {
+            let billing = try await addressService.getClientAddress(clientID: requested, type: "billing")
+            guard selectedClient?.id == requested else { return }
+            if let billing {
                 billingAddress = AddressFormModel(from: billing)
             }
 
-            if let shipping = try await addressService.getClientAddress(
-                clientID: client.id,
-                type: "shipping"
-            ) {
+            let shipping = try await addressService.getClientAddress(clientID: requested, type: "shipping")
+            guard selectedClient?.id == requested else { return }
+            if let shipping {
                 shippingAddress = AddressFormModel(from: shipping)
                 isShippingSameAsBilling = false
             } else {
@@ -188,12 +216,21 @@ class InvoiceViewModel: ObservableObject {
             }
         } catch {
             // Handle any thrown errors from address service calls
+            guard selectedClient?.id == requested else { return }
             showError(error.localizedDescription)
         }
     }
 
     // MARK: - Create Invoice (Backend Calculates Everything)
     func createInvoice() async -> Bool {
+        // Busy from the first tap, not from the create call.
+        //
+        // isLoading used to be set after the addresses had been saved, which is a
+        // round trip or two — so a second tap in that window started a second create
+        // and the customer got two identical invoices, both counted and both owed.
+        if isLoading { return false }
+        isLoading = true
+        defer { isLoading = false }
 
         // 1️⃣ Save addresses FIRST
         let addressesSaved = await saveClientAddressesIfNeeded()
@@ -238,9 +275,6 @@ class InvoiceViewModel: ObservableObject {
             }
         )
 
-        isLoading = true
-        defer { isLoading = false }
-
         do {
             _ = try await service.createInvoices(payload: payload)
 
@@ -279,42 +313,88 @@ class InvoiceViewModel: ObservableObject {
     /// Paging state. hasMoreInvoices goes false once a page comes back short, which is
     /// what stops the list asking forever at the bottom.
     private var invoiceOffset = 0
+    /// Identifies the newest list request. Every reply checks it before touching the
+    /// screen, so a slow one cannot land on top of a newer one.
+    ///
+    /// Comparing the query instead of a counter is not enough: typing "a", deleting it
+    /// and typing "a" again makes two requests that look identical, and the first one
+    /// coming back last would still be stale.
+    private var listRequestID = 0
     private var listCompanyID: Int?
     private var listClientID: Int?
+    private var listSearch: String?
+    private var listStatus: String?
 
     func fetchInvoices(
         companyID: Int? = nil,
         clientID: Int? = nil,
+        search: String? = nil,
+        status: String? = nil,
         limit: Int = invoicePageSize,
         offset: Int = 0
     ) async {
+        listRequestID += 1
+        let request = listRequestID
         isFetchingList = true
-        defer { isFetchingList = false }
 
         // Remembered so loadMoreInvoices can continue the same query.
         listCompanyID = companyID
         listClientID = clientID
+        listSearch = search
+        listStatus = status
         invoiceOffset = 0
         hasMoreInvoices = false
 
+        let company = companyID ?? SessionManager.shared.selectedCompanyId
+
+        // The figures above the list are counted by the server over everything that
+        // matches. Added up here they described the loaded page and called it the
+        // business: "Outstanding" was the outstanding amount of the latest fifty.
+        //
+        // Not asked for by a role that is refused it. The card is hidden for them
+        // anyway; making the request regardless would spend it to be told 403 and
+        // raise summaryFailed, which reads as a fault rather than as a part of the
+        // job somebody else does.
+        let maySeeTotals = SessionManager.shared.companyRole.canSeeReports
+        async let summaryResult = maySeeTotals
+            ? try? service.getInvoiceSummary(
+                companyID: company, clientID: clientID, search: search
+              )
+            : nil
+
         do {
             let response = try await service.getInvoices(
-                companyID: companyID ?? SessionManager.shared.selectedCompanyId,
+                companyID: company,
                 clientID: clientID,
+                search: search,
+                status: status,
                 limit: limit,
                 offset: offset
             )
+            let newSummary = await summaryResult
+            guard request == listRequestID else { return }
             invoices = response.data
             invoiceOffset = response.data.count
             hasMoreInvoices = response.data.count >= limit
+            loadMoreFailed = false
+            // A summary that failed is cleared rather than left behind: keeping the
+            // previous one put one search's totals above another search's rows.
+            summary = newSummary ?? .empty
+            summaryFailed = maySeeTotals && newSummary == nil
+            isFetchingList = false
         } catch let error as NSError {
+            guard request == listRequestID else { return }
+            isFetchingList = false
             // Handle 404 "No invoices found" gracefully
             if error.code == 404 {
                 invoices = []
+                summary = await summaryResult ?? .empty
                 return
             }
             showError(error.localizedDescription)
         } catch {
+            guard request == listRequestID else { return }
+            isFetchingList = false
             showError(error.localizedDescription)
         }
     }
@@ -326,32 +406,76 @@ class InvoiceViewModel: ObservableObject {
     /// and the Outstanding total on the summary card silently under-reported what was
     /// actually owed, because it is computed from the loaded rows.
     func loadMoreInvoices(currentItem invoice: InvoiceResponse) async {
-        guard !isLoadingMoreInvoices, hasMoreInvoices else { return }
+        // Not while a previous page is still failing: the Retry row drives that.
+        guard !isLoadingMoreInvoices, hasMoreInvoices, !loadMoreFailed else { return }
         guard let index = invoices.firstIndex(where: { $0.id == invoice.id }),
               index >= invoices.count - 10 else { return }
 
         isLoadingMoreInvoices = true
         defer { isLoadingMoreInvoices = false }
 
+        // The page belongs to this query. If the search or filter changes while it is
+        // out, the rows it carries are for a list nobody is looking at any more.
+        let request = listRequestID
+
         do {
             let response = try await service.getInvoices(
                 companyID: listCompanyID ?? SessionManager.shared.selectedCompanyId,
                 clientID: listClientID,
+                search: listSearch,
+                status: listStatus,
                 limit: Self.invoicePageSize,
                 offset: invoiceOffset
             )
+            guard request == listRequestID else { return }
+            let existing = Set(invoices.map(\.id))
+            invoices.append(contentsOf: response.data.filter { !existing.contains($0.id) })
+            invoiceOffset += response.data.count
+            hasMoreInvoices = response.data.count >= Self.invoicePageSize
+            loadMoreFailed = false
+        } catch {
+            guard request == listRequestID else { return }
+            // A failed page must not replace a list that already has content, and must
+            // not quietly end the list either: hasMoreInvoices stayed false, so the
+            // older invoices were unreachable until the screen was left and reopened,
+            // with nothing on screen to say so. The offset is kept and the row at the
+            // bottom offers another go.
+            loadMoreFailed = true
+        }
+    }
+
+    /// Another go at the page that failed, from the Retry row at the end of the list.
+    func retryLoadMore() async {
+        guard !isLoadingMoreInvoices else { return }
+        loadMoreFailed = false
+        isLoadingMoreInvoices = true
+        defer { isLoadingMoreInvoices = false }
+
+        let request = listRequestID
+
+        do {
+            let response = try await service.getInvoices(
+                companyID: listCompanyID ?? SessionManager.shared.selectedCompanyId,
+                clientID: listClientID,
+                search: listSearch,
+                status: listStatus,
+                limit: Self.invoicePageSize,
+                offset: invoiceOffset
+            )
+            guard request == listRequestID else { return }
             let existing = Set(invoices.map(\.id))
             invoices.append(contentsOf: response.data.filter { !existing.contains($0.id) })
             invoiceOffset += response.data.count
             hasMoreInvoices = response.data.count >= Self.invoicePageSize
         } catch {
-            // A failed page should not replace a list that already has content.
-            hasMoreInvoices = false
+            guard request == listRequestID else { return }
+            loadMoreFailed = true
         }
     }
 
     // MARK: - Fetch Invoice Detail
     func fetchInvoiceDetail(invoiceID: Int) async {
+        guard !previewMode else { return }
         isFetchingDetail = true
         defer { isFetchingDetail = false }
 
@@ -364,7 +488,19 @@ class InvoiceViewModel: ObservableObject {
         }
     }
 
+    /// Names for the lines on an invoice.
+    ///
+    /// The server sends the name with each line, so they are taken from the reply that
+    /// is already in hand. This used to fetch them one item at a time, in sequence: a
+    /// six-line invoice meant six more round trips before the screen could finish
+    /// drawing, every time it was opened. Anything the server left out is still fetched,
+    /// so an older server keeps working.
     private func loadItemNames(for items: [InvoiceItemDetail]) async {
+        for item in items where itemNames[item.item_id] == nil {
+            if let name = item.item_name, !name.isEmpty {
+                itemNames[item.item_id] = name
+            }
+        }
         for item in items where itemNames[item.item_id] == nil {
             if let response = try? await ItemService().getItemByID(item.item_id),
                let name = response.first?.name {
@@ -506,5 +642,65 @@ class InvoiceViewModel: ObservableObject {
     private func showError(_ message: String) {
         errorMessage = message
         showAlert = true
+    }
+}
+
+// MARK: - Not losing a half-written invoice
+
+extension InvoiceViewModel {
+
+    /// The form as it stands, in the shape that is kept on disk.
+    private var currentDraft: InvoiceDraft? {
+        guard let companyID = SessionManager.shared.selectedCompanyId else { return nil }
+        return InvoiceDraft(
+            companyID: companyID,
+            client: selectedClient,
+            lines: items.map {
+                InvoiceDraft.Line(
+                    item: $0.item, qty: $0.qty, rate: $0.rate,
+                    discount: $0.discount, taxRate: $0.taxRate
+                )
+            },
+            invoiceDate: invoiceDate,
+            dueDate: dueDate,
+            discount: discount
+        )
+    }
+
+    /// Writes the invoice being typed to disk.
+    ///
+    /// Called as things change and when the app goes to the background. Cheap enough to
+    /// do on every change — one small file, written atomically — and that matters more
+    /// than being clever: the moment worth surviving is the one nobody saw coming, when
+    /// the app is killed on a low-memory phone with no chance to save anything.
+    func saveDraft() {
+        guard let draft = currentDraft else { return }
+        InvoiceDraftStore.save(draft)
+    }
+
+    /// Forgets the unfinished invoice for the company in hand.
+    func discardDraft() {
+        guard let companyID = SessionManager.shared.selectedCompanyId else { return }
+        InvoiceDraftStore.discard(companyID: companyID)
+    }
+
+    /// An unfinished invoice waiting for this company, if there is one worth offering.
+    func pendingDraft() -> InvoiceDraft? {
+        guard let companyID = SessionManager.shared.selectedCompanyId else { return nil }
+        return InvoiceDraftStore.load(companyID: companyID)
+    }
+
+    /// Puts a draft back on the screen, exactly as it was left.
+    func restore(_ draft: InvoiceDraft) {
+        items = draft.lines.map {
+            InvoiceLineItem(
+                item: $0.item, qty: $0.qty, rate: $0.rate,
+                discount: $0.discount, taxRate: $0.taxRate
+            )
+        }
+        invoiceDate = draft.invoiceDate
+        dueDate = draft.dueDate
+        discount = draft.discount
+        selectedClient = draft.client
     }
 }

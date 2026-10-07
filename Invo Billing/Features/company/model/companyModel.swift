@@ -27,6 +27,11 @@ struct CompanyResponse: Codable ,Identifiable {
     let state: String
     let pincode: String
 
+    /// What this account is to this business: owner, manager or staff. Optional so a
+    /// server that does not send it yet still decodes — read it through `memberRole`.
+    let role: String?
+
+    var memberRole: MemberRole { MemberRole(role) }
 }
 
 struct CompaniesResponse: Codable {

@@ -18,11 +18,28 @@ struct LedgerListView: View {
             VStack(spacing: 0) {
 
                 // Summary
-                LedgerSummaryView(
-                    debit: vm.totalDebit,
-                    credit: vm.totalCredit,
-                    balance: vm.closingBalance
-                )
+                if vm.summaryFailed {
+                    // The figures are the customer's whole history, so when they cannot
+                    // be fetched the screen says so rather than showing ₹0 totals
+                    // above a page of real entries.
+                    VStack(spacing: 6) {
+                        Text("Totals unavailable")
+                            .font(.scaled(13, weight: .medium))
+                            .foregroundColor(.sForeground)
+                        Button("Try again") { Task { await vm.fetchLedger() } }
+                            .font(.scaled(13, weight: .medium))
+                            .foregroundColor(.sAccent)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(Color.sCard)
+                } else {
+                    LedgerSummaryView(
+                        debit: vm.totalDebit,
+                        credit: vm.totalCredit,
+                        balance: vm.closingBalance
+                    )
+                }
 
                 Rectangle().fill(Color.sBorder).frame(height: 0.5)
 
@@ -49,7 +66,32 @@ struct LedgerListView: View {
                     Spacer()
                 } else {
                     ScrollView {
-                        VStack(spacing: 10) {
+                        LazyVStack(spacing: 10) {
+                            // Older entries load upwards: the statement reads forwards,
+                            // so the newest page is the one shown first.
+                            if vm.isLoadingMore {
+                                ProgressView()
+                                    .tint(.sAccent)
+                                    .padding(.vertical, 12)
+                            } else if vm.loadMoreFailed {
+                                VStack(spacing: 6) {
+                                    Text("Couldn't load earlier entries.")
+                                        .font(.scaled(13))
+                                        .foregroundColor(.sMutedFG)
+                                    Button("Try again") { Task { await vm.retryLoadMore() } }
+                                        .font(.scaled(13, weight: .medium))
+                                        .foregroundColor(.sAccent)
+                                }
+                                .padding(.vertical, 12)
+                            } else if vm.hasMore {
+                                Button("Load earlier entries") {
+                                    Task { await vm.loadEarlier() }
+                                }
+                                .font(.scaled(13, weight: .medium))
+                                .foregroundColor(.sAccent)
+                                .padding(.vertical, 12)
+                            }
+
                             ForEach(vm.entries) { entry in
                                 LedgerRowView(entry: entry)
                             }
@@ -64,6 +106,23 @@ struct LedgerListView: View {
         }
         .navigationTitle("Ledger details")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                // The statement to send the customer. On this screen because this is
+                // where somebody is standing when the customer rings up to say they
+                // have paid everything.
+                NavigationLink {
+                    StatementShareView(
+                        clientID: vm.clientID,
+                        clientName: vm.entries.first?.clientName ?? "Customer"
+                    )
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                        .foregroundColor(.sAccent)
+                }
+                .disabled(vm.entries.isEmpty)
+            }
+        }
         .alert("Error", isPresented: $vm.showAlert) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -132,6 +191,10 @@ struct LedgerRowView: View {
         case .payment: return "Payment"
         case .creditNote: return "Credit Note"
         case .opening: return "Opening"
+        case .adjustment: return "Adjustment"
+        // A source type this version does not know about. The description beneath says
+        // what it was, so the row is still readable.
+        case .other: return "Entry"
         }
     }
 

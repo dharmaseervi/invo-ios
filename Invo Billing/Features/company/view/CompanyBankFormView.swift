@@ -16,6 +16,7 @@ struct CompanyBankFormView: View {
     @State private var upi = ""
     @State private var isDefault = false
     @State private var showError = false
+    @State private var password = ""
 
     var isEditing: Bool { bank != nil }
 
@@ -61,6 +62,16 @@ struct CompanyBankFormView: View {
                                     .foregroundColor(.sForeground)
                             }
                             .tint(.sAccent)
+                        }
+
+                        SecureField("Confirm your account password", text: $password)
+                            .textContentType(.password)
+                            .autocorrectionDisabled()
+
+                        if let message = vm.errorMessage {
+                            Text(message)
+                                .font(.scaled(12))
+                                .foregroundColor(.sDestructive)
                         }
 
                         if showError {
@@ -120,7 +131,7 @@ extension CompanyBankFormView {
                 }
                 .frame(height: 60)
             }
-            .disabled(vm.isLoading)
+            .disabled(vm.isLoading || password.isEmpty)
         }
     }
 
@@ -131,12 +142,14 @@ extension CompanyBankFormView {
     }
 
     private func handleSave() async {
+        vm.errorMessage = nil
         guard !holder.isEmpty, !bankName.isEmpty, !account.isEmpty else {
             showError = true
             return
         }
 
         let dto = CompanyBankRequestDTO(
+            password: password,
             bank_name: bankName,
             company_id: companyId,
             account_holder_name: holder,
@@ -155,6 +168,7 @@ extension CompanyBankFormView {
         }
 
         if success {
+            password = ""
             dismiss()
         }
     }

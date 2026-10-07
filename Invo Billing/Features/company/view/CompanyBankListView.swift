@@ -13,6 +13,9 @@ struct CompanyBankListView: View {
     @StateObject private var vm = CompanyBankViewModel()
     @State private var showForm = false
     @State private var selectedBank: CompanyBankResponse?
+    @State private var bankToDelete: CompanyBankResponse?
+    @State private var showDeleteConfirmation = false
+    @State private var deletePassword = ""
 
     var body: some View {
         ZStack {
@@ -80,9 +83,9 @@ struct CompanyBankListView: View {
                     .onDelete { indexSet in
                         if let index = indexSet.first {
                             let bank = vm.banks[index]
-                            Task {
-                                await vm.deleteBank(companyId: companyId, bankId: bank.id)
-                            }
+                            bankToDelete = bank
+                            deletePassword = ""
+                            showDeleteConfirmation = true
                         }
                     }
                 }
@@ -103,6 +106,27 @@ struct CompanyBankListView: View {
         }
         .task {
             await vm.loadBanks(companyId: companyId)
+        }
+        // The screen had no way at all to show a failure, so a load or a delete that
+        // did not work left an empty list that read as "no bank accounts".
+        .alert("Something went wrong", isPresented: $vm.showError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(vm.errorMessage ?? "Please try again.")
+        }
+        .alert("Remove bank account?", isPresented: $showDeleteConfirmation) {
+            SecureField("Account password", text: $deletePassword)
+            Button("Remove", role: .destructive) {
+                guard let bank = bankToDelete else { return }
+                let password = deletePassword
+                deletePassword = ""
+                bankToDelete = nil
+                Task { await vm.deleteBank(companyId: companyId, bankId: bank.id, password: password) }
+            }
+            .disabled(deletePassword.isEmpty)
+            Button("Cancel", role: .cancel) { deletePassword = ""; bankToDelete = nil }
+        } message: {
+            Text("Enter your password to remove this bank account.")
         }
         .sheet(isPresented: $showForm) {
             CompanyBankFormView(

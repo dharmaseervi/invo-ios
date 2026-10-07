@@ -6,6 +6,9 @@ struct CreditNoteListView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showCreate = false
     @State private var searchText = ""
+    /// Tracked, not inferred from an empty list: a search that matches nothing would
+    /// otherwise take the search box away with it.
+    @State private var hasLoadedOnce = false
     @State private var selectedFilter: CNFilterType = .all
     @State private var appearAnimation = false
 
@@ -26,56 +29,50 @@ struct CreditNoteListView: View {
         }
     }
 
-    // MARK: - Filtered Data
-    var filteredNotes: [CreditNoteModel] {
-        var notes = vm.creditNotes
+    // MARK: - Rows
+    //
+    // As the server returned them: the search box and the filter are query parameters.
+    // Filtering here searched only the page that had been loaded, so older credit notes
+    // could not be found at all, and the counts below described that page.
+    var filteredNotes: [CreditNoteModel] { vm.creditNotes }
 
-        if !searchText.isEmpty {
-            notes = notes.filter {
-                $0.credit_number.localizedCaseInsensitiveContains(searchText)
-                    || $0.client_name.localizedCaseInsensitiveContains(
-                        searchText
-                    )
-            }
-        }
-
+    /// What the filter tab asks the server for.
+    private var serverType: String? {
         switch selectedFilter {
-        case .all:
-            break
-        case .return:
-            notes = notes.filter { $0.type == "return" }
-        case .adjustment:
-            notes = notes.filter { $0.type == "adjustment" }
-        case .discount:
-            notes = notes.filter { $0.type == "discount" }
+        case .all: return nil
+        case .return: return "return"
+        case .adjustment: return "adjustment"
+        case .discount: return "discount"
         }
-
-        return notes
     }
 
-    // MARK: - Stats
-    var totalAmount: Double {
-        vm.creditNotes.reduce(0) { $0 + $1.total }
+    /// Fetches the rows and their figures for what is on screen.
+    private func reload() async {
+        await vm.load(
+            search: searchText.trimmingCharacters(in: .whitespaces),
+            type: serverType
+        )
+        hasLoadedOnce = true
     }
 
-    var returnCount: Int {
-        vm.creditNotes.filter { $0.type == "return" }.count
-    }
+    // MARK: - Stats, counted by the server over everything that matches
+    var totalAmount: Double { vm.summary.amount }
 
-    var adjustmentCount: Int {
-        vm.creditNotes.filter { $0.type == "adjustment" }.count
-    }
+    var returnCount: Int { vm.summary.returns }
 
-    var discountCount: Int {
-        vm.creditNotes.filter { $0.type == "discount" }.count
-    }
+    var adjustmentCount: Int { vm.summary.adjustments }
+
+    var discountCount: Int { vm.summary.discounts }
 
     var body: some View {
         ZStack {
             Color.sBackground.ignoresSafeArea()
             
             VStack(spacing: 0) {
-                if vm.isLoading {
+                // Only the very first load replaces the screen. Every search set
+                // isLoading, and this branch took the search field and keyboard with
+                // it on each keystroke.
+                if vm.isLoading && !hasLoadedOnce {
                     cnLoadingView
                 } else {
                     ScrollView(.vertical, showsIndicators: false) {
@@ -96,7 +93,7 @@ struct CreditNoteListView: View {
                         .offset(y: appearAnimation ? 0 : 20)
                     }
                     .refreshable {
-                        await vm.load()
+                        await reload()
                     }
                 }
             }
@@ -113,8 +110,23 @@ struct CreditNoteListView: View {
         .navigationDestination(isPresented: $showCreate) {
             CreateCreditNoteView()
         }
+        .onChange(of: selectedFilter) { _, _ in
+            Task { await reload() }
+        }
+        // Debounced: a request per keystroke, and the one answering last is not
+        // necessarily the one for what is in the box now.
+        .task(id: searchText) {
+            // Only skip the run that fires before the first load; onAppear does that
+            // one. The old guard also skipped an empty box with an empty list, which is
+            // exactly the state after clearing a search that matched nothing — so the
+            // full list never came back.
+            guard hasLoadedOnce else { return }
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            guard !Task.isCancelled else { return }
+            await reload()
+        }
         .onAppear {
-            Task { await vm.load() }
+            Task { await reload() }
             withAnimation(.easeOut(duration: 0.6).delay(0.1)) {
                 appearAnimation = true
             }
@@ -123,7 +135,7 @@ struct CreditNoteListView: View {
         .onChange(of: SessionManager.shared.selectedCompanyId) { _ in
             Task {
                 vm.creditNotes = []
-                await vm.load()
+                await reload()
             }
         }
         .alert("Error", isPresented: $vm.showAlert) {
@@ -215,7 +227,8 @@ struct CreditNoteListView: View {
 
     private func countFor(_ filter: CNFilterType) -> Int {
         switch filter {
-        case .all: return vm.creditNotes.count
+        // From the server: this counted the rows that had been downloaded.
+        case .all: return vm.summary.total
         case .return: return returnCount
         case .adjustment: return adjustmentCount
         case .discount: return discountCount
@@ -235,6 +248,24 @@ struct CreditNoteListView: View {
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 16)
+
+            if vm.summaryFailed {
+                // Dashes and a retry, not zeroes: "₹0 credited, 0 returns" above a
+                // page of real credit notes reads as fact, and it is not.
+                VStack(spacing: 6) {
+                    Text("Totals unavailable")
+                        .font(.scaled(13, weight: .medium))
+                        .foregroundColor(.sForeground)
+                    Button("Try again") { Task { await reload() } }
+                        .font(.scaled(13, weight: .medium))
+                        .foregroundColor(.sAccent)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 20)
+                .background(Color.sMuted.opacity(0.4))
+                .overlay(Rectangle().stroke(Color.sBorder, lineWidth: 1))
+                .padding(.horizontal, 24)
+            } else {
 
             // Stats Cards
             HStack(spacing: 0) {
@@ -272,12 +303,13 @@ struct CreditNoteListView: View {
                     .stroke(Color.sBorder, lineWidth: 1)
             )
             .padding(.horizontal, 24)
+            }
         }
     }
 
     // MARK: - List Section
     private var cnListSection: some View {
-        VStack(spacing: 0) {
+        LazyVStack(spacing: 0) {
             // Section Header
             HStack {
                 Text("All credit notes")
@@ -307,12 +339,32 @@ struct CreditNoteListView: View {
                 } label: {
                     CNRowView(cn: cn, index: index + 1)
                 }
+                // Per row, a few from the end: keyed on the count it fired again on
+                // every change to the list, which is both eager and repetitive.
+                .task { await vm.loadMoreIfNeeded(currentItem: cn) }
                 .buttonStyle(.plain)
 
                 Rectangle()
                     .fill(Color.sBorder)
                     .frame(height: 1)
                     .padding(.horizontal, 24)
+            }
+
+
+            if vm.isLoadingMore {
+                ProgressView()
+                    .tint(.sAccent)
+                    .padding(.vertical, 12)
+            } else if vm.loadMoreFailed {
+                VStack(spacing: 6) {
+                    Text("Couldn't load more credit notes.")
+                        .font(.scaled(13))
+                        .foregroundColor(.sMutedFG)
+                    Button("Try again") { Task { await vm.retryLoadMore() } }
+                        .font(.scaled(13, weight: .medium))
+                        .foregroundColor(.sAccent)
+                }
+                .padding(.vertical, 12)
             }
         }
     }
