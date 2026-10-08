@@ -16,6 +16,9 @@ struct InvoiceAddressFormView: View {
 
     @FocusState private var focusedField: AddressField?
     @State private var showValidation = false
+    @State private var isVerifyingGST = false
+    @State private var gstVerifyMessage: String?
+    @State private var gstVerifySuccess = false
 
     private var isLine1Valid: Bool {
         !draft.line1.trimmingCharacters(in: .whitespaces).isEmpty
@@ -199,13 +202,7 @@ struct InvoiceAddressFormView: View {
                                     placeholder: "name@company.com"
                                 )
                                 
-                                addressField(
-                                    "GST Number",
-                                    text: $draft.gstNumber,
-                                    icon: "doc.text.fill",
-                                    field: .gstNumber,
-                                    placeholder: "27AABCT5055K1Z0"
-                                )
+                                gstField
                             }
                         )
                         
@@ -246,8 +243,120 @@ struct InvoiceAddressFormView: View {
         }
     }
     
+    // MARK: - GST field with inline Verify button
+
+    private var gstField: some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                Label("GST Number", systemImage: "doc.text.fill")
+                    .font(.scaled(12, weight: .semibold))
+                    .foregroundColor(.sMutedFG)
+                Spacer()
+                if draft.gstNumber.count == 15 {
+                    Button {
+                        Task { await verifyGSTIN() }
+                    } label: {
+                        if isVerifyingGST {
+                            ProgressView().scaleEffect(0.7).tint(.sAccent)
+                        } else {
+                            Text("Verify")
+                                .font(.scaled(12, weight: .semibold))
+                                .foregroundColor(.sAccent)
+                        }
+                    }
+                    .disabled(isVerifyingGST)
+                }
+            }
+
+            TextField("27AABCT5055K1Z0", text: $draft.gstNumber)
+                .font(.scaled(14, weight: .regular))
+                .focused($focusedField, equals: .gstNumber)
+                .textFieldStyle(.plain)
+                .textInputAutocapitalization(.characters)
+                .autocorrectionDisabled()
+                .padding(.vertical, 10)
+                .overlay(
+                    Rectangle()
+                        .frame(height: 1)
+                        .foregroundColor(focusedField == .gstNumber ? Color.sAccent : Color.sBorder),
+                    alignment: .bottom
+                )
+                .animation(.easeInOut(duration: 0.2), value: focusedField)
+                .onChange(of: draft.gstNumber) { gstin in
+                    gstVerifyMessage = nil
+                    // Auto-fill state from first 2 digits the moment they are typed.
+                    if let stateName = IndianStates.state(fromGSTIN: gstin),
+                       IndianStates.all.contains(stateName) {
+                        draft.state = stateName
+                    }
+                }
+
+            if let msg = gstVerifyMessage {
+                HStack(spacing: 6) {
+                    Image(systemName: gstVerifySuccess ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
+                        .font(.scaled(12))
+                        .foregroundColor(gstVerifySuccess ? .green : .sDestructive)
+                    Text(msg)
+                        .font(.scaled(12))
+                        .foregroundColor(gstVerifySuccess ? .green : .sDestructive)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
+    @MainActor
+    private func verifyGSTIN() async {
+        isVerifyingGST = true
+        gstVerifyMessage = nil
+        defer { isVerifyingGST = false }
+
+        let gstin = draft.gstNumber.uppercased()
+        guard let url = URL(string: "\(AppEnvironment.baseURL)/gstin/\(gstin)") else {
+            gstVerifyMessage = "Invalid request URL"
+            gstVerifySuccess = false
+            return
+        }
+
+        var req = URLRequest(url: url)
+        req.httpMethod = "GET"
+        if let token = KeychainManager.shared.loadToken() {
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: req)
+            guard let http = response as? HTTPURLResponse else { throw URLError(.badServerResponse) }
+
+            struct GSTINResponse: Decodable {
+                let valid: Bool
+                let state: String?
+                let message: String?
+            }
+
+            if http.statusCode == 200,
+               let result = try? JSONDecoder().decode(GSTINResponse.self, from: data) {
+                gstVerifySuccess = result.valid
+                if result.valid {
+                    if let state = result.state, IndianStates.all.contains(state) {
+                        draft.state = state
+                    }
+                    gstVerifyMessage = result.message ?? "Valid GSTIN"
+                } else {
+                    gstVerifyMessage = result.message ?? "Invalid GSTIN"
+                }
+            } else {
+                gstVerifySuccess = false
+                gstVerifyMessage = "Could not verify — check the number"
+            }
+        } catch {
+            gstVerifySuccess = false
+            gstVerifyMessage = "Verification failed"
+        }
+    }
+
     // MARK: - Components
-    
+
     private func section<Content: View>(
         title: String,
         icon: String,

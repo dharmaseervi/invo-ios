@@ -8,8 +8,9 @@ struct InvoiceDetailView: View {
     @State private var showEditInvoice = false
     @State private var showCreditNote = false
     @State private var showDeleteConfirmation = false
+    @State private var showCancelConfirmation = false
     @State private var isDeleting = false
-
+    @State private var isCancelling = false
     // Check if invoice is draft
     private var isDraft: Bool {
         vm.invoiceDetail?.status.rawValue == "draft"
@@ -93,6 +94,16 @@ struct InvoiceDetailView: View {
                            [.issued, .partial, .paid].contains(detail.status) {
                             Button(action: { showCreditNote = true }) {
                                 Label("Credit note", systemImage: "arrow.uturn.backward.circle")
+                            }
+                        }
+
+                        // Cancel voids the invoice and zeroes the ledger entry.
+                        // Only available on issued/partial — drafts can simply be deleted.
+                        if let detail = vm.invoiceDetail,
+                           [.issued, .partial].contains(detail.status) {
+                            Divider()
+                            Button(role: .destructive, action: { showCancelConfirmation = true }) {
+                                Label("Cancel invoice", systemImage: "xmark.circle")
                             }
                         }
 
@@ -496,6 +507,25 @@ struct InvoiceDetailView: View {
                     CreateCreditNoteView(invoice: detail)
                 }
             }
+        }
+        .confirmationDialog(
+            "Cancel this invoice?",
+            isPresented: $showCancelConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Cancel invoice", role: .destructive) {
+                Task {
+                    isCancelling = true
+                    let cancelled = await vm.cancelInvoice(invoiceID: invoiceID)
+                    isCancelling = false
+                    if cancelled {
+                        await vm.fetchInvoiceDetail(invoiceID: invoiceID)
+                    }
+                }
+            }
+            Button("Keep invoice", role: .cancel) {}
+        } message: {
+            Text("The invoice will be voided and the customer will no longer owe this amount. This cannot be undone.")
         }
         .sheet(isPresented: $showEditInvoice) {
             NavigationStack {

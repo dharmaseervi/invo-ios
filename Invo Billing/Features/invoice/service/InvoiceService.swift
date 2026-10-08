@@ -565,6 +565,31 @@ final class InvoiceService {
 
 
 
+    // MARK: - Cancel Invoice (Issued / Partial)
+    func cancelInvoice(invoiceID: Int) async throws {
+        guard let url = URL(string: "\(baseURL)/invoices/\(invoiceID)/cancel") else {
+            throw URLError(.badURL)
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token = KeychainManager.shared.loadToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse else { throw URLError(.badServerResponse) }
+        switch http.statusCode {
+        case 200, 204:
+            return
+        default:
+            if let payload = try? JSONDecoder().decode([String: String].self, from: data),
+               let reason = payload["error"], !reason.isEmpty {
+                throw NSError(domain: "Invoice", code: http.statusCode, userInfo: [NSLocalizedDescriptionKey: reason])
+            }
+            throw NSError(domain: "Invoice", code: http.statusCode, userInfo: [NSLocalizedDescriptionKey: "Failed to cancel invoice"])
+        }
+    }
+
     /// Counts and totals over every invoice that matches, not just the loaded page.
     ///
     /// The list screen used to add up the rows it happened to have, so "Outstanding"

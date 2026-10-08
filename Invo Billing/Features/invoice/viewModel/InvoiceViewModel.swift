@@ -204,6 +204,16 @@ class InvoiceViewModel: ObservableObject {
             guard selectedClient?.id == requested else { return }
             if let billing {
                 billingAddress = AddressFormModel(from: billing)
+            } else {
+                // No saved address yet — seed the form from the client profile so the
+                // user isn't staring at a blank billing form after selecting a client.
+                billingAddress.name = client.name
+                billingAddress.line1 = client.address
+                billingAddress.city = client.city
+                billingAddress.state = client.state.isEmpty ? billingAddress.state : client.state
+                billingAddress.postalCode = client.pincode
+                billingAddress.phone = client.phone
+                billingAddress.email = client.email
             }
 
             let shipping = try await addressService.getClientAddress(clientID: requested, type: "shipping")
@@ -632,6 +642,19 @@ class InvoiceViewModel: ObservableObject {
         defer { isLoading = false }
         do {
             try await service.deleteInvoice(invoiceID: invoiceID)
+            return true
+        } catch {
+            showError(error.localizedDescription)
+            return false
+        }
+    }
+
+    /// Cancels an issued/partial invoice. Returns true so the caller can refresh the view.
+    func cancelInvoice(invoiceID: Int) async -> Bool {
+        isLoading = true
+        defer { isLoading = false }
+        do {
+            try await service.cancelInvoice(invoiceID: invoiceID)
             return true
         } catch {
             showError(error.localizedDescription)

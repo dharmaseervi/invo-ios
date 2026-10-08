@@ -7,10 +7,33 @@ struct OTPLoginView: View {
     var body: some View {
         ZStack {
             Color.sBackground.ignoresSafeArea()
-            
+
+            VStack(spacing: 0) {
+                // Back button row — always visible since nav bar is hidden
+                HStack {
+                    Button {
+                        viewModel.otpSent = false
+                        viewModel.otpCode = ""
+                        viewModel.otpEmail = ""
+                        viewModel.errorMessage = nil
+                        presentationMode.wrappedValue.dismiss()
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "chevron.left")
+                                .font(.scaled(16, weight: .semibold))
+                            Text("Back")
+                                .font(.scaled(16))
+                        }
+                        .foregroundColor(.sAccent)
+                    }
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
-                    Spacer().frame(height: 52)
+                    Spacer().frame(height: 24)
                     
                     // MARK: - Logo
                     VStack(spacing: 12) {
@@ -211,26 +234,10 @@ struct OTPLoginView: View {
                     )
                     .padding(.horizontal, 24)
                     
-                    // Back to login
-                    Button {
-                        viewModel.otpSent = false
-                        viewModel.otpCode = ""
-                        viewModel.otpEmail = ""
-                        viewModel.errorMessage = nil
-                        presentationMode.wrappedValue.dismiss()
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "chevron.left")
-                                .font(.scaled(12, weight: .semibold))
-                            Text("Back to login")
-                                .font(.scaled(13))
-                        }
-                        .foregroundColor(.sMutedFG)
-                    }
-                    .padding(.top, 20)
-                    .padding(.bottom, 40)
+                    Spacer().frame(height: 40)
                 }
             }
+            } // end VStack
         }
         .navigationBarHidden(true)
         .onTapGesture { hideKeyboard() }
