@@ -71,6 +71,22 @@ struct CreateEstimateView: View {
 
                         VStack(spacing: 0) {
                             HStack {
+                                Text("Document type")
+                                    .font(.scaled(14))
+                                    .foregroundColor(.sForeground)
+                                Spacer()
+                                Picker("", selection: $vm.docType) {
+                                    Text("Quotation").tag("")
+                                    Text("Proforma Invoice").tag("PROFORMA INVOICE")
+                                }
+                                .pickerStyle(.menu)
+                                .tint(.sAccent)
+                            }
+                            .padding(14)
+
+                            Rectangle().fill(Color.sBorder).frame(height: 0.5)
+
+                            HStack {
                                 Text("Estimate number")
                                     .font(.scaled(14))
                                     .foregroundColor(.sForeground)
@@ -122,7 +138,8 @@ struct CreateEstimateView: View {
                         subtotal: vm.subtotal,
                         tax: vm.tax,
                         discount: $vm.discount,
-                        total: vm.total
+                        total: vm.total,
+                        tdsRate: .constant(0)
                     )
                 }
                 .padding(.top, 16)
@@ -168,7 +185,7 @@ struct CreateEstimateView: View {
                 .background(Color.sBackground)
             }
         }
-        .navigationTitle("New estimate")
+        .navigationTitle(vm.docType.isEmpty ? "New estimate" : "New proforma invoice")
         // Presented as a full-screen cover, so there is no back chevron to leave by.
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {

@@ -57,6 +57,7 @@ struct InvoiceRequestDTO: Codable {
     let invoice_date: String   // yyyy-MM-dd
     let due_date: String       // yyyy-MM-dd
     let discount: Double
+    let tds_rate: Double
     let items: [InvoiceItemRequest]
 }
 
@@ -149,6 +150,9 @@ struct InvoiceDetailResponse: Codable {
     let is_overdue: Bool
     let days_overdue: Int
 
+    let tds_rate: Double?
+    let tds_amount: Double?
+
     let client: ClientSummary
     let items: [InvoiceItemDetail]
 }
@@ -158,6 +162,7 @@ struct InvoiceDetailResponse: Codable {
 struct ClientSummary: Codable {
     let id: Int
     let name: String
+    let phone: String?
 }
 
 // MARK: - Invoice Item (from backend)

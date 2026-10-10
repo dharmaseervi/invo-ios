@@ -93,6 +93,9 @@ struct InvoiceView: View {
     /// leaves the list empty, so clearing that search made this true again and the
     /// search box disappeared under the placeholder exactly when it was being used.
     @State private var hasLoadedOnce = false
+    @State private var isSelecting = false
+    @State private var selectedIDs: Set<Int> = []
+    @State private var isBulkWorking = false
 
     private var isFirstLoad: Bool { vm.isFetchingList && !hasLoadedOnce }
 
@@ -115,9 +118,55 @@ struct InvoiceView: View {
         }
     }
 
+    private var bulkActionBar: some View {
+        VStack(spacing: 0) {
+            Spacer()
+            if isSelecting {
+                HStack(spacing: 16) {
+                    Text("\(selectedIDs.count) selected")
+                        .font(.scaled(14, weight: .medium))
+                        .foregroundColor(.sForeground)
+                    Spacer()
+                    let payable = filteredInvoices.filter { selectedIDs.contains($0.id) && $0.remaining_amount > 0 }
+                    if !payable.isEmpty {
+                        Button {
+                            Task {
+                                isBulkWorking = true
+                                await vm.markPaidBulk(invoices: payable)
+                                isBulkWorking = false
+                                isSelecting = false
+                                selectedIDs.removeAll()
+                                await reload()
+                            }
+                        } label: {
+                            if isBulkWorking {
+                                ProgressView().tint(.sAccentFG)
+                            } else {
+                                Text("Mark paid (\(payable.count))")
+                                    .font(.scaled(13, weight: .semibold))
+                                    .foregroundColor(.sAccentFG)
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 8)
+                                    .background(Color.sAccent)
+                                    .cornerRadius(8)
+                            }
+                        }
+                        .disabled(isBulkWorking)
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 14)
+                .background(.ultraThinMaterial)
+                .overlay(Rectangle().frame(height: 0.5).foregroundColor(Color.sBorder), alignment: .top)
+            }
+        }
+        .ignoresSafeArea(edges: .bottom)
+    }
+
     private var screen: some View {
             ZStack {
                 Color.sBackground.ignoresSafeArea()
+                bulkActionBar
                 VStack(spacing: 0) {
                     // The search field and the filters stay mounted while a search
                     // runs. They used to be inside the branch that the loading
@@ -179,8 +228,23 @@ struct InvoiceView: View {
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { showCreateInvoice = true } label: {
-                        Image(systemName: "plus")
+                    HStack(spacing: 16) {
+                        if isSelecting {
+                            Button("Done") {
+                                isSelecting = false
+                                selectedIDs.removeAll()
+                            }
+                            .font(.body.weight(.medium))
+                        } else {
+                            Button {
+                                isSelecting = true
+                            } label: {
+                                Image(systemName: "checkmark.circle")
+                            }
+                            Button { showCreateInvoice = true } label: {
+                                Image(systemName: "plus")
+                            }
+                        }
                     }
                 }
             }
@@ -412,12 +476,30 @@ struct InvoiceView: View {
             // for rows nobody had looked at.
             LazyVStack(spacing: 10) {
                 ForEach(filteredInvoices) { invoice in
-                    NavigationLink(destination: InvoiceDetailView(invoiceID: invoice.id, vm: vm)) {
-                        InvoiceRowCard(invoice: invoice, vm: vm, isOverdue: isOverdue(invoice))
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    .task {
-                        await vm.loadMoreInvoices(currentItem: invoice)
+                    if isSelecting {
+                        Button {
+                            if selectedIDs.contains(invoice.id) {
+                                selectedIDs.remove(invoice.id)
+                            } else {
+                                selectedIDs.insert(invoice.id)
+                            }
+                        } label: {
+                            HStack(spacing: 10) {
+                                Image(systemName: selectedIDs.contains(invoice.id) ? "checkmark.circle.fill" : "circle")
+                                    .font(.scaled(20))
+                                    .foregroundColor(selectedIDs.contains(invoice.id) ? .sAccent : .sMutedFG)
+                                InvoiceRowCard(invoice: invoice, vm: vm, isOverdue: isOverdue(invoice))
+                            }
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    } else {
+                        NavigationLink(destination: InvoiceDetailView(invoiceID: invoice.id, vm: vm)) {
+                            InvoiceRowCard(invoice: invoice, vm: vm, isOverdue: isOverdue(invoice))
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .task {
+                            await vm.loadMoreInvoices(currentItem: invoice)
+                        }
                     }
                 }
 

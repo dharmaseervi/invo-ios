@@ -74,7 +74,9 @@ struct DebugInvoice100View: View {
             remaining_amount: subtotal + tax,
             is_overdue: false,
             days_overdue: 0,
-            client: ClientSummary(id: 1, name: "Demo Client Pvt. Ltd."),
+            tds_rate: nil,
+            tds_amount: nil,
+            client: ClientSummary(id: 1, name: "Demo Client Pvt. Ltd.", phone: nil),
             items: items
         )
         return v

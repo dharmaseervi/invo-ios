@@ -51,4 +51,22 @@ final class ProfitLossViewModel: ObservableObject {
             showAlert = true
         }
     }
+
+    func exportCSV() -> URL? {
+        guard let r = report else { return nil }
+        var csv = "Profit & Loss — \(r.period)\n"
+        csv += "From,\(r.from)\nTo,\(r.to)\n\n"
+        csv += "Metric,Amount\n"
+        csv += "Revenue,\(r.revenue)\n"
+        csv += "Purchases,\(r.purchases)\n"
+        csv += "Expenses,\(r.expenses)\n"
+        csv += "Gross Profit,\(r.gross_profit)\n"
+        csv += "Net Profit,\(r.net_profit)\n"
+        csv += "Gross Margin %,\(r.gross_margin_pct)\n"
+        csv += "Net Margin %,\(r.net_margin_pct)\n"
+        csv += "Invoices,\(r.invoice_count)\n"
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("ProfitLoss_\(r.period).csv")
+        try? csv.write(to: url, atomically: true, encoding: .utf8)
+        return url
+    }
 }

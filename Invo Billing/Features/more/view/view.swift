@@ -372,6 +372,12 @@ struct MoreView: View {
             } label: {
                 MoreViewRow(icon: "doc.text.fill", label: "Credit notes")
             }
+            rowDivider()
+            NavigationLink {
+                ChallanListView()
+            } label: {
+                MoreViewRow(icon: "shippingbox", label: "Delivery challans")
+            }
         }
     }
 

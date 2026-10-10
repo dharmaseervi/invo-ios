@@ -137,7 +137,8 @@ struct EditInvoiceView: View {
                                 subtotal: vm.subtotal,
                                 tax: vm.tax,
                                 discount: $vm.discount,
-                                total: vm.total
+                                total: vm.total,
+                                tdsRate: .constant(0)
                             )
                             
                             // Action Buttons

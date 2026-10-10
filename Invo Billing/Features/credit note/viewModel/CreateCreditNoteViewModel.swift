@@ -79,7 +79,8 @@ final class CreateCreditNoteViewModel: ObservableObject {
             let item = ItemResponse(
                 id: id, name: name[id] ?? "", category_id: nil, hsn_code: nil, sku: nil,
                 unit: nil, description: nil, cost_price: nil, price: unit, quantity: 0,
-                low_stock_alert: nil, tax_rate: tax[id], company_id: companyID, user_id: 0
+                low_stock_alert: nil, tax_rate: tax[id], company_id: companyID, user_id: 0,
+                barcode: nil
             )
             return InvoiceLineItem(item: item, qty: sold, rate: unit, discount: 0, taxRate: tax[id] ?? 0)
         }

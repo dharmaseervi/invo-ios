@@ -10,6 +10,7 @@ import SwiftUI
 
 struct ProfitLossView: View {
     @StateObject private var vm = ProfitLossViewModel()
+    @State private var shareURL: URL?
 
     var body: some View {
         ZStack {
@@ -47,6 +48,22 @@ struct ProfitLossView: View {
         }
         .navigationTitle("Profit & Loss")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    if let url = vm.exportCSV() { shareURL = url }
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                }
+                .disabled(vm.report == nil)
+            }
+        }
+        .sheet(item: Binding(
+            get: { shareURL.map { PLShareURLWrapper(url: $0) } },
+            set: { shareURL = $0?.url }
+        )) { wrapper in
+            PLShareSheet(activityItems: [wrapper.url])
+        }
         .task { await vm.load() }
         .onChange(of: vm.selectedPeriod) { _, _ in Task { await vm.load() } }
         .alert("Report", isPresented: $vm.showAlert) {
@@ -242,4 +259,17 @@ struct ProfitLossView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 40)
     }
+}
+
+private struct PLShareURLWrapper: Identifiable {
+    let id = UUID()
+    let url: URL
+}
+
+private struct PLShareSheet: UIViewControllerRepresentable {
+    let activityItems: [Any]
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+    }
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }

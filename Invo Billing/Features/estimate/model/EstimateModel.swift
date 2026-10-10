@@ -46,6 +46,7 @@ struct EstimateDetailResponse: Codable {
     let discount: Double
     let total: Double
     let status: EstimateStatus
+    let doc_type: String?
     let converted_invoice_id: Int?
     let client: ClientSummary
     let items: [EstimateItemDetail]
@@ -58,6 +59,7 @@ struct EstimateRequestDTO: Codable {
     let expiry_date: String?
     let discount: Double
     let items: [InvoiceItemRequest]
+    let doc_type: String?
 }
 
 struct UpdateEstimateRequestDTO: Codable {

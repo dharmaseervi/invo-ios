@@ -225,7 +225,8 @@ class EditInvoiceViewModel: ObservableObject {
             low_stock_alert: 0,
             tax_rate: item.tax_rate,
             company_id: SessionManager.shared.selectedCompanyId ?? 0,
-            user_id: 0
+            user_id: 0,
+            barcode: nil
         )
 
         return InvoiceLineItem(

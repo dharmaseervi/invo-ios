@@ -11,6 +11,7 @@ class InvoiceViewModel: ObservableObject {
     @Published var invoiceDate: Date = Date()
     @Published var dueDate: Date = Date().addingTimeInterval(86400 * 7)
     @Published var discount: Double = 0
+    @Published var tdsRate: Double = 0
 
     // MARK: - UI State
     @Published var isLoading = false
@@ -274,6 +275,7 @@ class InvoiceViewModel: ObservableObject {
             invoice_date: formatter.string(from: invoiceDate),
             due_date: formatter.string(from: dueDate),
             discount: discount,
+            tds_rate: tdsRate,
             items: items.map {
                 InvoiceItemRequest(
                     item_id: $0.item.id,
@@ -633,6 +635,7 @@ class InvoiceViewModel: ObservableObject {
         invoiceDate = Date()
         dueDate = Date().addingTimeInterval(86400 * 7)
         discount = 0
+        tdsRate = 0
     }
 
     /// Deletes a draft invoice. Returns true so the caller can dismiss the detail screen,
@@ -659,6 +662,28 @@ class InvoiceViewModel: ObservableObject {
         } catch {
             showError(error.localizedDescription)
             return false
+        }
+    }
+
+    func markPaidBulk(invoices: [InvoiceResponse]) async {
+        var failed = 0
+        for inv in invoices where inv.remaining_amount > 0 {
+            let dto = PaymentRequestDTO(
+                client_id: inv.client_id,
+                amount: inv.remaining_amount,
+                payment_method: .cash,
+                reference: nil,
+                notes: "Bulk mark paid",
+                allocations: [PaymentAllocationDTO(invoice_id: inv.id, amount: inv.remaining_amount)]
+            )
+            do {
+                try await PaymentService.shared.recordPayment(requestDTO: dto)
+            } catch {
+                failed += 1
+            }
+        }
+        if failed > 0 {
+            showError("\(failed) invoice(s) could not be marked paid")
         }
     }
 

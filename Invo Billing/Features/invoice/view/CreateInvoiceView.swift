@@ -73,7 +73,8 @@ struct CreateInvoiceView: View {
                         subtotal: vm.subtotal,
                         tax: vm.tax,
                         discount: $vm.discount,
-                        total: vm.total
+                        total: vm.total,
+                        tdsRate: $vm.tdsRate
                     )
                 }
                 .padding(.top, 16)

@@ -77,6 +77,20 @@ struct InvoiceDetailView: View {
                                 Label("Email invoice", systemImage: "envelope")
                             }
 
+                            if let phone = detail.client.phone, !phone.isEmpty {
+                                Button(action: {
+                                    let digits = phone.filter { $0.isNumber }
+                                    let fullPhone = digits.hasPrefix("91") ? digits : "91\(digits)"
+                                    let text = "Invoice \(detail.invoice_number) for ₹\(String(format: "%.0f", detail.total)) is ready. Please review and make the payment at your earliest convenience."
+                                    let encoded = text.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+                                    if let url = URL(string: "whatsapp://send?phone=\(fullPhone)&text=\(encoded)") {
+                                        UIApplication.shared.open(url)
+                                    }
+                                }) {
+                                    Label("Send via WhatsApp", systemImage: "message")
+                                }
+                            }
+
                             if detail.remaining_amount > 0 && detail.status != .draft && detail.status != .cancelled {
                                 Button(action: {
                                     vm.selectedEmailInvoiceID = invoiceID
@@ -355,7 +369,24 @@ struct InvoiceDetailView: View {
 
                                     Rectangle().fill(Color.sBorder).frame(height: 0.5).padding(.horizontal, 14)
 
-                                    SummaryRowItemZara(label: "Total", value: detail.total, isTotal: true)
+                                    if let tdsRate = detail.tds_rate, tdsRate > 0,
+                                       let tdsAmount = detail.tds_amount {
+                                        SummaryRowItemZara(label: "Invoice total", value: detail.total, isTotal: false)
+                                        Rectangle().fill(Color.sBorder).frame(height: 0.5).padding(.horizontal, 14)
+                                        SummaryRowItemZara(
+                                            label: "TDS @ \(tdsRate.formatted(.number.precision(.fractionLength(0...1))))%",
+                                            value: -tdsAmount,
+                                            isTotal: false
+                                        )
+                                        Rectangle().fill(Color.sBorder).frame(height: 0.5).padding(.horizontal, 14)
+                                        SummaryRowItemZara(
+                                            label: "Net receivable",
+                                            value: detail.total - tdsAmount,
+                                            isTotal: true
+                                        )
+                                    } else {
+                                        SummaryRowItemZara(label: "Total", value: detail.total, isTotal: true)
+                                    }
                                 }
                                 .background(Color.sCard)
                                 .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5))

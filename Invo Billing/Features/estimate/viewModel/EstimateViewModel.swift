@@ -13,6 +13,7 @@ final class EstimateViewModel: ObservableObject {
     @Published var hasExpiryDate: Bool = true
     @Published var discount: Double = 0
     @Published var estimateNumber: String = "Auto-generated"
+    @Published var docType: String = ""
 
     // MARK: - List / Detail State
     @Published var estimates: [EstimateResponse] = []
@@ -141,7 +142,8 @@ final class EstimateViewModel: ObservableObject {
             discount: discount,
             items: items.map {
                 InvoiceItemRequest(item_id: $0.item.id, qty: $0.qty, rate: $0.rate, discount: $0.discount, tax_rate: $0.taxRate)
-            }
+            },
+            doc_type: docType.isEmpty ? nil : docType
         )
 
         isLoading = true
@@ -430,6 +432,7 @@ final class EstimateViewModel: ObservableObject {
         estimateDate = Date()
         expiryDate = Date().addingTimeInterval(86400 * 14)
         discount = 0
+        docType = ""
     }
 
     private func showError(_ message: String) {

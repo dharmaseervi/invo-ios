@@ -18,6 +18,7 @@ struct ItemRequestDTO: Codable {
     let quantity: Int
     let low_stock_alert: Int
     let tax_rate: Double
+    let barcode: String?
 }
 
 struct CategoryModel: Codable, Identifiable {
@@ -49,7 +50,7 @@ struct ItemResponse: Codable, Identifiable, Hashable {
     let id: Int
     let name: String
     let category_id: Int?
-    let hsn_code: String?       // ← add
+    let hsn_code: String?
     let sku: String?
     let unit: String?
     let description: String?
@@ -60,6 +61,7 @@ struct ItemResponse: Codable, Identifiable, Hashable {
     let tax_rate: Double?
     let company_id: Int
     let user_id: Int
+    let barcode: String?
 }
 
 struct ItemListResponse: Codable {

@@ -7,6 +7,8 @@ struct SelectItemSheet: View {
     @StateObject var vm = ItemViewModel()
     @State private var searchText = ""
     @State private var showAddItem = false
+    @State private var showBarcodeScanner = false
+    @State private var barcodeError: String?
 
     // Server-side, like the items list: with a paged catalogue a local filter only
     // searches what has been scrolled to, so building an invoice from a thousand
@@ -210,18 +212,57 @@ struct SelectItemSheet: View {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(action: { showAddItem = true }) {
-                        Image(systemName: "plus")
+                    HStack(spacing: 16) {
+                        Button {
+                            showBarcodeScanner = true
+                        } label: {
+                            Image(systemName: "barcode.viewfinder")
+                        }
+                        Button(action: { showAddItem = true }) {
+                            Image(systemName: "plus")
+                        }
                     }
                 }
             }
             .task { await vm.loadItems() }
-
+            .alert("Barcode scan", isPresented: Binding(
+                get: { barcodeError != nil },
+                set: { if !$0 { barcodeError = nil } }
+            )) {
+                Button("OK", role: .cancel) { barcodeError = nil }
+            } message: {
+                Text(barcodeError ?? "")
+            }
             .sheet(isPresented: $showAddItem, onDismiss: {
                 Task { await vm.loadItems() }
             }) {
                 ItemFormView()
                     .presentationDetents([.large])
+            }
+            .sheet(isPresented: $showBarcodeScanner) {
+                ItemScannerView(onCancel: { showBarcodeScanner = false }) { code in
+                    showBarcodeScanner = false
+                    guard let companyID = SessionManager.shared.selectedCompanyId else { return }
+                    Task {
+                        do {
+                            let item = try await ItemService().getItemByBarcode(companyID: companyID, barcode: code)
+                            if let existing = selectedItems.firstIndex(where: { $0.item.id == item.id }) {
+                                selectedItems[existing].qty += 1
+                            } else {
+                                selectedItems.append(InvoiceLineItem(
+                                    item: item,
+                                    qty: 1,
+                                    rate: item.price,
+                                    discount: 0,
+                                    taxRate: item.tax_rate ?? 18
+                                ))
+                            }
+                        } catch {
+                            barcodeError = "No item found for barcode: \(code)"
+                        }
+                    }
+                }
+                .ignoresSafeArea()
             }
         }
     }

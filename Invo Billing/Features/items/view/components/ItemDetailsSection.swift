@@ -11,7 +11,7 @@ import SwiftUI
 struct ItemDetailsSection: View {
     @ObservedObject var vm: ItemViewModel
     @FocusState private var focusedField: FocusableField?
-
+    @State private var showBarcodeScanner = false
 
     enum FocusableField {
         case name, sku, description, unit, category
@@ -100,6 +100,46 @@ struct ItemDetailsSection: View {
                                 .stroke(Color.sInput, lineWidth: 0.5)
                         )
                         .cornerRadius(8)
+                }
+
+                // Barcode field
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Barcode")
+                        .font(.scaled(13, weight: .medium))
+                        .foregroundColor(.sForeground)
+
+                    HStack(spacing: 8) {
+                        TextField("Scan or enter barcode", text: $vm.barcode)
+                            .font(.scaled(14))
+                            .foregroundColor(.sForeground)
+                            .tint(.sAccent)
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.never)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 10)
+                            .background(Color.sCard)
+                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.sInput, lineWidth: 0.5))
+                            .cornerRadius(8)
+
+                        Button {
+                            showBarcodeScanner = true
+                        } label: {
+                            Image(systemName: "barcode.viewfinder")
+                                .font(.scaled(20))
+                                .foregroundColor(.sAccent)
+                                .frame(width: 44, height: 44)
+                                .background(Color.sCard)
+                                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.sInput, lineWidth: 0.5))
+                                .cornerRadius(8)
+                        }
+                    }
+                }
+                .sheet(isPresented: $showBarcodeScanner) {
+                    ItemScannerView(onCancel: { showBarcodeScanner = false }) { code in
+                        vm.barcode = code
+                        showBarcodeScanner = false
+                    }
+                    .ignoresSafeArea()
                 }
 
                 // Side by side while they fit, stacked when they do not: at a large

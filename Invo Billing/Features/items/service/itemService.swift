@@ -192,7 +192,26 @@ class ItemService {
         let decoded = try JSONDecoder().decode(ItemListResponse.self, from: data)
         return decoded.items
     }
-//
+
+    func getItemByBarcode(companyID: Int, barcode: String) async throws -> ItemResponse {
+        let encoded = barcode.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? barcode
+        guard let url = URL(string: "\(baseURL)/items/\(companyID)/barcode/\(encoded)") else {
+            throw URLError(.badURL)
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        if let token = KeychainManager.shared.loadToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw NSError(domain: "ItemService", code: 404,
+                          userInfo: [NSLocalizedDescriptionKey: "Item not found for barcode"])
+        }
+        struct BarcodeResponse: Decodable { let item: ItemResponse }
+        let decoded = try JSONDecoder().decode(BarcodeResponse.self, from: data)
+        return decoded.item
+    }
 
 }
 

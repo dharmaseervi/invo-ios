@@ -30,6 +30,7 @@ class ItemViewModel: ObservableObject {
     @Published var selectedCategoryId: Int?
     @Published var unit: String?
     @Published var hsnCode = ""
+    @Published var barcode = ""
 
     @Published var categories: [CategoryResponse] = []
     @Published var items: [ItemResponse] = []
@@ -138,7 +139,8 @@ class ItemViewModel: ObservableObject {
             price: Self.money(price) ?? 0,
             quantity: Self.count(quantity) ?? 0,
             low_stock_alert: Self.count(lowStockAlert) ?? 0,
-            tax_rate: Double(taxRate) ?? 0
+            tax_rate: Double(taxRate) ?? 0,
+            barcode: barcode.isEmpty ? nil : barcode
         )
 
         isLoading = true
@@ -173,6 +175,7 @@ class ItemViewModel: ObservableObject {
         lowStockAlert = item.low_stock_alert.map { String($0) } ?? ""
         taxRate = item.tax_rate.map { String($0) } ?? "18"
         unit = item.unit
+        barcode = item.barcode ?? ""
     }
 
     /// Applies a category's default HSN code / GST rate to a new item's form —
@@ -208,7 +211,8 @@ class ItemViewModel: ObservableObject {
             price: Self.money(price) ?? 0,
             quantity: Self.count(quantity) ?? 0,
             low_stock_alert: Self.count(lowStockAlert) ?? 0,
-            tax_rate: Double(taxRate) ?? 0
+            tax_rate: Double(taxRate) ?? 0,
+            barcode: barcode.isEmpty ? nil : barcode
         )
 
         isLoading = true
@@ -429,6 +433,7 @@ class ItemViewModel: ObservableObject {
         lowStockAlert = ""
         taxRate = "18"
         hsnCode = ""
+        barcode = ""
         unit = nil
         selectedCategoryId = nil
         editingItemId = nil
