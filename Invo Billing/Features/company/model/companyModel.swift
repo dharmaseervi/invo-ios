@@ -14,6 +14,7 @@ struct CompanyRequestDTO: Codable {
     let city: String
     let state: String
     let pincode: String
+    let invoice_footer: String
 }
 
 struct CompanyResponse: Codable ,Identifiable {
@@ -26,6 +27,9 @@ struct CompanyResponse: Codable ,Identifiable {
     let city: String
     let state: String
     let pincode: String
+
+    /// Printed at the bottom of every invoice PDF. Optional so older server responses decode.
+    let invoice_footer: String?
 
     /// What this account is to this business: owner, manager or staff. Optional so a
     /// server that does not send it yet still decodes — read it through `memberRole`.

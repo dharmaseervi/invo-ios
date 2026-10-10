@@ -112,6 +112,7 @@ struct CompanyRowZara: View {
     let company: CompanyResponse
     let isSelected: Bool
     let onSelect: () -> Void
+    @State private var showEdit = false
 
     var body: some View {
         HStack(spacing: 12) {
@@ -146,6 +147,12 @@ struct CompanyRowZara: View {
             .buttonStyle(PlainButtonStyle())
 
             Menu {
+                Button {
+                    showEdit = true
+                } label: {
+                    Label("Edit details", systemImage: "pencil")
+                }
+
                 NavigationLink {
                     CompanyBankListView(companyId: company.id)
                 } label: {
@@ -162,6 +169,9 @@ struct CompanyRowZara: View {
                 Image(systemName: "ellipsis")
                     .foregroundColor(.sMutedFG)
                     .padding(.leading, 4)
+            }
+            .navigationDestination(isPresented: $showEdit) {
+                CompanyEditView(company: company)
             }
         }
         .padding(14)

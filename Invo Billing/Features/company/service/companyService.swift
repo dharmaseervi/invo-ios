@@ -52,6 +52,26 @@ class CompanyService: ObservableObject {
         }
     }
     
+    // MARK: - Update Company
+    func updateCompany(id: Int, payload: CompanyRequestDTO) async throws {
+        guard let url = URL(string: "\(baseURL)/companies/\(id)") else {
+            throw URLError(.badURL)
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token = KeychainManager.shared.loadToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        } else {
+            throw URLError(.userAuthenticationRequired)
+        }
+        request.httpBody = try JSONEncoder().encode(payload)
+        let (_, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+    }
+
     // MARK: - Get My Company
     func getMyCompany() async throws -> [CompanyResponse]? {
         

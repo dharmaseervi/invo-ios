@@ -20,6 +20,7 @@ class CompanyFormViewModel: ObservableObject {
     @Published var pincode = ""
     @Published var state = ""
     @Published var gst = ""
+    @Published var invoiceFooter = ""
 
     // UI state
     @Published var isSaving = false
@@ -49,7 +50,8 @@ class CompanyFormViewModel: ObservableObject {
             gst: gst,
             city: city,
             state: state,
-            pincode: pincode
+            pincode: pincode,
+            invoice_footer: invoiceFooter
         )
         
         if IndianStates.defaultState.isEmpty && !state.isEmpty {
