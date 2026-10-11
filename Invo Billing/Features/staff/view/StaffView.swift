@@ -133,7 +133,7 @@ struct StaffView: View {
                 } label: {
                     Image(systemName: "ellipsis")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.secondary)
                         .frame(width: 32, height: 32)
                         .contentShape(Rectangle())
                 }

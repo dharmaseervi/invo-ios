@@ -100,12 +100,12 @@ struct CompanyRowZara: View {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(company.name)
                             .font(.subheadline.weight(.medium))
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(Color.primary)
                             .lineLimit(1)
 
                         Text("\(company.city), \(company.state)")
                             .font(.footnote)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.secondary)
                             .lineLimit(1)
                     }
                     .alignmentGuide(.listRowSeparatorLeading) { d in d[.leading] }
@@ -139,7 +139,7 @@ struct CompanyRowZara: View {
             } label: {
                 Image(systemName: "ellipsis")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.secondary)
                     .frame(width: 32, height: 32)
                     .contentShape(Rectangle())
             }

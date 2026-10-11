@@ -259,7 +259,7 @@ struct MoreView: View {
                     VStack(spacing: 4) {
                         Text(appVersion)
                             .font(.caption)
-                        Text("© \(Calendar.current.component(.year, from: Date())) Invo Billing. All rights reserved.")
+                        Text("© \(String(Calendar.current.component(.year, from: Date()))) Invo Billing. All rights reserved.")
                             .font(.caption)
                     }
                     .foregroundStyle(.secondary)
