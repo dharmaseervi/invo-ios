@@ -23,12 +23,20 @@ struct AdaptiveStatRow: View {
         var id: String { label }
     }
 
+    @Environment(\.dynamicTypeSize) private var textSize
     let stats: [Stat]
 
     var body: some View {
-        ViewThatFits(in: .horizontal) {
-            horizontal
+        if textSize.isAccessibilitySize {
             vertical
+        } else {
+            // ViewThatFits measures each option at its ideal width but lays the winner
+            // out at the offered width, so the columns can still share the full row.
+            ViewThatFits(in: .horizontal) {
+                horizontal
+                vertical
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
@@ -39,8 +47,8 @@ struct AdaptiveStatRow: View {
                     Rectangle().fill(Color.sBorder).frame(width: 0.5, height: 30)
                 }
                 column(stat)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, index == 0 ? 0 : 10)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.horizontal, 10)
             }
         }
     }
@@ -51,31 +59,31 @@ struct AdaptiveStatRow: View {
                 if index > 0 {
                     Rectangle().fill(Color.sBorder).frame(height: 0.5)
                 }
-                HStack(alignment: .firstTextBaseline) {
+                AdaptiveFormRow {
                     Text(stat.label)
-                        .font(.scaled(12))
+                        .font(.footnote)
                         .foregroundColor(.sMutedFG)
-                    Spacer(minLength: 12)
+                    if !textSize.isAccessibilitySize { Spacer(minLength: 12) }
                     Text(stat.value)
-                        .font(.scaled(14, weight: .semibold))
+                        .font(.body.weight(.semibold))
                         .foregroundColor(stat.color)
-                        .moneyLine()
+                        .monospacedDigit()
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
         }
     }
 
     private func column(_ stat: Stat) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .center, spacing: 3) {
             Text(stat.value)
-                .font(.scaled(14, weight: .semibold))
+                .font(.body.weight(.semibold))
                 .foregroundColor(stat.color)
                 .moneyLine()
             Text(stat.label)
-                .font(.scaled(10))
+                .font(.caption)
                 .foregroundColor(.sMutedFG)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }

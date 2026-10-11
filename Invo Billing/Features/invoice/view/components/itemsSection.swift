@@ -20,22 +20,22 @@ struct ItemsSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Items")
-                .font(.scaled(13, weight: .medium))
+                .font(.subheadline.weight(.medium))
                 .foregroundColor(.sMutedFG)
-                .padding(.horizontal, 20)
+                .padding(.horizontal, AppSpacing.page)
                 .padding(.bottom, 10)
 
             if invoiceItems.isEmpty {
                 VStack(spacing: 12) {
                     Image(systemName: "box.2")
-                        .font(.scaled(32))
+                        .font(.largeTitle)
                         .foregroundColor(.sMutedFG)
                     VStack(spacing: 4) {
                         Text("No items added")
-                            .font(.scaled(14, weight: .semibold))
+                            .font(.subheadline.weight(.semibold))
                             .foregroundColor(.sForeground)
                         Text("Add items to create your invoice")
-                            .font(.scaled(12))
+                            .font(.footnote)
                             .foregroundColor(.sMutedFG)
                     }
                 }
@@ -44,17 +44,17 @@ struct ItemsSection: View {
                 .background(Color.sCard)
                 .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5))
                 .cornerRadius(10)
-                .padding(.horizontal, 20)
+                .padding(.horizontal, AppSpacing.page)
                 .padding(.bottom, 16)
             } else {
                 VStack(spacing: 8) {
                     HStack {
                         Text("Total items")
-                            .font(.scaled(12))
+                            .font(.footnote)
                             .foregroundColor(.sMutedFG)
                         Spacer()
                         Text("\(totalItems)")
-                            .font(.scaled(13))
+                            .font(.subheadline)
                             .foregroundColor(.sForeground)
                     }
 
@@ -62,11 +62,11 @@ struct ItemsSection: View {
 
                     HStack {
                         Text("Total amount")
-                            .font(.scaled(12))
+                            .font(.footnote)
                             .foregroundColor(.sMutedFG)
                         Spacer()
                         Text(Money.text(totalAmount)).moneyLine()
-                            .font(.scaled(13))
+                            .font(.subheadline)
                             .foregroundColor(.sForeground)
                     }
                 }
@@ -75,7 +75,7 @@ struct ItemsSection: View {
                 .background(Color.sCard)
                 .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5))
                 .cornerRadius(10)
-                .padding(.horizontal, 20)
+                .padding(.horizontal, AppSpacing.page)
                 .padding(.bottom, 16)
 
                 VStack(spacing: 10) {
@@ -93,7 +93,7 @@ struct ItemsSection: View {
                         )
                     }
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, AppSpacing.page)
                 .padding(.bottom, 16)
             }
 
@@ -102,9 +102,9 @@ struct ItemsSection: View {
                 Button(action: { showItemPicker = true }) {
                     HStack(spacing: 8) {
                         Image(systemName: "plus.circle")
-                            .font(.scaled(13, weight: .semibold))
+                            .font(.subheadline.weight(.semibold))
                         Text("Add item")
-                            .font(.scaled(14, weight: .medium))
+                            .font(.subheadline.weight(.medium))
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
@@ -117,9 +117,9 @@ struct ItemsSection: View {
                 Button(action: { showScanner = true }) {
                     HStack(spacing: 8) {
                         Image(systemName: "barcode.viewfinder")
-                            .font(.scaled(13, weight: .semibold))
+                            .font(.subheadline.weight(.semibold))
                         Text("Scan item")
-                            .font(.scaled(14, weight: .medium))
+                            .font(.subheadline.weight(.medium))
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
@@ -129,7 +129,7 @@ struct ItemsSection: View {
                     .cornerRadius(10)
                 }
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, AppSpacing.page)
             .padding(.bottom, 20)
         }
         .sheet(isPresented: $showEditSheet) {
@@ -171,7 +171,7 @@ struct ItemRowZara: View {
     var body: some View {
         HStack(spacing: 12) {
             Text(String(item.item.name.prefix(1)).uppercased())
-                .font(.scaled(12, weight: .semibold))
+                .font(.footnote.weight(.semibold))
                 .foregroundColor(.sAccentFG)
                 .frame(width: 40, height: 40)
                 .background(Color.sAccent)
@@ -179,25 +179,25 @@ struct ItemRowZara: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(item.item.name)
-                    .font(.scaled(13, weight: .medium))
+                    .font(.subheadline.weight(.medium))
                     .foregroundColor(.sForeground)
                     .lineLimit(1)
 
                 HStack(spacing: 6) {
                     Text("Qty: \(item.qty)")
-                        .font(.scaled(11))
+                        .font(.caption)
                         .foregroundColor(.sMutedFG)
                     Text("•")
                         .foregroundColor(.sMutedFG)
                     Text(Money.text(item.rate)).moneyLine()
-                        .font(.scaled(11))
+                        .font(.caption)
                         .foregroundColor(.sMutedFG)
 
                     if item.discount > 0 {
                         Text("•")
                             .foregroundColor(.sMutedFG)
                         Text("Disc: \(Money.text(item.discount))")
-                            .font(.scaled(11))
+                            .font(.caption)
                             .foregroundColor(.sMutedFG)
                     }
                 }
@@ -207,18 +207,18 @@ struct ItemRowZara: View {
 
             VStack(alignment: .trailing, spacing: 8) {
                 Text(Money.text(item.total)).moneyLine()
-                    .font(.scaled(13, weight: .semibold))
+                    .font(.subheadline.weight(.semibold))
                     .foregroundColor(.sForeground)
 
                 HStack(spacing: 14) {
                     Button(action: onEdit) {
                         Image(systemName: "pencil")
-                            .font(.scaled(12))
+                            .font(.footnote)
                             .foregroundColor(.sMutedFG)
                     }
                     Button(action: onDelete) {
                         Image(systemName: "trash")
-                            .font(.scaled(12))
+                            .font(.footnote)
                             .foregroundColor(.sDestructive)
                     }
                 }
@@ -272,12 +272,12 @@ struct EditItemSheetZara: View {
                                 // Item Display
                                 VStack(alignment: .leading, spacing: 10) {
                                     Text("Item")
-                                        .font(.scaled(13, weight: .medium))
+                                        .font(.subheadline.weight(.medium))
                                         .foregroundColor(.sMutedFG)
 
                                     HStack(spacing: 12) {
                                         Text(String(currentItem.item.name.prefix(1)).uppercased())
-                                            .font(.scaled(12, weight: .semibold))
+                                            .font(.footnote.weight(.semibold))
                                             .foregroundColor(.sAccentFG)
                                             .frame(width: 44, height: 44)
                                             .background(Color.sAccent)
@@ -285,12 +285,12 @@ struct EditItemSheetZara: View {
 
                                         VStack(alignment: .leading, spacing: 3) {
                                             Text(currentItem.item.name)
-                                                .font(.scaled(14, weight: .medium))
+                                                .font(.subheadline.weight(.medium))
                                                 .foregroundColor(.sForeground)
 
                                             if let desc = currentItem.item.description {
                                                 Text(desc)
-                                                    .font(.scaled(12))
+                                                    .font(.footnote)
                                                     .foregroundColor(.sMutedFG)
                                                     .lineLimit(1)
                                             }
@@ -306,18 +306,18 @@ struct EditItemSheetZara: View {
                                 // Quantity
                                 VStack(alignment: .leading, spacing: 10) {
                                     Text("Quantity")
-                                        .font(.scaled(13, weight: .medium))
+                                        .font(.subheadline.weight(.medium))
                                         .foregroundColor(.sMutedFG)
 
                                     HStack(spacing: 12) {
                                         Button(action: { if qty > 1 { qty -= 1 } }) {
                                             Image(systemName: "minus.circle")
-                                                .font(.scaled(20))
+                                                .font(.title3)
                                                 .foregroundColor(.sMutedFG)
                                         }
 
                                         TextField("Qty", value: $qty, format: .number)
-                                            .font(.scaled(16, weight: .semibold))
+                                            .font(.subheadline.weight(.semibold))
                                             .multilineTextAlignment(.center)
                                             .keyboardType(.numberPad)
                                             .frame(maxWidth: .infinity)
@@ -325,7 +325,7 @@ struct EditItemSheetZara: View {
 
                                         Button(action: { qty += 1 }) {
                                             Image(systemName: "plus.circle")
-                                                .font(.scaled(20))
+                                                .font(.title3)
                                                 .foregroundColor(.sMutedFG)
                                         }
                                     }
@@ -339,16 +339,16 @@ struct EditItemSheetZara: View {
                                 // Rate
                                 VStack(alignment: .leading, spacing: 10) {
                                     Text("Unit price")
-                                        .font(.scaled(13, weight: .medium))
+                                        .font(.subheadline.weight(.medium))
                                         .foregroundColor(.sMutedFG)
 
                                     HStack(spacing: 8) {
                                         Text("₹")
-                                            .font(.scaled(14))
+                                            .font(.subheadline)
                                             .foregroundColor(.sMutedFG)
 
                                         TextField("0.00", value: $rate, format: .number)
-                                            .font(.scaled(15))
+                                            .font(.subheadline)
                                             .keyboardType(.decimalPad)
                                             .frame(maxWidth: .infinity)
                                             .foregroundColor(.sForeground)
@@ -363,16 +363,16 @@ struct EditItemSheetZara: View {
                                 // Discount
                                 VStack(alignment: .leading, spacing: 10) {
                                     Text("Discount")
-                                        .font(.scaled(13, weight: .medium))
+                                        .font(.subheadline.weight(.medium))
                                         .foregroundColor(.sMutedFG)
 
                                     HStack(spacing: 8) {
                                         Text("₹")
-                                            .font(.scaled(14))
+                                            .font(.subheadline)
                                             .foregroundColor(.sMutedFG)
 
                                         TextField("0.00", value: $discount, format: .number)
-                                            .font(.scaled(15))
+                                            .font(.subheadline)
                                             .keyboardType(.decimalPad)
                                             .frame(maxWidth: .infinity)
                                             .foregroundColor(.sForeground)
@@ -387,7 +387,7 @@ struct EditItemSheetZara: View {
                                 // Tax Rate
                                 VStack(alignment: .leading, spacing: 10) {
                                     Text("Tax rate")
-                                        .font(.scaled(13, weight: .medium))
+                                        .font(.subheadline.weight(.medium))
                                         .foregroundColor(.sMutedFG)
 
                                     Picker("Tax", selection: $taxRate) {
@@ -404,7 +404,7 @@ struct EditItemSheetZara: View {
                                 // Summary
                                 VStack(alignment: .leading, spacing: 10) {
                                     Text("Summary")
-                                        .font(.scaled(13, weight: .medium))
+                                        .font(.subheadline.weight(.medium))
                                         .foregroundColor(.sMutedFG)
 
                                     VStack(spacing: 0) {
@@ -425,7 +425,7 @@ struct EditItemSheetZara: View {
                                 }
                                 .padding(.bottom, 100)
                             }
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, AppSpacing.page)
                             .padding(.top, 20)
                         }
                     }
@@ -452,9 +452,9 @@ struct EditItemSheetZara: View {
                             }) {
                                 HStack(spacing: 8) {
                                     Image(systemName: "checkmark.circle.fill")
-                                        .font(.scaled(13, weight: .semibold))
+                                        .font(.subheadline.weight(.semibold))
                                     Text("Save changes")
-                                        .font(.scaled(15, weight: .semibold))
+                                        .font(.subheadline.weight(.semibold))
                                 }
                                 .foregroundColor(.sAccentFG)
                                 .frame(maxWidth: .infinity)
@@ -470,7 +470,7 @@ struct EditItemSheetZara: View {
                                 dismiss()
                             }) {
                                 Text("Cancel")
-                                    .font(.scaled(14, weight: .medium))
+                                    .font(.subheadline.weight(.medium))
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 14)
                                     .foregroundColor(.sForeground)
@@ -479,7 +479,7 @@ struct EditItemSheetZara: View {
                                     .cornerRadius(10)
                             }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.page)
                         .padding(.vertical, 16)
                         .background(Color.sBackground)
                         .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: -4)
@@ -516,13 +516,13 @@ struct SummaryLineZara: View {
     var body: some View {
         HStack(spacing: 0) {
             Text(label)
-                .font(.scaled(isTotal ? 14 : 12, weight: isTotal ? .semibold : .regular))
+                .font(isTotal ? .headline : .subheadline)
                 .foregroundColor(.sForeground)
 
             Spacer()
 
             Text(Money.text(value)).moneyLine()
-                .font(.scaled(isTotal ? 14 : 12, weight: isTotal ? .semibold : .regular))
+                .font(isTotal ? .headline : .subheadline)
                 .foregroundColor(.sForeground)
         }
         .padding(.horizontal, 14)

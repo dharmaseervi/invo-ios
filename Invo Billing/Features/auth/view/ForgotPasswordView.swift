@@ -5,241 +5,102 @@ struct ForgotPasswordView: View {
     @Environment(\.presentationMode) var presentationMode
     @State private var showPassword = false
     @State private var showConfirm = false
-    
+
     var passwordsMatch: Bool {
         !viewModel.resetConfirmPassword.isEmpty &&
         viewModel.resetNewPassword == viewModel.resetConfirmPassword
     }
-    
+
+    private var showMismatch: Bool {
+        !viewModel.resetConfirmPassword.isEmpty && !passwordsMatch
+    }
+
     var body: some View {
         ZStack {
-            Color.sBackground.ignoresSafeArea()
-            
+            AuthBackdrop()
+
             ScrollView(showsIndicators: false) {
-                VStack(spacing: 0) {
-                    Spacer().frame(height: 52)
-                    
-                    // MARK: - Logo
-                    VStack(spacing: 12) {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(Color.sAccent)
-                                .frame(width: 44, height: 44)
-                            Image(systemName: viewModel.resetCodeSent
-                                  ? "lock.rotation"
-                                  : "key.fill")
-                            .font(.scaled(20, weight: .medium))
-                            .foregroundColor(.sAccentFG)
-                        }
-                        
-                        VStack(spacing: 4) {
-                            Text(viewModel.resetCodeSent
-                                 ? "Reset your password"
-                                 : "Forgot password")
-                            .font(.scaled(20, weight: .semibold))
-                            .foregroundColor(.sForeground)
-                            
-                            Text(viewModel.resetCodeSent
-                                 ? "Enter the code sent to\n\(viewModel.resetEmail)"
-                                 : "Enter your email to receive a reset code")
-                            .font(.scaled(13))
-                            .foregroundColor(.sMutedFG)
-                            .multilineTextAlignment(.center)
-                        }
+                VStack(alignment: .leading, spacing: 32) {
+                    AuthBackButton {
+                        viewModel.resetCodeSent = false
+                        viewModel.resetCode = ""
+                        viewModel.errorMessage = nil
+                        presentationMode.wrappedValue.dismiss()
                     }
-                    .padding(.bottom, 32)
-                    
-                    // MARK: - Card
-                    VStack(spacing: 14) {
-                        
-                        if !viewModel.resetCodeSent {
-                            
-                            // Email field
-                            VioletField(
-                                label: "Email address",
-                                placeholder: "name@company.com",
+
+                    AuthHeader(
+                        title: viewModel.resetCodeSent ? "Reset your password" : "Forgot password?",
+                        subtitle: viewModel.resetCodeSent
+                            ? "Enter the code sent to \(viewModel.resetEmail) and choose a new password"
+                            : "Enter your email and we'll send you a reset code",
+                        symbol: viewModel.resetCodeSent ? "lock.rotation" : "key"
+                    )
+
+                    if viewModel.resetCodeSent {
+                        VStack(alignment: .leading, spacing: 12) {
+                            AuthCodeField(code: $viewModel.resetCode)
+                            AuthHint(icon: "clock", text: "Code expires in 10 minutes")
+                        }
+
+                        VStack(alignment: .leading, spacing: 10) {
+                            AuthFieldGroup {
+                                AuthInputRow(
+                                    icon: "lock",
+                                    placeholder: "New password",
+                                    text: $viewModel.resetNewPassword,
+                                    contentType: .newPassword,
+                                    isSecure: !showPassword
+                                ) {
+                                    AuthRevealButton(isRevealed: $showPassword)
+                                }
+                                AuthRowDivider()
+                                AuthInputRow(
+                                    icon: "lock.rotation",
+                                    placeholder: "Confirm new password",
+                                    text: $viewModel.resetConfirmPassword,
+                                    contentType: .newPassword,
+                                    isSecure: !showConfirm
+                                ) {
+                                    if viewModel.resetConfirmPassword.isEmpty {
+                                        AuthRevealButton(isRevealed: $showConfirm)
+                                    } else {
+                                        Image(systemName: passwordsMatch ? "checkmark.circle.fill" : "xmark.circle.fill")
+                                            .font(.subheadline)
+                                            .foregroundColor(passwordsMatch ? AuthTheme.success : AuthTheme.destructive)
+                                            .frame(width: 32, height: 32)
+                                            .accessibilityLabel(passwordsMatch ? "Passwords match" : "Passwords do not match")
+                                    }
+                                }
+                            }
+
+                            if showMismatch {
+                                Text("Passwords don't match")
+                                    .font(.caption)
+                                    .foregroundColor(AuthTheme.destructive)
+                                    .padding(.horizontal, 4)
+                            }
+                        }
+                    } else {
+                        AuthFieldGroup {
+                            AuthInputRow(
+                                icon: "envelope",
+                                placeholder: "Email",
                                 text: $viewModel.resetEmail,
                                 keyboard: .emailAddress,
-                                isSecure: false
+                                contentType: .username
                             )
-                            
-                        } else {
-                            
-                            // Reset code
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("Reset code")
-                                    .font(.scaled(13, weight: .medium))
-                                    .foregroundColor(.sForeground)
-                                
-                                TextField("000000", text: $viewModel.resetCode)
-                                    .keyboardType(.numberPad)
-                                    .font(.scaled(28, weight: .bold))
-                                    .tracking(14)
-                                    .multilineTextAlignment(.center)
-                                    .foregroundColor(.sForeground)
-                                    .tint(.sAccent)
-                                    .padding(.vertical, 14)
-                                    .background(Color.sCard)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .stroke(Color.sAccent.opacity(0.4), lineWidth: 1)
-                                    )
-                                    .cornerRadius(8)
-                                    .onChange(of: viewModel.resetCode) { newValue in
-                                        if newValue.count > 6 {
-                                            viewModel.resetCode = String(newValue.prefix(6))
-                                        }
-                                    }
-                                
-                                // Progress dots
-                                HStack(spacing: 8) {
-                                    ForEach(0..<6, id: \.self) { i in
-                                        Circle()
-                                            .fill(i < viewModel.resetCode.count
-                                                  ? Color.sAccent
-                                                  : Color.sBorder)
-                                            .frame(width: 8, height: 8)
-                                            .animation(.spring(response: 0.2), value: viewModel.resetCode.count)
-                                    }
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding(.top, 4)
-                            }
-                            
-                            // New password
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("New password")
-                                    .font(.scaled(13, weight: .medium))
-                                    .foregroundColor(.sForeground)
-                                
-                                HStack(spacing: 10) {
-                                    Group {
-                                        if showPassword {
-                                            TextField("Create new password", text: $viewModel.resetNewPassword)
-                                        } else {
-                                            SecureField("Create new password", text: $viewModel.resetNewPassword)
-                                        }
-                                    }
-                                    .font(.scaled(14))
-                                    .foregroundColor(.sForeground)
-                                    .tint(.sAccent)
-                                    .textInputAutocapitalization(.never)
-                                    .autocorrectionDisabled()
-                                    
-                                    Button {
-                                        showPassword.toggle()
-                                    } label: {
-                                        Image(systemName: showPassword ? "eye.slash" : "eye")
-                                            .font(.scaled(14))
-                                            .foregroundColor(.sMutedFG)
-                                    }
-                                }
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 10)
-                                .background(Color.sCard)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .stroke(Color.sInput, lineWidth: 0.5)
-                                )
-                                .cornerRadius(8)
-                            }
-                            
-                            // Confirm password
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("Confirm password")
-                                    .font(.scaled(13, weight: .medium))
-                                    .foregroundColor(.sForeground)
-                                
-                                HStack(spacing: 10) {
-                                    Group {
-                                        if showConfirm {
-                                            TextField("Repeat new password", text: $viewModel.resetConfirmPassword)
-                                        } else {
-                                            SecureField("Repeat new password", text: $viewModel.resetConfirmPassword)
-                                        }
-                                    }
-                                    .font(.scaled(14))
-                                    .foregroundColor(.sForeground)
-                                    .tint(.sAccent)
-                                    .textInputAutocapitalization(.never)
-                                    .autocorrectionDisabled()
-                                    
-                                    if !viewModel.resetConfirmPassword.isEmpty {
-                                        Image(systemName: passwordsMatch
-                                              ? "checkmark.circle.fill"
-                                              : "xmark.circle.fill")
-                                        .font(.scaled(15))
-                                        .foregroundColor(passwordsMatch
-                                                         ? Color(red: 0.086, green: 0.639, blue: 0.341)
-                                                         : .sDestructive)
-                                    } else {
-                                        Button {
-                                            showConfirm.toggle()
-                                        } label: {
-                                            Image(systemName: showConfirm ? "eye.slash" : "eye")
-                                                .font(.scaled(14))
-                                                .foregroundColor(.sMutedFG)
-                                        }
-                                    }
-                                }
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 10)
-                                .background(Color.sCard)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .stroke(
-                                            !viewModel.resetConfirmPassword.isEmpty && !passwordsMatch
-                                            ? Color.sDestructive.opacity(0.5)
-                                            : Color.sInput,
-                                            lineWidth: 0.5
-                                        )
-                                )
-                                .cornerRadius(8)
-                            }
-                            
-                            // Info banner
-                            HStack(spacing: 8) {
-                                Image(systemName: "clock")
-                                    .font(.scaled(13))
-                                    .foregroundColor(.sMutedFG)
-                                Text("Code expires in 10 minutes")
-                                    .font(.scaled(13))
-                                    .foregroundColor(.sMutedFG)
-                                Spacer()
-                            }
-                            .padding(12)
-                            .background(Color.sMuted)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color.sBorder, lineWidth: 0.5)
-                            )
-                            .cornerRadius(8)
                         }
-                        
-                        // Error
+                    }
+
+                    VStack(spacing: 12) {
                         if let error = viewModel.errorMessage {
-                            HStack(spacing: 8) {
-                                Image(systemName: "exclamationmark.circle")
-                                    .font(.scaled(13))
-                                    .foregroundColor(.sDestructive)
-                                Text(error)
-                                    .font(.scaled(13))
-                                    .foregroundColor(.sDestructive)
-                                Spacer()
-                            }
-                            .padding(12)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color.sDestructive.opacity(0.06))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .stroke(Color.sDestructive.opacity(0.2), lineWidth: 0.5)
-                                    )
-                            )
+                            AuthErrorBanner(message: error)
                         }
-                        
-                        // Action button
-                        Button {
+
+                        AuthPrimaryButton(
+                            title: viewModel.resetCodeSent ? "Reset password" : "Send code",
+                            isLoading: viewModel.isLoading
+                        ) {
                             hideKeyboard()
                             if viewModel.resetCodeSent {
                                 guard passwordsMatch else {
@@ -254,30 +115,10 @@ struct ForgotPasswordView: View {
                                     await viewModel.forgotPassword()
                                 }
                             }
-                        } label: {
-                            HStack {
-                                if viewModel.isLoading {
-                                    ProgressView()
-                                        .tint(.sAccentFG)
-                                        .scaleEffect(0.85)
-                                } else {
-                                    Text(viewModel.resetCodeSent
-                                         ? "Reset password"
-                                         : "Send code")
-                                    .font(.scaled(15, weight: .semibold))
-                                    .foregroundColor(.sAccentFG)
-                                }
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .background(Color.sPrimary)
-                            .cornerRadius(8)
                         }
-                        .disabled(viewModel.isLoading)
-                        
-                        // Resend
+
                         if viewModel.resetCodeSent {
-                            HStack(spacing: 16) {
+                            HStack(spacing: 24) {
                                 Button {
                                     withAnimation(.easeInOut(duration: 0.2)) {
                                         viewModel.resetCodeSent = false
@@ -286,56 +127,25 @@ struct ForgotPasswordView: View {
                                     }
                                 } label: {
                                     Text("Change email")
-                                        .font(.scaled(13))
-                                        .foregroundColor(.sMutedFG)
+                                        .foregroundColor(AuthTheme.muted)
                                 }
-                                
-                                Rectangle()
-                                    .fill(Color.sBorder)
-                                    .frame(width: 0.5, height: 14)
-                                
+
                                 Button {
                                     Task { await viewModel.forgotPassword() }
                                 } label: {
                                     Text("Resend code")
-                                        .font(.scaled(13, weight: .medium))
-                                        .foregroundColor(.sAccent)
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(AuthTheme.accent)
                                 }
                             }
-                            .frame(maxWidth: .infinity)
+                            .font(.subheadline)
+                            .padding(.top, 8)
                         }
                     }
-                    .padding(20)
-                    .background(Color.sCard)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.sBorder, lineWidth: 0.5)
-                    )
-                    .cornerRadius(12)
-                    .shadow(
-                        color: Color(UIColor.label).opacity(0.06),
-                        radius: 20, x: 0, y: 8
-                    )
-                    .padding(.horizontal, 24)
-                    
-                    // Back to login
-                    Button {
-                        viewModel.resetCodeSent = false
-                        viewModel.resetCode = ""
-                        viewModel.errorMessage = nil
-                        presentationMode.wrappedValue.dismiss()
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "chevron.left")
-                                .font(.scaled(12, weight: .semibold))
-                            Text("Back to login")
-                                .font(.scaled(13))
-                        }
-                        .foregroundColor(.sMutedFG)
-                    }
-                    .padding(.top, 20)
-                    .padding(.bottom, 40)
                 }
+                .padding(.horizontal, 24)
+                .padding(.top, 8)
+                .padding(.bottom, 32)
             }
         }
         .navigationBarHidden(true)

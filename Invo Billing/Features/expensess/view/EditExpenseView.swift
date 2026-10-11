@@ -11,6 +11,7 @@ struct ExpenseEditView: View {
     @State private var description: String = ""
     @State private var date: Date = Date()
     @State private var paymentMethod = ""
+    @State private var category = ""
 
     var isFormValid: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty &&
@@ -31,6 +32,7 @@ struct ExpenseEditView: View {
         amount != Money.editable(expense.amount) ||
         description != (expense.description ?? "") ||
         paymentMethod != (expense.paymentMethod ?? "") ||
+        category != (expense.category ?? "") ||
         newDateString != AppDate.date(fromWire: expense.date).map(AppDate.wireString(from:))
     }
 
@@ -45,7 +47,7 @@ struct ExpenseEditView: View {
                         // MARK: - Expense Details Section
                         VStack(alignment: .leading, spacing: 14) {
                             Text("Expense details")
-                                .font(.scaled(13, weight: .medium))
+                                .font(.subheadline.weight(.medium))
                                 .foregroundColor(.sMutedFG)
 
                             FormFieldView(
@@ -57,16 +59,16 @@ struct ExpenseEditView: View {
                             // Amount Field
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("Amount")
-                                    .font(.scaled(13, weight: .medium))
+                                    .font(.subheadline.weight(.medium))
                                     .foregroundColor(.sForeground)
 
                                 HStack(spacing: 8) {
                                     Text("₹")
-                                        .font(.scaled(15, weight: .semibold))
+                                        .font(.subheadline.weight(.semibold))
                                         .foregroundColor(.sMutedFG)
 
                                     TextField("0.00", text: $amount)
-                                        .font(.scaled(15))
+                                        .font(.body)
                                         .foregroundColor(.sForeground)
                                         .tint(.sAccent)
                                         .keyboardType(.decimalPad)
@@ -81,12 +83,13 @@ struct ExpenseEditView: View {
                                 .cornerRadius(8)
                             }
 
+                            ExpenseCategoryPicker(selection: $category)
                             ExpensePaymentMethodPicker(selection: $paymentMethod)
 
                             // Date Field
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("Date")
-                                    .font(.scaled(13, weight: .medium))
+                                    .font(.subheadline.weight(.medium))
                                     .foregroundColor(.sForeground)
 
                                 DatePicker(
@@ -111,11 +114,11 @@ struct ExpenseEditView: View {
                         // MARK: - Description Section
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Description (optional)")
-                                .font(.scaled(13, weight: .medium))
+                                .font(.subheadline.weight(.medium))
                                 .foregroundColor(.sMutedFG)
 
                             TextEditor(text: $description)
-                                .font(.scaled(15))
+                                .font(.body)
                                 .foregroundColor(.sForeground)
                                 .frame(minHeight: 100)
                                 .padding(10)
@@ -128,7 +131,7 @@ struct ExpenseEditView: View {
                                 .scrollContentBackground(.hidden)
                         }
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, AppSpacing.page)
                     .padding(.vertical, 20)
                 }
             }
@@ -163,6 +166,7 @@ struct ExpenseEditView: View {
         amount = Money.editable(expense.amount)
         description = expense.description ?? ""
         paymentMethod = expense.paymentMethod ?? ""
+        category = expense.category ?? ""
 
         // The API can return a timestamp; changing only the payment method must not
         // accidentally move an older expense onto today's cash closing.
@@ -199,40 +203,13 @@ struct ExpenseEditView: View {
                 amount: Double(amount) ?? 0,
                 description: description.isEmpty ? nil : description
                     .trimmingCharacters(in: .whitespaces), date: dateString,
-                paymentMethod: paymentMethod
+                paymentMethod: paymentMethod,
+                category: category.isEmpty ? nil : category
             )
 
             if success {
                 dismiss()
             }
-        }
-    }
-}
-
-// MARK: - Form Field Component
-struct FormFieldView: View {
-    let label: String
-    let placeholder: String
-    @Binding var text: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(label)
-                .font(.scaled(13, weight: .medium))
-                .foregroundColor(.sForeground)
-
-            TextField(placeholder, text: $text)
-                .font(.scaled(15))
-                .foregroundColor(.sForeground)
-                .tint(.sAccent)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
-                .background(Color.sCard)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.sInput, lineWidth: 0.5)
-                )
-                .cornerRadius(8)
         }
     }
 }

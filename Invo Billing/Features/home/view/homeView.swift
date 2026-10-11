@@ -26,59 +26,46 @@ struct HomeView: View {
         VStack(spacing: 16) {
             VStack(alignment: .leading, spacing: 6) {
                 Text("Today")
-                    .font(.scaled(13))
+                    .font(.subheadline)
                     .foregroundColor(.sMutedFG)
                 Text(AppDate.text(Date()))
-                    .font(.scaled(22, weight: .bold))
+                    .font(.title2.weight(.bold))
                     .foregroundColor(.sForeground)
                 Text("Write an invoice, take a payment, look someone up.")
-                    .font(.scaled(12))
+                    .font(.footnote)
                     .foregroundColor(.sMutedFG)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(18)
-            .background(Color.sCard)
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.sBorder, lineWidth: 0.5))
-            .cornerRadius(16)
+            .padding(AppSpacing.card)
+            .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
 
             quickActionsCard
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, AppSpacing.page)
     }
     
     var body: some View {
         NavigationStack {
-            ZStack {
-                Color.sBackground.ignoresSafeArea()
-                
-                VStack(spacing: 0) {
-                    ScrollView(showsIndicators: false) {
-                        VStack(spacing: 20) {
-                            // Somebody who cannot see the shop's takings should not be
-                            // sent to a screen made of them, and certainly not to its
-                            // refusal. The counter boy opens on the work instead.
-                            if !session.companyRole.canSeeReports {
-                                counterHome
-                            } else if viewModel.isLoading {
-                                skeletonView
-                            } else if let errorMessage = viewModel.errorMessage {
-                                errorView(errorMessage)
-                            } else {
-                                revenueCard
-                                statsRow
-                                quickActionsCard
-                                recentActivityCard
-                            }
-                        }
-                        .padding(.top, 20)
-                        // TabView already insets scroll content for the tab bar; the
-                        // extra 100pt here was stacked on top of it and left a dead
-                        // band under the last row.
-                        .padding(.bottom, 24)
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 20) {
+                    if !session.companyRole.canSeeReports {
+                        counterHome
+                    } else if viewModel.isLoading {
+                        skeletonView
+                    } else if let errorMessage = viewModel.errorMessage {
+                        errorView(errorMessage)
+                    } else {
+                        revenueCard
+                        statsRow
+                        quickActionsCard
+                        recentActivityCard
                     }
-                    .refreshable { fetch() }
                 }
+                .padding(.top, 20)
+                .padding(.bottom, 24)
             }
+            .refreshable { fetch() }
+            .background(Color(UIColor.systemGroupedBackground))
             .navigationTitle(session.companyRole.canSeeReports ? "Dashboard" : "Today")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
@@ -102,12 +89,12 @@ struct HomeView: View {
                     } label: {
                         HStack(spacing: 4) {
                             Image(systemName: "building.2")
-                                .font(.scaled(12))
+                                .font(.footnote)
                             Text(selectedCompanyName)
-                                .font(.scaled(14, weight: .medium))
+                                .font(.subheadline.weight(.medium))
                                 .lineLimit(1)
                             Image(systemName: "chevron.down")
-                                .font(.scaled(10, weight: .semibold))
+                                .font(.caption.weight(.semibold))
                         }
                         .foregroundColor(.sForeground)
                     }
@@ -123,9 +110,9 @@ struct HomeView: View {
                         HStack(spacing: 4) {
                             Text(selectedPeriod)
                             Image(systemName: "chevron.down")
-                                .font(.scaled(11, weight: .semibold))
+                                .font(.caption.weight(.semibold))
                         }
-                        .font(.scaled(14, weight: .medium))
+                        .font(.subheadline.weight(.medium))
                     }
                     }
                 }
@@ -158,12 +145,12 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("Last 7 days")
-                    .font(.scaled(12, weight: .medium))
+                    .font(.footnote.weight(.medium))
                     .foregroundColor(.sMutedFG)
                 Spacer()
                 if peak > 0 {
                     Text("Best day \(Money.text(peak))")
-                        .font(.scaled(12))
+                        .font(.footnote)
                         .foregroundColor(.sMutedFG)
                 }
             }
@@ -190,7 +177,7 @@ struct HomeView: View {
                         .frame(maxWidth: .infinity)
 
                         Text(AppDate.weekdayInitial(fromWire: day.date))
-                            .font(.scaled(11, weight: isToday ? .semibold : .regular))
+                            .font(.caption.weight(isToday ? .semibold : .regular))
                             .foregroundColor(isToday ? .sForeground : .sMutedFG)
                     }
                     .accessibilityElement(children: .ignore)
@@ -213,10 +200,10 @@ struct HomeView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Total revenue")
-                        .font(.scaled(13))
+                        .font(.subheadline)
                         .foregroundColor(.sMutedFG)
                     Text(Money.compact(viewModel.dashboard?.revenue.total ?? 0)).moneyLine()
-                        .font(.scaled(30, weight: .semibold))
+                        .font(.title.weight(.semibold))
                         .foregroundColor(.sForeground)
                 }
                 Spacer()
@@ -224,25 +211,21 @@ struct HomeView: View {
                 let change = viewModel.dashboard?.revenue.changePercent ?? 0
                 HStack(spacing: 4) {
                     Image(systemName: change >= 0 ? "arrow.up.right" : "arrow.down.right")
-                        .font(.scaled(11, weight: .semibold))
+                        .font(.caption.weight(.semibold))
                     Text("\(String(format: "%.1f", abs(change)))%")
-                        .font(.scaled(12, weight: .medium))
+                        .font(.footnote.weight(.medium))
                 }
-                .foregroundColor(change >= 0
-                                 ? Color(red: 0.086, green: 0.639, blue: 0.341)
-                                 : Color(red: 0.863, green: 0.149, blue: 0.149))
+                .foregroundColor(change >= 0 ? .sSuccess : .sDestructive)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 5)
                 .background(
                     Capsule()
-                        .fill(change >= 0
-                              ? Color(red: 0.086, green: 0.639, blue: 0.341).opacity(0.08)
-                              : Color(red: 0.863, green: 0.149, blue: 0.149).opacity(0.08))
+                        .fill(change >= 0 ? Color.sSuccessMuted : Color.sDestructive.opacity(0.08))
                         .overlay(
                             Capsule()
                                 .stroke(change >= 0
-                                        ? Color(red: 0.086, green: 0.639, blue: 0.341).opacity(0.2)
-                                        : Color(red: 0.863, green: 0.149, blue: 0.149).opacity(0.2),
+                                        ? Color.sSuccessMuted
+                                        : Color.sDestructive.opacity(0.2),
                                         lineWidth: 0.5)
                         )
                 )
@@ -256,56 +239,76 @@ struct HomeView: View {
                 revenueChart(trend)
             } else {
                 Text("No sales recorded in the last 7 days")
-                    .font(.scaled(13))
+                    .font(.subheadline)
                     .foregroundColor(.sMutedFG)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.vertical, 18)
             }
         }
         .padding(16)
-        .background(Color.sCard)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.sBorder, lineWidth: 0.5)
-        )
-        .cornerRadius(12)
-        .padding(.horizontal, 20)
+        .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
+        .padding(.horizontal, AppSpacing.page)
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 8)
     }
-    
-    
-    // MARK: - Stats Row
+
+
+    // MARK: - Cash position row (receivable / overdue / payable)
     var statsRow: some View {
-        HStack(spacing: 10) {
-            HomeStatCard(
-                icon: "doc.text",
-                label: "Invoices",
-                value: "\(viewModel.dashboard?.counts.invoices ?? 0)"
-            )
-            HomeStatCard(
-                icon: "person",
-                label: "Clients",
-                value: "\(viewModel.dashboard?.counts.clients ?? 0)"
-            )
-            HomeStatCard(
-                icon: "cube",
-                label: "Items",
-                value: "\(viewModel.dashboard?.counts.items ?? 0)"
-            )
+        VStack(spacing: 10) {
+            HStack(spacing: 10) {
+                cashTile(
+                    label: "To collect",
+                    value: viewModel.dashboard?.receivables?.total ?? 0,
+                    sub: "\(viewModel.dashboard?.receivables?.count ?? 0) invoices",
+                    color: .sAccent
+                )
+                cashTile(
+                    label: "Overdue",
+                    value: viewModel.dashboard?.receivables?.overdue ?? 0,
+                    sub: "Past due date",
+                    color: (viewModel.dashboard?.receivables?.overdue ?? 0) > 0 ? .sDestructive : .sMutedFG
+                )
+                cashTile(
+                    label: "To pay",
+                    value: viewModel.dashboard?.payables?.total ?? 0,
+                    sub: "\(viewModel.dashboard?.payables?.count ?? 0) bills",
+                    color: .sMutedFG
+                )
+            }
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, AppSpacing.page)
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 8)
+    }
+
+    private func cashTile(label: String, value: Double, sub: String, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(label)
+                .font(.caption)
+                .foregroundColor(.sMutedFG)
+            Text(Money.compact(value)).moneyLine()
+                .font(.subheadline.weight(.semibold))
+                .foregroundColor(color)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            Text(sub)
+                .font(.caption)
+                .foregroundColor(.sMutedFG)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 10))
     }
     
     // MARK: - Quick Actions
     var quickActionsCard: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Quick actions")
-                .font(.scaled(13, weight: .medium))
+                .font(.subheadline.weight(.medium))
                 .foregroundColor(.sMutedFG)
-                .padding(.horizontal, 16)
+                .padding(.horizontal, AppSpacing.page)
                 .padding(.top, 14)
                 .padding(.bottom, 10)
             
@@ -338,32 +341,27 @@ struct HomeView: View {
                 )
             }
         }
-        .background(Color.sCard)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.sBorder, lineWidth: 0.5)
-        )
-        .cornerRadius(12)
-        .padding(.horizontal, 20)
+        .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
+        .padding(.horizontal, AppSpacing.page)
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 8)
     }
-    
+
     // MARK: - Recent Activity
     var recentActivityCard: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Text("Recent activity")
-                    .font(.scaled(13, weight: .medium))
+                    .font(.subheadline.weight(.medium))
                     .foregroundColor(.sMutedFG)
                 Spacer()
                 NavigationLink(destination: InvoiceView()) {
                     Text("View all")
-                        .font(.scaled(13))
+                        .font(.subheadline)
                         .foregroundColor(.sAccent)
                 }
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, AppSpacing.page)
             .padding(.top, 14)
             .padding(.bottom, 10)
             
@@ -390,10 +388,10 @@ struct HomeView: View {
                     Spacer()
                     VStack(spacing: 6) {
                         Image(systemName: "doc.text")
-                            .font(.scaled(22))
+                            .font(.title2)
                             .foregroundColor(.sMutedFG)
                         Text("No recent activity")
-                            .font(.scaled(13))
+                            .font(.subheadline)
                             .foregroundColor(.sMutedFG)
                     }
                     Spacer()
@@ -401,38 +399,33 @@ struct HomeView: View {
                 .padding(.vertical, 28)
             }
         }
-        .background(Color.sCard)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.sBorder, lineWidth: 0.5)
-        )
-        .cornerRadius(12)
-        .padding(.horizontal, 20)
+        .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
+        .padding(.horizontal, AppSpacing.page)
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 8)
     }
-    
+
     // MARK: - Error
     func errorView(_ message: String) -> some View {
         VStack(spacing: 12) {
             Image(systemName: "exclamationmark.triangle")
-                .font(.scaled(24))
+                .font(.title2)
                 .foregroundColor(.sMutedFG)
             Text(message)
-                .font(.scaled(13))
+                .font(.subheadline)
                 .foregroundColor(.sMutedFG)
                 .multilineTextAlignment(.center)
             Button {
                 fetch()
             } label: {
                 Text("Retry")
-                    .font(.scaled(13, weight: .medium))
+                    .font(.subheadline.weight(.medium))
                     .foregroundColor(.sAccent)
             }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 60)
-        .padding(.horizontal, 20)
+        .padding(.horizontal, AppSpacing.page)
     }
 
     // MARK: - Skeleton
@@ -440,16 +433,12 @@ struct HomeView: View {
         VStack(spacing: 10) {
             ForEach(0..<4, id: \.self) { _ in
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.sMuted)
+                    .fill(Color(UIColor.secondarySystemGroupedBackground))
                     .frame(height: 80)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.sBorder, lineWidth: 0.5)
-                    )
                     .shimmer()
             }
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, AppSpacing.page)
     }
 }
 
@@ -462,14 +451,14 @@ struct HomeStatCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Image(systemName: icon)
-                .font(.scaled(14))
+                .font(.body)
                 .foregroundColor(.sMutedFG)
             VStack(alignment: .leading, spacing: 2) {
                 Text(value)
-                    .font(.scaled(22, weight: .semibold))
+                    .font(.title2.weight(.semibold))
                     .foregroundColor(.sForeground)
                 Text(label)
-                    .font(.scaled(12))
+                    .font(.footnote)
                     .foregroundColor(.sMutedFG)
                     // Three of these sit side by side, so at large text sizes the
                     // column is narrower than the word: "Invoices" broke as "Invoic /
@@ -480,12 +469,7 @@ struct HomeStatCard: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
-        .background(Color.sCard)
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(Color.sBorder, lineWidth: 0.5)
-        )
-        .cornerRadius(10)
+        .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 10))
     }
 }
 
@@ -505,30 +489,26 @@ struct HomeActionRow: View {
             HStack(spacing: 12) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.sMuted)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color.sBorder, lineWidth: 0.5)
-                        )
+                        .fill(Color(UIColor.tertiarySystemGroupedBackground))
                         .frame(width: tile, height: tile)
                     Image(systemName: icon)
-                        .font(.scaled(14))
-                        .foregroundColor(.sForeground)
+                        .font(.body)
+                        .foregroundStyle(.primary)
                 }
                 VStack(alignment: .leading, spacing: 1) {
                     Text(title)
-                        .font(.scaled(14, weight: .medium))
+                        .font(.subheadline.weight(.medium))
                         .foregroundColor(.sForeground)
                     Text(subtitle)
-                        .font(.scaled(12))
+                        .font(.footnote)
                         .foregroundColor(.sMutedFG)
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .font(.scaled(12))
+                    .font(.footnote)
                     .foregroundColor(.sMutedFG)
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, AppSpacing.page)
             .padding(.vertical, 12)
         }
         .buttonStyle(PlainButtonStyle())
@@ -545,9 +525,9 @@ struct HomeActivityRow: View {
     
     var statusColor: Color {
         switch status.lowercased() {
-        case "paid":               return Color(red: 0.086, green: 0.639, blue: 0.341)
-        case "pending", "partial": return Color(red: 0.722, green: 0.494, blue: 0.051)
-        default:                   return Color(UIColor.systemGray)
+        case "paid":               return .sSuccess
+        case "pending", "partial": return .sWarning
+        default:                   return .sNeutral
         }
     }
     
@@ -555,28 +535,27 @@ struct HomeActivityRow: View {
         HStack(spacing: 12) {
             ZStack {
                 Circle()
-                    .fill(Color.sMuted)
-                    .overlay(Circle().stroke(Color.sBorder, lineWidth: 0.5))
+                    .fill(Color.sAccentMuted)
                     .frame(width: 36, height: 36)
                 Text(initials)
-                    .font(.scaled(12, weight: .semibold))
-                    .foregroundColor(.sForeground)
+                    .font(.footnote.weight(.semibold))
+                    .foregroundColor(.sAccent)
             }
             VStack(alignment: .leading, spacing: 1) {
                 Text(name)
-                    .font(.scaled(14, weight: .medium))
+                    .font(.subheadline.weight(.medium))
                     .foregroundColor(.sForeground)
                 Text(number)
-                    .font(.scaled(12))
+                    .font(.footnote)
                     .foregroundColor(.sMutedFG)
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 3) {
                 Text(amount)
-                    .font(.scaled(14, weight: .semibold))
+                    .font(.subheadline.weight(.semibold))
                     .foregroundColor(.sForeground)
                 Text(status)
-                    .font(.scaled(11, weight: .medium))
+                    .font(.caption.weight(.medium))
                     .foregroundColor(statusColor)
                     .padding(.horizontal, 7)
                     .padding(.vertical, 2)
@@ -590,7 +569,7 @@ struct HomeActivityRow: View {
                     )
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, AppSpacing.page)
         .padding(.vertical, 12)
     }
 }

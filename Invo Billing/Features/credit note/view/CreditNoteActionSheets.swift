@@ -64,11 +64,11 @@ struct ApplyCreditSheet: View {
                 if isLoading {
                     HStack {
                         ProgressView().tint(.sAccent)
-                        Text("Loading…").font(.scaled(13)).foregroundColor(.sMutedFG)
+                        Text("Loading…").font(.subheadline).foregroundColor(.sMutedFG)
                     }
                 } else if invoices.isEmpty {
                     Text("Nothing of theirs is unpaid. The credit can be refunded instead.")
-                        .font(.scaled(13))
+                        .font(.subheadline)
                         .foregroundColor(.sMutedFG)
                 } else {
                     ForEach(invoices) { invoice in
@@ -79,10 +79,10 @@ struct ApplyCreditSheet: View {
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(invoice.invoiceNumber)
-                                        .font(.scaled(14, weight: .medium))
+                                        .font(.body.weight(.medium))
                                         .foregroundColor(.sForeground)
                                     Text("\(Money.text(invoice.remainingAmount)) owing")
-                                        .font(.scaled(12))
+                                        .font(.footnote)
                                         .foregroundColor(.sMutedFG)
                                 }
                                 Spacer()
@@ -120,7 +120,7 @@ struct ApplyCreditSheet: View {
             if let errorMessage {
                 Section {
                     Text(errorMessage)
-                        .font(.scaled(13))
+                        .font(.subheadline)
                         .foregroundColor(.sDestructive)
                 }
             }
@@ -238,7 +238,7 @@ struct RefundCreditSheet: View {
             if let errorMessage {
                 Section {
                     Text(errorMessage)
-                        .font(.scaled(13))
+                        .font(.subheadline)
                         .foregroundColor(.sDestructive)
                 }
             }

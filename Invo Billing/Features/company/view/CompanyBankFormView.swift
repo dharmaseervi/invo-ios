@@ -44,7 +44,7 @@ struct CompanyBankFormView: View {
 
                             ZaraTextField(label: "Account number", text: $account, placeholder: "0000 0000 0000", keyboard: .numberPad)
 
-                            HStack(spacing: 14) {
+                            AdaptiveFormRow {
                                 ZaraTextField(label: "IFSC code", text: $ifsc, placeholder: "HDFC0001234")
                                 ZaraTextField(label: "Branch", text: $branch, placeholder: "Downtown")
                             }
@@ -58,7 +58,7 @@ struct CompanyBankFormView: View {
 
                             Toggle(isOn: $isDefault) {
                                 Text("Set as default account")
-                                    .font(.scaled(13))
+                                    .font(.subheadline)
                                     .foregroundColor(.sForeground)
                             }
                             .tint(.sAccent)
@@ -70,19 +70,19 @@ struct CompanyBankFormView: View {
 
                         if let message = vm.errorMessage {
                             Text(message)
-                                .font(.scaled(12))
+                                .font(.footnote)
                                 .foregroundColor(.sDestructive)
                         }
 
                         if showError {
                             Text("Please fill in all required fields.")
-                                .font(.scaled(12))
+                                .font(.footnote)
                                 .foregroundColor(.sDestructive)
                         }
 
                         Spacer(minLength: 100)
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, AppSpacing.page)
                 }
 
                 actionButton
@@ -125,11 +125,11 @@ extension CompanyBankFormView {
                         ProgressView().tint(.sAccentFG)
                     } else {
                         Text(isEditing ? "Update account" : "Save bank details")
-                            .font(.scaled(15, weight: .semibold))
+                            .font(.subheadline.weight(.semibold))
                             .foregroundColor(.sAccentFG)
                     }
                 }
-                .frame(height: 60)
+                .frame(minHeight: 60)
             }
             .disabled(vm.isLoading || password.isEmpty)
         }
@@ -137,7 +137,7 @@ extension CompanyBankFormView {
 
     private func sectionLabel(_ text: String) -> some View {
         Text(text)
-            .font(.scaled(13, weight: .medium))
+            .font(.subheadline.weight(.medium))
             .foregroundColor(.sMutedFG)
     }
 
@@ -183,21 +183,6 @@ struct ZaraTextField: View {
     var keyboard: UIKeyboardType = .default
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(label)
-                .font(.scaled(11, weight: .medium))
-                .foregroundColor(.sMutedFG)
-
-            TextField("", text: $text, prompt: Text(placeholder).foregroundColor(.sMutedFG))
-                .font(.scaled(15))
-                .foregroundColor(.sForeground)
-                .tint(.sAccent)
-                .keyboardType(keyboard)
-                .autocorrectionDisabled()
-
-            Rectangle()
-                .frame(height: 1)
-                .foregroundColor(.sBorder)
-        }
+        FormFieldView(label: label, placeholder: placeholder, text: $text, keyboard: keyboard)
     }
 }

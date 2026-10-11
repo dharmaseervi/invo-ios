@@ -12,95 +12,66 @@ struct LedgerListView: View {
     }
 
     var body: some View {
-        ZStack {
-            Color.sBackground.ignoresSafeArea()
+        List {
+            summaryCard
+                .padding(.horizontal, AppSpacing.page)
+                .padding(.top, 8)
+                .padding(.bottom, 4)
+                .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
 
-            VStack(spacing: 0) {
-
-                // Summary
-                if vm.summaryFailed {
-                    // The figures are the customer's whole history, so when they cannot
-                    // be fetched the screen says so rather than showing ₹0 totals
-                    // above a page of real entries.
-                    VStack(spacing: 6) {
-                        Text("Totals unavailable")
-                            .font(.scaled(13, weight: .medium))
-                            .foregroundColor(.sForeground)
-                        Button("Try again") { Task { await vm.fetchLedger() } }
-                            .font(.scaled(13, weight: .medium))
-                            .foregroundColor(.sAccent)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(Color.sCard)
-                } else {
-                    LedgerSummaryView(
-                        debit: vm.totalDebit,
-                        credit: vm.totalCredit,
-                        balance: vm.closingBalance
-                    )
-                }
-
-                Rectangle().fill(Color.sBorder).frame(height: 0.5)
-
-                // Entries
-                if vm.isLoading {
-                    Spacer()
-                    ProgressView().tint(.sAccent)
-                    Spacer()
-                } else if vm.entries.isEmpty {
-                    Spacer()
-                    VStack(spacing: 10) {
-                        Image(systemName: "book")
-                            .font(.scaled(22))
-                            .foregroundColor(.sMutedFG)
-                        Text("No transactions yet")
-                            .font(.scaled(14, weight: .medium))
-                            .foregroundColor(.sForeground)
-                        Text("Invoices, payments, and credit notes for this client will appear here")
-                            .font(.scaled(12))
-                            .foregroundColor(.sMutedFG)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 40)
-                    }
-                    Spacer()
-                } else {
-                    ScrollView {
-                        LazyVStack(spacing: 10) {
-                            // Older entries load upwards: the statement reads forwards,
-                            // so the newest page is the one shown first.
-                            if vm.isLoadingMore {
-                                ProgressView()
-                                    .tint(.sAccent)
-                                    .padding(.vertical, 12)
-                            } else if vm.loadMoreFailed {
-                                VStack(spacing: 6) {
-                                    Text("Couldn't load earlier entries.")
-                                        .font(.scaled(13))
-                                        .foregroundColor(.sMutedFG)
-                                    Button("Try again") { Task { await vm.retryLoadMore() } }
-                                        .font(.scaled(13, weight: .medium))
-                                        .foregroundColor(.sAccent)
-                                }
-                                .padding(.vertical, 12)
-                            } else if vm.hasMore {
-                                Button("Load earlier entries") {
-                                    Task { await vm.loadEarlier() }
-                                }
-                                .font(.scaled(13, weight: .medium))
-                                .foregroundColor(.sAccent)
-                                .padding(.vertical, 12)
-                            }
-
-                            ForEach(vm.entries) { entry in
-                                LedgerRowView(entry: entry)
-                            }
+            if vm.isLoading {
+                HStack { Spacer(); ProgressView().tint(.sAccent); Spacer() }
+                    .padding(.vertical, 60)
+                    .listRowSeparator(.hidden)
+            } else if vm.entries.isEmpty {
+                ContentUnavailableView(
+                    "No transactions yet",
+                    systemImage: "book",
+                    description: Text("Invoices, payments, and credit notes for this client will appear here")
+                )
+                .padding(.vertical, 40)
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+            } else {
+                // Older entries load upwards: the statement reads forwards, so the
+                // newest page is the one shown first.
+                Group {
+                    if vm.isLoadingMore {
+                        HStack { Spacer(); ProgressView().tint(.sAccent); Spacer() }
+                    } else if vm.loadMoreFailed {
+                        VStack(spacing: 6) {
+                            Text("Couldn't load earlier entries.")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            Button("Try again") { Task { await vm.retryLoadMore() } }
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(Color.sAccent)
                         }
-                        .padding(20)
+                        .frame(maxWidth: .infinity)
+                    } else if vm.hasMore {
+                        Button("Load earlier entries") {
+                            Task { await vm.loadEarlier() }
+                        }
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(Color.sAccent)
+                        .frame(maxWidth: .infinity)
                     }
+                }
+                .padding(.vertical, 4)
+                .listRowSeparator(.hidden)
+
+                ForEach(vm.entries) { entry in
+                    LedgerRowView(entry: entry)
+                        .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+                        .listRowSeparator(.hidden, edges: entry.id == vm.entries.first?.id ? .top : [])
                 }
             }
         }
+        .listStyle(.plain)
+        .contentMargins(.bottom, 16, for: .scrollContent)
+        .refreshable { await vm.fetchLedger() }
         .onAppear {
             Task { await vm.fetchLedger() }
         }
@@ -129,54 +100,39 @@ struct LedgerListView: View {
             Text(vm.errorMessage ?? "Something went wrong")
         }
     }
-}
 
-struct LedgerSummaryView: View {
+    // The figures are the customer's whole history, so when they cannot be fetched the
+    // screen says so rather than showing ₹0 totals above a page of real entries.
+    private var summaryCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 1) {
+                Text("Closing balance")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Text(vm.summaryFailed ? "—" : Money.text(vm.closingBalance)).moneyLine()
+                    .font(.title.bold())
+                    .foregroundStyle(vm.summaryFailed ? .secondary
+                                     : (vm.closingBalance > 0 ? Color.sDestructive : Color.sSuccess))
+                if vm.summaryFailed {
+                    Button("Totals unavailable — retry") { Task { await vm.fetchLedger() } }
+                        .font(.footnote)
+                        .tint(Color.sAccent)
+                }
+            }
 
-    let debit: Double
-    let credit: Double
-    let balance: Double
+            Divider()
 
-    var body: some View {
-        VStack(spacing: 10) {
-
-            summaryRow(title: "Total debit", value: debit, color: .sDestructive)
-            summaryRow(title: "Total credit", value: credit, color: Color(red: 0.086, green: 0.639, blue: 0.341))
-
-            Rectangle().fill(Color.sBorder).frame(height: 0.5)
-
-            summaryRow(
-                title: "Closing balance",
-                value: balance,
-                isBold: true,
-                color: balance > 0 ? .sDestructive : Color(red: 0.086, green: 0.639, blue: 0.341)
-            )
+            AdaptiveStatRow(stats: [
+                .init(label: "Total debit",
+                      value: vm.summaryFailed ? "—" : Money.text(vm.totalDebit),
+                      color: vm.summaryFailed ? .sForeground : .sDestructive),
+                .init(label: "Total credit",
+                      value: vm.summaryFailed ? "—" : Money.text(vm.totalCredit),
+                      color: vm.summaryFailed ? .sForeground : .sSuccess)
+            ])
         }
-        .padding(20)
-        .background(Color.sCard)
-    }
-
-    private func summaryRow(
-        title: String,
-        value: Double,
-        isBold: Bool = false,
-        color: Color = .primary
-    ) -> some View {
-
-        HStack {
-            Text(title)
-                .font(.scaled(13))
-                .foregroundColor(.sMutedFG)
-
-            Spacer()
-
-            Text(Money.text(value)).moneyLine()
-                .font(.system(
-                    size: isBold ? 15 : 13,
-                    weight: isBold ? .semibold : .regular
-                ))
-                .foregroundColor(color)
-        }
+        .padding(12)
+        .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
     }
 }
 
@@ -207,53 +163,38 @@ struct LedgerRowView: View {
     }
 
     private var amountColor: Color {
-        entry.debit > 0 ? .sDestructive : Color(red: 0.086, green: 0.639, blue: 0.341)
+        entry.debit > 0 ? .sDestructive : .sSuccess
     }
 
-    private var formattedDate: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "dd MMM yyyy"
-        return formatter.string(from: entry.createdAt)
+    private var subtitle: String {
+        var parts = [AppDate.text(entry.createdAt)]
+        if let desc = entry.description, !desc.isEmpty { parts.append(desc) }
+        return parts.joined(separator: " · ")
     }
 
     var body: some View {
-        HStack(spacing: 16) {
-
-            // LEFT SIDE
-            VStack(alignment: .leading, spacing: 4) {
-
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(titleText)
-                    .font(.scaled(13, weight: .semibold))
-                    .foregroundColor(.sForeground)
-
-                Text(formattedDate)
-                    .font(.scaled(11))
-                    .foregroundColor(.sMutedFG)
-
-                if let desc = entry.description, !desc.isEmpty {
-                    Text(desc)
-                        .font(.scaled(11))
-                        .foregroundColor(.sMutedFG)
-                }
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.primary)
+                Text(subtitle)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
 
-            Spacer()
+            Spacer(minLength: 8)
 
-            // RIGHT SIDE
-            VStack(alignment: .trailing, spacing: 4) {
-
-                Text(amountText)
-                    .foregroundColor(amountColor)
-                    .font(.scaled(13, weight: .medium))
-
+            VStack(alignment: .trailing, spacing: 3) {
+                Text(amountText).moneyLine()
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(amountColor)
                 Text("Bal \(Money.text(entry.balance))")
-                    .font(.scaled(11))
-                    .foregroundColor(.sMutedFG)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
+            .frame(minWidth: 88, alignment: .trailing)
         }
-        .padding(14)
-        .background(Color.sCard)
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
-        .cornerRadius(12)
     }
 }

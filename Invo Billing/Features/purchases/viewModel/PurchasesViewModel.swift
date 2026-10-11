@@ -18,6 +18,7 @@ final class PurchasesViewModel: ObservableObject {
     /// a perfectly confident typeface, that it owes nothing.
     @Published private(set) var totalDue: Double?
     @Published private(set) var bills: [PurchaseBill] = []
+    @Published private(set) var returns: [PurchaseReturn] = []
     @Published private(set) var isLoading = false
     @Published private(set) var isWorking = false
     /// Set when the last load failed, so totals already on screen can be marked as out
@@ -66,7 +67,7 @@ final class PurchasesViewModel: ObservableObject {
         if loadedCompanyID != companyID || loadedFilter != billFilter || loadedSearch != search {
             bills = []
         }
-        if loadedCompanyID != companyID { suppliers = []; totalDue = nil }
+        if loadedCompanyID != companyID { suppliers = []; totalDue = nil; returns = [] }
         loadedCompanyID = companyID
         loadedFilter = billFilter
         loadedSearch = search
@@ -77,14 +78,16 @@ final class PurchasesViewModel: ObservableObject {
             // make it up, and they should never be a refresh apart.
             async let suppliersResult = service.suppliers(companyID: companyID)
             async let billsResult = service.bills(companyID: companyID, status: billFilter, search: search, limit: pageSize)
+            async let returnsResult = service.returns(companyID: companyID)
 
-            let (supplierPage, billPage) = try await (suppliersResult, billsResult)
+            let (supplierPage, billPage, returnList) = try await (suppliersResult, billsResult, returnsResult)
             guard request == requestID else { return }
             suppliers = supplierPage.data
             totalDue = supplierPage.total_due
             bills = billPage
             billOffset = billPage.count
             hasMoreBills = billPage.count == pageSize
+            returns = returnList
             loadFailed = false
         } catch {
             guard request == requestID else { return }
@@ -157,7 +160,7 @@ final class PurchasesViewModel: ObservableObject {
 
         do {
             try await service.recordReturn(companyID: companyID, request: request)
-            message = "Sent back. Stock and the bill both updated."
+            message = "Return recorded. Stock and bill updated."
             await load()
             return true
         } catch {

@@ -34,221 +34,242 @@ struct MoreView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                Color.sBackground.ignoresSafeArea()
+            List {
 
-                VStack(spacing: 0) {
-                    ScrollView(.vertical, showsIndicators: false) {
-                        VStack(spacing: 0) {
+                // MARK: - Profile
+                Section {
+                    NavigationLink { ProfileView() } label: {
+                        HStack(spacing: 14) {
+                            Text(String(vm.profile?.email.prefix(1).uppercased() ?? "U"))
+                                .font(.title3.weight(.semibold))
+                                .foregroundColor(.sAccentFG)
+                                .frame(width: 48, height: 48)
+                                .background(Color.sAccent, in: RoundedRectangle(cornerRadius: 12))
 
-                            // MARK: - Profile Section
-                            VStack(alignment: .leading, spacing: 10) {
-                                Text("Profile")
-                                    .font(.scaled(13, weight: .medium))
-                                    .foregroundColor(.sMutedFG)
-
-                                NavigationLink {
-                                    ProfileView()
-                                } label: {
-                                    HStack(spacing: 14) {
-                                        Text(String(vm.profile?.email.prefix(1).uppercased() ?? "U"))
-                                            .font(.scaled(18, weight: .semibold))
-                                            .foregroundColor(.sAccentFG)
-                                            .frame(width: 52, height: 52)
-                                            .background(Color.sAccent)
-                                            .cornerRadius(12)
-
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text(vm.profile?.email ?? "Loading...")
-                                                .font(.scaled(14, weight: .medium))
-                                                .foregroundColor(.sForeground)
-                                            Text("View profile")
-                                                .font(.scaled(12))
-                                                .foregroundColor(.sMutedFG)
-                                        }
-
-                                        Spacer()
-
-                                        Image(systemName: "chevron.right")
-                                            .font(.scaled(12, weight: .semibold))
-                                            .foregroundColor(.sMutedFG)
-                                    }
-                                    .padding(14)
-                                    .background(Color.sCard)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .stroke(Color.sBorder, lineWidth: 0.5)
-                                    )
-                                    .cornerRadius(12)
-                                }
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(vm.profile?.email ?? "Loading…")
+                                    .font(.subheadline.weight(.medium))
+                                    .foregroundStyle(.primary)
+                                Text("View profile")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
                             }
-                            .padding(.horizontal, 20)
-                            .padding(.top, 20)
-                            .padding(.bottom, 24)
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
 
-                            salesSection
-                            purchasesSection
-                            moneySection
-                            inventorySection
-                            reportsSection
-                            businessSection
-                            settingsSection
+                // MARK: - Sales
+                Section("Sales") {
+                    NavigationLink { EstimateListView() } label: {
+                        MoreViewRow(icon: "doc.badge.clock", label: "Estimates")
+                    }
+                    NavigationLink { CreditNoteListView() } label: {
+                        MoreViewRow(icon: "doc.text.fill", label: "Credit notes")
+                    }
+                    NavigationLink { ChallanListView() } label: {
+                        MoreViewRow(icon: "shippingbox", label: "Delivery challans")
+                    }
+                }
 
-                            // MARK: - Security Section
-                            sectionHeader("Security")
-
-                            VStack(spacing: 0) {
-                                if biometricKind != .none {
-                                    HStack(spacing: 14) {
-                                        Image(systemName: biometricKind.icon)
-                                            .font(.scaled(14))
-                                            .foregroundColor(.sMutedFG)
-                                            .frame(width: 24)
-
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text(biometricKind.label)
-                                                .font(.scaled(14))
-                                                .foregroundColor(.sForeground)
-                                            Text("Unlock the app instead of staying logged out")
-                                                .font(.scaled(11.5))
-                                                .foregroundColor(.sMutedFG)
-                                        }
-
-                                        Spacer()
-
-                                        Toggle("", isOn: Binding(
-                                            get: { session.isBiometricLockEnabled },
-                                            set: { newValue in toggleBiometric(newValue) }
-                                        ))
-                                        .labelsHidden()
-                                        .tint(.sAccent)
-                                    }
-                                    .padding(.vertical, 12)
-
-                                    Divider().padding(.leading, 38)
-                                }
-
-                                NavigationLink {
-                                    ActiveSessionsView()
-                                } label: {
-                                    HStack(spacing: 14) {
-                                        Image(systemName: "person.2.badge.key")
-                                            .font(.scaled(14))
-                                            .foregroundColor(.sMutedFG)
-                                            .frame(width: 24)
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text("Active sessions")
-                                                .font(.scaled(14))
-                                                .foregroundColor(.sForeground)
-                                            Text("View and revoke logins on other devices")
-                                                .font(.scaled(11.5))
-                                                .foregroundColor(.sMutedFG)
-                                        }
-                                        Spacer()
-                                        Image(systemName: "chevron.right")
-                                            .font(.scaled(12))
-                                            .foregroundColor(.sMutedFG)
-                                    }
-                                    .padding(.vertical, 12)
-                                }
-                            }
-                            .padding(.horizontal, 14)
-                            .background(Color.sCard)
-                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
-                            .cornerRadius(12)
-                            .padding(.horizontal, 20)
-                            .padding(.bottom, 24)
-
-                            // MARK: - Support Section
-                            sectionHeader("Support")
-
-                            VStack(spacing: 0) {
-                                NavigationLink {
-                                    HelpView()
-                                } label: {
-                                    MoreViewRowBasic(label: "Help & Support")
-                                }
-
-                                #if DEBUG
-                                rowDivider()
-                                Button {
-                                    Task { await sendTestPush() }
-                                } label: {
-                                    MoreViewRowBasic(label: testPushStatus ?? "Send test notification")
-                                }
-                                #endif
-                            }
-                            .padding(.horizontal, 14)
-                            .background(Color.sCard)
-                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
-                            .cornerRadius(12)
-                            .padding(.horizontal, 20)
-                            .padding(.bottom, 24)
-
-                            // MARK: - Sign Out Button
-                            Button {
-                                showSignOutConfirmation = true
-                            } label: {
-                                HStack(spacing: 8) {
-                                    Image(systemName: "rectangle.portrait.and.arrow.right")
-                                        .font(.scaled(14, weight: .semibold))
-                                    Text("Sign out")
-                                        .font(.scaled(14, weight: .semibold))
-                                }
-                                .foregroundColor(.sForeground)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 14)
-                                .background(Color.sCard)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .stroke(Color.sBorder, lineWidth: 0.5)
-                                )
-                                .cornerRadius(10)
-                            }
-                            .padding(.horizontal, 20)
-                            .padding(.bottom, 10)
-
-                            // MARK: - Delete Account Button
-                            Button {
-                                showDeleteConfirmation = true
-                            } label: {
-                                HStack(spacing: 8) {
-                                    Image(systemName: "trash")
-                                        .font(.scaled(14))
-                                    Text("Delete account")
-                                        .font(.scaled(14, weight: .semibold))
-                                }
-                                .foregroundColor(.sDestructive.opacity(0.7))
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 14)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .stroke(Color.sDestructive.opacity(0.15), lineWidth: 0.5)
-                                )
-                                .cornerRadius(10)
-                            }
-                            .padding(.horizontal, 20)
-                            .padding(.bottom, 24)
-
-                            // MARK: - Version
-                            VStack(spacing: 6) {
-                                Text(appVersion)
-                                    .font(.scaled(11))
-                                    .foregroundColor(.sMutedFG)
-                                Text("© \(Calendar.current.component(.year, from: Date())) Invo Billing. All rights reserved.")
-                                    .font(.scaled(10))
-                                    .foregroundColor(.sMutedFG)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.bottom, 40)
+                // MARK: - Purchases
+                if session.companyRole.canSeeCosts {
+                    Section("Purchases") {
+                        NavigationLink { PurchasesView() } label: {
+                            MoreViewRow(icon: "shippingbox.fill", label: "Purchases")
+                        }
+                        NavigationLink { PurchaseLedgerView() } label: {
+                            MoreViewRow(icon: "text.book.closed.fill", label: "Purchase ledger")
                         }
                     }
                 }
+
+                // MARK: - Money
+                if session.companyRole.canSeeReports {
+                    Section("Money") {
+                        NavigationLink { PaymentsView() } label: {
+                            MoreViewRow(icon: "indianrupeesign.circle.fill", label: "Payments")
+                        }
+                        NavigationLink { ExpenseView() } label: {
+                            MoreViewRow(icon: "banknote.fill", label: "Expenses")
+                        }
+                        NavigationLink { LedgerView() } label: {
+                            MoreViewRow(icon: "book.fill", label: "Customer ledger")
+                        }
+                        NavigationLink { CashClosingView() } label: {
+                            MoreViewRow(icon: "indianrupeesign.square", label: "Cash closing")
+                        }
+                    }
+                }
+
+                // MARK: - Inventory
+                if session.companyRole.canEditCatalogue || session.companyRole.canSeeReports {
+                    Section("Inventory") {
+                        if session.companyRole.canEditCatalogue {
+                            NavigationLink { StocktakeView() } label: {
+                                MoreViewRow(icon: "checklist", label: "Stock count")
+                            }
+                        }
+                        if session.companyRole.canSeeReports {
+                            NavigationLink { StockReportView() } label: {
+                                MoreViewRow(icon: "shippingbox.fill", label: "Stock report")
+                            }
+                        }
+                    }
+                }
+
+                // MARK: - Reports
+                if session.companyRole.canSeeReports {
+                    Section("Reports") {
+                        NavigationLink { ProfitLossView() } label: {
+                            MoreViewRow(icon: "chart.bar.doc.horizontal", label: "Profit & Loss")
+                        }
+                        NavigationLink { GSTReportView() } label: {
+                            MoreViewRow(icon: "doc.text.magnifyingglass", label: "GST reports")
+                        }
+                        NavigationLink { AgingReportView() } label: {
+                            MoreViewRow(icon: "clock.badge.exclamationmark", label: "Client aging")
+                        }
+                        NavigationLink { SupplierAgingReportView() } label: {
+                            MoreViewRow(icon: "clock.badge.exclamationmark.fill", label: "Supplier aging")
+                        }
+                        NavigationLink { OverdueRemindersView() } label: {
+                            MoreViewRow(icon: "bell.badge.fill", label: "Overdue reminders")
+                        }
+                    }
+                }
+
+                // MARK: - Business
+                if session.companyRole.canChangeSettings || session.companyRole.canManageStaff {
+                    Section("Business") {
+                        if session.companyRole.canChangeSettings {
+                            NavigationLink { CompanyView() } label: {
+                                MoreViewRow(icon: "building.2.fill", label: "Company details")
+                            }
+                        }
+                        if session.companyRole.canManageStaff {
+                            NavigationLink { StaffView() } label: {
+                                MoreViewRow(icon: "person.2.fill", label: "Staff")
+                            }
+                        }
+                    }
+                }
+
+                // MARK: - Settings
+                Section("Settings") {
+                    Button { showTemplatePicker = true } label: {
+                        MoreViewRow(icon: "paintpalette.fill", label: "Invoice template", value: selectedTemplate.title)
+                    }
+                    Menu {
+                        ForEach(IndianStates.all, id: \.self) { state in
+                            Button {
+                                defaultState = state
+                                IndianStates.defaultState = state
+                            } label: {
+                                if defaultState == state {
+                                    Label(state, systemImage: "checkmark")
+                                } else {
+                                    Text(state)
+                                }
+                            }
+                        }
+                    } label: {
+                        MoreViewRow(icon: "map.fill", label: "Default state", value: defaultState.isEmpty ? "Not set" : defaultState)
+                    }
+                    notificationRow
+                }
+
+                // MARK: - Security
+                Section("Security") {
+                    if biometricKind != .none {
+                        HStack {
+                            Image(systemName: biometricKind.icon)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .frame(width: 24)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(biometricKind.label)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.primary)
+                                Text("Unlock the app instead of staying logged out")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Toggle("", isOn: Binding(
+                                get: { session.isBiometricLockEnabled },
+                                set: { newValue in toggleBiometric(newValue) }
+                            ))
+                            .labelsHidden()
+                            .tint(.sAccent)
+                        }
+                    }
+                    NavigationLink { ActiveSessionsView() } label: {
+                        MoreViewRow(icon: "person.2.badge.key", label: "Active sessions")
+                    }
+                }
+
+                // MARK: - Support
+                Section("Support") {
+                    NavigationLink { HelpView() } label: {
+                        MoreViewRowBasic(label: "Help & Support")
+                    }
+                    #if DEBUG
+                    Button {
+                        Task { await sendTestPush() }
+                    } label: {
+                        MoreViewRowBasic(label: testPushStatus ?? "Send test notification")
+                    }
+                    #endif
+                }
+
+                // MARK: - Sign Out / Delete
+                Section {
+                    Button {
+                        showSignOutConfirmation = true
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "rectangle.portrait.and.arrow.right")
+                                .font(.subheadline.weight(.semibold))
+                            Text("Sign out")
+                                .font(.subheadline.weight(.semibold))
+                        }
+                        .foregroundStyle(.primary)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                    }
+                }
+
+                Section {
+                    Button {
+                        showDeleteConfirmation = true
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "trash")
+                                .font(.body)
+                            Text("Delete account")
+                                .font(.subheadline.weight(.semibold))
+                        }
+                        .foregroundStyle(Color.sDestructive.opacity(0.8))
+                        .frame(maxWidth: .infinity, alignment: .center)
+                    }
+                }
+
+                // MARK: - Version
+                Section {
+                    VStack(spacing: 4) {
+                        Text(appVersion)
+                            .font(.caption)
+                        Text("© \(Calendar.current.component(.year, from: Date())) Invo Billing. All rights reserved.")
+                            .font(.caption)
+                    }
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity)
+                    .listRowBackground(Color.clear)
+                }
+
             }
+            .listStyle(.insetGrouped)
             .navigationTitle("More")
-            // Debug builds accept -startScreen <name> so a sub-screen can be opened directly
-            // for a screenshot pass. Checking the reports at an accessibility text size
-            // otherwise means driving the UI by hand. Compiled out of release.
             #if DEBUG
             .navigationDestination(isPresented: $debugScreenOpen) {
                 switch UserDefaults.standard.string(forKey: "startScreen") ?? "" {
@@ -276,11 +297,7 @@ struct MoreView: View {
             }
             #endif
             .navigationBarTitleDisplayMode(.large)
-            .task {
-                await vm.loadProfile()
-            }
-
-            // MARK: - Step 1 Warning Dialog
+            .task { await vm.loadProfile() }
             .confirmationDialog(
                 "Delete Account",
                 isPresented: $showDeleteConfirmation,
@@ -294,12 +311,6 @@ struct MoreView: View {
                 Text("This will permanently delete your account and ALL data — invoices, clients, companies, and expenses. This cannot be undone.")
             }
             .presentationCompactAdaptation(.sheet)
-
-            // MARK: - Step 2 Final Confirmation
-            //
-            // The password, not just a second tap. A bearer token was the only thing
-            // standing in front of deleting a business's books, so a phone picked up
-            // off a counter was enough to wipe them.
             .alert(
                 "Enter your password",
                 isPresented: $showFinalDeleteConfirmation
@@ -310,9 +321,7 @@ struct MoreView: View {
                     deletePassword = ""
                     Task {
                         let success = await authVM.deleteAccount(password: password)
-                        if !success {
-                            showDeleteError = true
-                        }
+                        if !success { showDeleteError = true }
                     }
                 }
                 Button("Cancel", role: .cancel) { deletePassword = "" }
@@ -324,8 +333,6 @@ struct MoreView: View {
             } message: {
                 Text(authVM.errorMessage ?? "Failed to delete account")
             }
-
-            // MARK: - Sign Out Confirmation
             .confirmationDialog(
                 "Sign out of Invo Billing?",
                 isPresented: $showSignOutConfirmation,
@@ -337,8 +344,6 @@ struct MoreView: View {
                 Button("Cancel", role: .cancel) {}
             }
             .presentationCompactAdaptation(.sheet)
-
-            // MARK: - Invoice Template Picker
             .sheet(isPresented: $showTemplatePicker) {
                 InvoiceTemplatePickerSheet(selected: $selectedTemplate) { template in
                     selectedTemplate = template
@@ -355,191 +360,6 @@ struct MoreView: View {
             } message: {
                 Text(biometricError ?? "")
             }
-        }
-    }
-
-    // MARK: - Modules
-    private var salesSection: some View {
-        menuSection("Sales") {
-            NavigationLink {
-                EstimateListView()
-            } label: {
-                MoreViewRow(icon: "doc.badge.clock", label: "Estimates")
-            }
-            rowDivider()
-            NavigationLink {
-                CreditNoteListView()
-            } label: {
-                MoreViewRow(icon: "doc.text.fill", label: "Credit notes")
-            }
-            rowDivider()
-            NavigationLink {
-                ChallanListView()
-            } label: {
-                MoreViewRow(icon: "shippingbox", label: "Delivery challans")
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var purchasesSection: some View {
-        if session.companyRole.canSeeCosts {
-            menuSection("Purchases") {
-                NavigationLink {
-                    PurchasesView()
-                } label: {
-                    MoreViewRow(icon: "shippingbox.fill", label: "Purchases")
-                }
-                rowDivider()
-                NavigationLink {
-                    PurchaseLedgerView()
-                } label: {
-                    MoreViewRow(icon: "text.book.closed.fill", label: "Purchase ledger")
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var moneySection: some View {
-        if session.companyRole.canSeeReports {
-            menuSection("Money") {
-                NavigationLink {
-                    PaymentsView()
-                } label: {
-                    MoreViewRow(icon: "indianrupeesign.circle.fill", label: "Payments")
-                }
-                rowDivider()
-                NavigationLink {
-                    ExpenseView()
-                } label: {
-                    MoreViewRow(icon: "banknote.fill", label: "Expenses")
-                }
-                rowDivider()
-                NavigationLink {
-                    LedgerView()
-                } label: {
-                    MoreViewRow(icon: "book.fill", label: "Customer ledger")
-                }
-                rowDivider()
-                NavigationLink {
-                    CashClosingView()
-                } label: {
-                    MoreViewRow(icon: "indianrupeesign.square", label: "Cash closing")
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var inventorySection: some View {
-        if session.companyRole.canEditCatalogue || session.companyRole.canSeeReports {
-            menuSection("Inventory") {
-                if session.companyRole.canEditCatalogue {
-                    NavigationLink {
-                        StocktakeView()
-                    } label: {
-                        MoreViewRow(icon: "checklist", label: "Stock count")
-                    }
-                }
-                if session.companyRole.canEditCatalogue && session.companyRole.canSeeReports {
-                    rowDivider()
-                }
-                if session.companyRole.canSeeReports {
-                    NavigationLink {
-                        StockReportView()
-                    } label: {
-                        MoreViewRow(icon: "shippingbox.fill", label: "Stock report")
-                    }
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var reportsSection: some View {
-        if session.companyRole.canSeeReports {
-            menuSection("Reports") {
-                NavigationLink {
-                    ProfitLossView()
-                } label: {
-                    MoreViewRow(icon: "chart.bar.doc.horizontal", label: "Profit & Loss")
-                }
-                rowDivider()
-                NavigationLink {
-                    GSTReportView()
-                } label: {
-                    MoreViewRow(icon: "doc.text.magnifyingglass", label: "GST reports")
-                }
-                rowDivider()
-                NavigationLink {
-                    AgingReportView()
-                } label: {
-                    MoreViewRow(icon: "clock.badge.exclamationmark", label: "Client aging")
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var businessSection: some View {
-        if session.companyRole.canChangeSettings || session.companyRole.canManageStaff {
-            menuSection("Business") {
-                if session.companyRole.canChangeSettings {
-                    NavigationLink {
-                        CompanyView()
-                    } label: {
-                        MoreViewRow(icon: "building.2.fill", label: "Company details")
-                    }
-                }
-                if session.companyRole.canChangeSettings && session.companyRole.canManageStaff {
-                    rowDivider()
-                }
-                if session.companyRole.canManageStaff {
-                    NavigationLink {
-                        StaffView()
-                    } label: {
-                        MoreViewRow(icon: "person.2.fill", label: "Staff")
-                    }
-                }
-            }
-        }
-    }
-
-    private var settingsSection: some View {
-        menuSection("Settings") {
-            Button {
-                showTemplatePicker = true
-            } label: {
-                MoreViewRow(
-                    icon: "paintpalette.fill",
-                    label: "Invoice template",
-                    value: selectedTemplate.title
-                )
-            }
-            rowDivider()
-            Menu {
-                ForEach(IndianStates.all, id: \.self) { state in
-                    Button {
-                        defaultState = state
-                        IndianStates.defaultState = state
-                    } label: {
-                        if defaultState == state {
-                            Label(state, systemImage: "checkmark")
-                        } else {
-                            Text(state)
-                        }
-                    }
-                }
-            } label: {
-                MoreViewRow(
-                    icon: "map.fill",
-                    label: "Default state",
-                    value: defaultState.isEmpty ? "Not set" : defaultState
-                )
-            }
-            rowDivider()
-            notificationRow
         }
     }
 
@@ -565,7 +385,7 @@ struct MoreView: View {
 
     #if DEBUG
     private func sendTestPush() async {
-        testPushStatus = "Sending..."
+        testPushStatus = "Sending…"
         guard let url = URL(string: "\(AppEnvironment.baseURL)/push/test") else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -590,14 +410,19 @@ struct MoreView: View {
     /// Reminders about invoices that have become overdue. Off until asked for.
     private var notificationRow: some View {
         HStack {
-            MoreViewRow(icon: "bell.fill", label: "Overdue reminders", showsChevron: false)
+            Image(systemName: "bell.fill")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .frame(width: 24)
+            Text("Overdue reminders")
+                .font(.subheadline)
+                .foregroundStyle(.primary)
+            Spacer()
             Toggle("", isOn: Binding(
                 get: { notificationsOn },
                 set: { wanted in
                     if wanted {
                         Task {
-                            // Already refused once: iOS will not ask again, so the only
-                            // honest thing is to send them where they can change it.
                             if notificationsDenied {
                                 openSystemSettings()
                             } else {
@@ -606,12 +431,12 @@ struct MoreView: View {
                             }
                         }
                     } else {
-                        // Turning them off is a system setting; the app cannot revoke it.
                         openSystemSettings()
                     }
                 }
             ))
             .labelsHidden()
+            .tint(.sAccent)
         }
         .task { await refreshNotificationStatus() }
     }
@@ -626,93 +451,43 @@ struct MoreView: View {
         guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
         UIApplication.shared.open(url)
     }
-
-    // MARK: - Helpers
-    private func menuSection<Content: View>(
-        _ title: String,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        VStack(spacing: 0) {
-            sectionHeader(title)
-            VStack(spacing: 0, content: content)
-                .padding(.horizontal, 14)
-                .background(Color.sCard)
-                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
-                .cornerRadius(12)
-                .padding(.horizontal, 20)
-        }
-        .padding(.bottom, 24)
-    }
-
-    private func sectionHeader(_ title: String) -> some View {
-        Text(title)
-            .font(.scaled(13, weight: .medium))
-            .foregroundColor(.sMutedFG)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 20)
-            .padding(.bottom, 10)
-            .accessibilityAddTraits(.isHeader)
-    }
-
-    private func rowDivider() -> some View {
-        Rectangle()
-            .fill(Color.sBorder)
-            .frame(height: 0.5)
-    }
 }
 
-// MARK: - More View Row (with icon)
+// MARK: - More View Row (icon + label + optional trailing value)
 struct MoreViewRow: View {
     let icon: String
     let label: String
     var value: String? = nil
-    /// A row that carries its own control — a toggle, say — is not tappable, so it must
-    /// not wear a disclosure chevron promising a screen that does not exist.
-    var showsChevron: Bool = true
 
     var body: some View {
         HStack(spacing: 14) {
             Image(systemName: icon)
-                .font(.scaled(14))
-                .foregroundColor(.sMutedFG)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
                 .frame(width: 24)
 
             Text(label)
-                .font(.scaled(14))
-                .foregroundColor(.sForeground)
+                .font(.subheadline)
+                .foregroundStyle(.primary)
 
             Spacer()
 
             if let value {
                 Text(value)
-                    .font(.scaled(13))
-                    .foregroundColor(.sMutedFG)
-            }
-
-            if showsChevron {
-                Image(systemName: "chevron.right")
-                    .font(.scaled(12, weight: .semibold))
-                    .foregroundColor(.sMutedFG)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
             }
         }
-        .padding(.vertical, 12)
     }
 }
 
-// MARK: - More View Row Basic (no icon)
+// MARK: - More View Row Basic (label only, no icon)
 struct MoreViewRowBasic: View {
     let label: String
 
     var body: some View {
-        HStack {
-            Text(label)
-                .font(.scaled(14))
-                .foregroundColor(.sForeground)
-            Spacer()
-            Image(systemName: "chevron.right")
-                .font(.scaled(12, weight: .semibold))
-                .foregroundColor(.sMutedFG)
-        }
-        .padding(.vertical, 12)
+        Text(label)
+            .font(.subheadline)
+            .foregroundStyle(.primary)
     }
 }

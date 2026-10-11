@@ -12,6 +12,7 @@ class InvoiceViewModel: ObservableObject {
     @Published var dueDate: Date = Date().addingTimeInterval(86400 * 7)
     @Published var discount: Double = 0
     @Published var tdsRate: Double = 0
+    @Published var docType: String = ""  // "" = Tax Invoice, "CREDIT INVOICE"
 
     // MARK: - UI State
     @Published var isLoading = false
@@ -276,6 +277,7 @@ class InvoiceViewModel: ObservableObject {
             due_date: formatter.string(from: dueDate),
             discount: discount,
             tds_rate: tdsRate,
+            doc_type: docType,
             items: items.map {
                 InvoiceItemRequest(
                     item_id: $0.item.id,
@@ -636,6 +638,7 @@ class InvoiceViewModel: ObservableObject {
         dueDate = Date().addingTimeInterval(86400 * 7)
         discount = 0
         tdsRate = 0
+        docType = ""
     }
 
     /// Deletes a draft invoice. Returns true so the caller can dismiss the detail screen,

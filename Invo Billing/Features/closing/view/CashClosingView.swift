@@ -37,32 +37,27 @@ struct CashClosingView: View {
     }
 
     var body: some View {
-        ZStack {
-            Color.sBackground.ignoresSafeArea()
-
+        Group {
             if vm.isLoading && vm.today == nil {
-                ProgressView().tint(.sAccent)
+                ProgressView()
+                    .tint(.sAccent)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 14) {
-                        expectedCard
-                        countCard
+                Form {
+                    Section {
+                        DatePicker("Day", selection: $date, displayedComponents: .date)
+                    }
 
-                        if !vm.recent.isEmpty {
-                            Text("Earlier days")
-                                .font(.scaled(13, weight: .medium))
-                                .foregroundColor(.sMutedFG)
-                                .padding(.top, 6)
+                    expectedSection
+                    countSection
 
+                    if !vm.recent.isEmpty {
+                        Section("Earlier days") {
                             ForEach(vm.recent) { day in
-                                dayCard(day)
+                                dayRow(day)
                             }
                         }
-
-                        Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)
                 }
                 .refreshable { await vm.load(date: date) }
             }
@@ -84,117 +79,88 @@ struct CashClosingView: View {
         }
     }
 
-    private var expectedCard: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            DatePicker("Day", selection: $date, displayedComponents: .date)
-                .font(.scaled(13))
-
-            Divider().padding(.vertical, 8)
-
-            Text("Should be in the drawer")
-                .font(.scaled(13))
-                .foregroundColor(.sMutedFG)
-
-            if vm.loadFailed {
-                Text("Couldn't read this day")
-                    .font(.scaled(20, weight: .semibold))
-                    .foregroundColor(.sMutedFG)
-                Button("Try again") { Task { await vm.load(date: date) } }
-                    .font(.scaled(13, weight: .medium))
-                    .foregroundColor(.sAccent)
-            } else if vm.today == nil {
-                // Loading. A placeholder rather than a zero, which would read as a
-                // day that genuinely took nothing.
-                Text("—")
-                    .font(.scaled(26, weight: .bold))
-                    .foregroundColor(.sMutedFG)
-            } else {
-                Text(Money.text(liveExpected)).moneyLine()
-                    .font(.scaled(26, weight: .bold))
-                    .foregroundColor(.sForeground)
+    // The arithmetic, not just its answer. A shopkeeper who disagrees with the figure
+    // needs to see which part they disagree with — and the single number this screen
+    // used to show was wrong for anybody who keeps a float or pays a supplier in cash.
+    private var expectedSection: some View {
+        Section {
+            VStack(alignment: .leading, spacing: 1) {
+                Text("Should be in the drawer")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                if vm.loadFailed {
+                    Text("Couldn't read this day")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Button("Try again") { Task { await vm.load(date: date) } }
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(Color.sAccent)
+                        .buttonStyle(.borderless)
+                } else if vm.today == nil {
+                    // Loading. A placeholder rather than a zero, which would read as a
+                    // day that genuinely took nothing.
+                    Text("—")
+                        .font(.title.bold())
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text(Money.text(liveExpected)).moneyLine()
+                        .font(.title.bold())
+                        .foregroundStyle(.primary)
+                }
             }
+            .padding(.vertical, 2)
 
-            // The arithmetic, not just its answer. A shopkeeper who disagrees with the
-            // figure needs to see which part they disagree with — and the single
-            // number this screen used to show was wrong for anybody who keeps a float
-            // or pays a supplier in cash.
             if vm.today != nil {
-            VStack(spacing: 6) {
                 breakdownRow("In the drawer this morning", openingValue, isOut: false)
-
                 ForEach(vm.today?.cashIn ?? []) { line in
                     breakdownRow(line.label, line.amount, isOut: false, count: line.count)
                 }
                 ForEach(vm.today?.cashOut ?? []) { line in
                     breakdownRow(line.label, line.amount, isOut: true, count: line.count)
                 }
-
-                if (vm.today?.cashIn.isEmpty ?? true) && (vm.today?.cashOut.isEmpty ?? true) {
-                    Text("Nothing has gone in or out of the till today.")
-                        .font(.scaled(12))
-                        .foregroundColor(.sMutedFG)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
             }
-            .padding(.top, 10)
+
+            if showOpeningField {
+                HStack {
+                    Text("₹").foregroundStyle(.secondary)
+                    TextField("What was in it this morning", text: $openingOverride)
+                        .keyboardType(.decimalPad)
+                }
             }
 
             Button(showOpeningField ? "Use yesterday's figure" : "The float was different") {
                 if showOpeningField { openingOverride = "" }
                 showOpeningField.toggle()
             }
-            .font(.scaled(12, weight: .medium))
-            .foregroundColor(.sAccent)
-            .padding(.top, 2)
-
-            if showOpeningField {
-                HStack {
-                    Text("₹")
-                        .font(.scaled(15))
-                        .foregroundColor(.sMutedFG)
-                    TextField("What was in it this morning", text: $openingOverride)
-                        .keyboardType(.decimalPad)
-                        .font(.scaled(15))
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(Color.sBackground)
-                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.sInput, lineWidth: 0.5))
-                .cornerRadius(8)
+            .font(.subheadline)
+            .foregroundStyle(Color.sAccent)
+        } footer: {
+            if vm.today != nil,
+               (vm.today?.cashIn.isEmpty ?? true) && (vm.today?.cashOut.isEmpty ?? true) {
+                Text("Nothing has gone in or out of the till today.")
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(18)
-        .background(Color.sCard)
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.sBorder, lineWidth: 0.5))
-        .cornerRadius(16)
     }
 
     /// One line of the drawer's arithmetic: what it was and which way it moved.
     private func breakdownRow(
         _ label: String, _ amount: Double, isOut: Bool, count: Int? = nil
     ) -> some View {
-        HStack {
+        LabeledContent {
+            Text((isOut ? "− " : "+ ") + Money.text(amount)).moneyLine()
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(isOut ? Color.sDestructive : Color.sForeground)
+        } label: {
             Text(count.flatMap { $0 > 0 ? "\(label) (\($0))" : nil } ?? label)
-                .font(.scaled(12))
-                .foregroundColor(.sMutedFG)
-            Spacer()
-            Text((isOut ? "− " : "+ ") + Money.text(amount))
-                .font(.scaled(12, weight: .medium))
-                .foregroundColor(isOut ? .sDestructive : .sForeground)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
         }
     }
 
-    private var countCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(vm.today?.closed == true ? "Counted" : "Count the drawer")
-                .font(.scaled(13, weight: .medium))
-                .foregroundColor(.sMutedFG)
-
+    private var countSection: some View {
+        Section {
             HStack {
-                Text("₹")
-                    .font(.scaled(17))
-                    .foregroundColor(.sMutedFG)
+                Text("₹").foregroundStyle(.secondary)
                 TextField(
                     vm.today?.closed == true
                         ? Money.text(vm.today?.counted_cash ?? 0)
@@ -202,37 +168,10 @@ struct CashClosingView: View {
                     text: $counted
                 )
                 .keyboardType(.decimalPad)
-                .font(.scaled(17))
                 .focused($countFocused)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .background(Color.sBackground)
-            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.sInput, lineWidth: 0.5))
-            .cornerRadius(8)
-
-            if let difference = liveDifference {
-                Text(differenceText(difference))
-                    .font(.scaled(13, weight: .medium))
-                    .foregroundColor(differenceColour(difference))
-            } else if let today = vm.today, today.closed {
-                Text(today.differenceText)
-                    .font(.scaled(13, weight: .medium))
-                    .foregroundColor(differenceColour(today.difference))
-                if !today.note.isEmpty {
-                    Text(today.note)
-                        .font(.scaled(12))
-                        .foregroundColor(.sMutedFG)
-                }
             }
 
             TextField("Note (optional)", text: $note)
-                .font(.scaled(14))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
-                .background(Color.sBackground)
-                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.sInput, lineWidth: 0.5))
-                .cornerRadius(8)
 
             Button {
                 guard let value = countedValue else { return }
@@ -250,46 +189,51 @@ struct CashClosingView: View {
                 }
             } label: {
                 Text(vm.today?.closed == true ? "Save the new count" : "Close the day")
-                    .font(.scaled(15, weight: .semibold))
-                    .foregroundColor(.sAccentFG)
+                    .font(.subheadline.weight(.semibold))
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 13)
-                    .background(
-                        countedValue == nil || !vm.isReady(for: date)
-                            ? Color.sPrimary.opacity(0.4)
-                            : Color.sPrimary
-                    )
-                    .cornerRadius(10)
             }
+            .buttonStyle(.borderedProminent)
+            .tint(.sAccent)
+            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
             // Waits for the day's own figures. Counted against a stale or missing
             // expectation, a closing records a difference that was never real.
             .disabled(countedValue == nil || !vm.isReady(for: date))
+        } header: {
+            Text(vm.today?.closed == true ? "Counted" : "Count the drawer")
+        } footer: {
+            if let difference = liveDifference {
+                Text(differenceText(difference))
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(differenceColour(difference))
+            } else if let today = vm.today, today.closed {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(today.differenceText)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(differenceColour(today.difference))
+                    if !today.note.isEmpty {
+                        Text(today.note)
+                    }
+                }
+            }
         }
-        .padding(18)
-        .background(Color.sCard)
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.sBorder, lineWidth: 0.5))
-        .cornerRadius(16)
     }
 
-    private func dayCard(_ day: DayClosing) -> some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
+    private func dayRow(_ day: DayClosing) -> some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(AppDate.text(fromWire: day.date))
-                    .font(.scaled(14, weight: .medium))
-                    .foregroundColor(.sForeground)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.primary)
                 Text("\(Money.text(day.expected_cash)) expected · \(Money.text(day.counted_cash)) counted")
-                    .font(.scaled(12))
-                    .foregroundColor(.sMutedFG)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
-            Spacer()
+            Spacer(minLength: 8)
             Text(day.differenceText)
-                .font(.scaled(12, weight: .medium))
-                .foregroundColor(differenceColour(day.difference))
+                .font(.footnote.weight(.medium))
+                .foregroundStyle(differenceColour(day.difference))
         }
-        .padding(14)
-        .background(Color.sCard)
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.sBorder, lineWidth: 0.5))
-        .cornerRadius(14)
     }
 
     private func differenceText(_ difference: Double) -> String {
@@ -301,6 +245,6 @@ struct CashClosingView: View {
     private func differenceColour(_ difference: Double) -> Color {
         if difference < -0.004 { return .sDestructive }
         if difference > 0.004 { return .sAccent }
-        return Color(red: 0.086, green: 0.639, blue: 0.341)
+        return .sSuccess
     }
 }

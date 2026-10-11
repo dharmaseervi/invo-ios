@@ -48,6 +48,7 @@ struct PurchaseLedgerView: View {
                         } label: {
                             supplierRow(supplier)
                         }
+                        .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
                         .task {
                             if supplier.id == vm.suppliers.suffix(5).first?.id {
                                 await vm.loadMore()
@@ -74,9 +75,7 @@ struct PurchaseLedgerView: View {
                 }
             }
         }
-        .listStyle(.insetGrouped)
-        .scrollContentBackground(.hidden)
-        .background(Color.sBackground)
+        .listStyle(.plain)
         .navigationTitle("Purchase ledger")
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $search, placement: .navigationBarDrawer(displayMode: .always),
@@ -92,41 +91,42 @@ struct PurchaseLedgerView: View {
     }
 
     private func supplierRow(_ supplier: Supplier) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            VStack(alignment: .leading, spacing: 5) {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(supplier.name)
-                    .font(.scaled(16, weight: .medium))
-                    .foregroundColor(.sForeground)
-                if !supplier.phone.isEmpty {
-                    Text(supplier.phone)
-                        .font(.scaled(13))
-                        .foregroundColor(.sMutedFG)
-                }
-                Text("\(supplier.open_bills) unpaid bill\(supplier.open_bills == 1 ? "" : "s")")
-                    .font(.scaled(12))
-                    .foregroundColor(.sMutedFG)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                Text([supplier.phone,
+                      "\(supplier.open_bills) unpaid bill\(supplier.open_bills == 1 ? "" : "s")"]
+                        .filter { !$0.isEmpty }
+                        .joined(separator: " · "))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
             Spacer(minLength: 8)
-            VStack(alignment: .trailing, spacing: 5) {
+            VStack(alignment: .trailing, spacing: 3) {
                 if supplier.due > 0 {
                     Text(Money.text(supplier.due)).moneyLine()
-                        .font(.scaled(16, weight: .semibold))
-                        .foregroundColor(.sForeground)
-                    Text("Owed to supplier")
-                        .font(.scaled(12))
-                        .foregroundColor(.sMutedFG)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                } else if supplier.heldInAdvance <= 0 {
+                    Text("Settled")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.secondary)
                 }
                 if supplier.heldInAdvance > 0 {
                     Text("\(Money.text(supplier.heldInAdvance)) paid ahead")
-                        .font(.scaled(12))
-                        .foregroundColor(.sAccent)
-                } else if supplier.due == 0 {
-                    Text("Settled")
-                        .font(.scaled(13, weight: .medium))
-                        .foregroundColor(.sMutedFG)
+                        .font(.caption)
+                        .foregroundStyle(Color.sAccent)
+                } else if supplier.due > 0 {
+                    Text("Owed")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
+            .frame(minWidth: 88, alignment: .trailing)
         }
-        .padding(.vertical, 6)
     }
 }

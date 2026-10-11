@@ -18,7 +18,7 @@ struct EmailVerificationView: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
-                    Spacer().frame(height: 52)
+                    Spacer().frame(minHeight: 52)
 
                     // MARK: - Logo
                     VStack(spacing: 12) {
@@ -27,15 +27,15 @@ struct EmailVerificationView: View {
                                 .fill(Color.sAccent)
                                 .frame(width: 44, height: 44)
                             Image(systemName: "envelope.badge.fill")
-                                .font(.scaled(20, weight: .medium))
+                                .font(.title3.weight(.medium))
                                 .foregroundColor(.sAccentFG)
                         }
                         VStack(spacing: 4) {
                             Text("Verify your email")
-                                .font(.scaled(20, weight: .semibold))
+                                .font(.title3.weight(.semibold))
                                 .foregroundColor(.sForeground)
                             Text("Enter the 6-digit code sent to\n\(viewModel.verificationEmail)")
-                                .font(.scaled(13))
+                                .font(.subheadline)
                                 .foregroundColor(.sMutedFG)
                                 .multilineTextAlignment(.center)
                         }
@@ -47,12 +47,12 @@ struct EmailVerificationView: View {
 
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Verification code")
-                                .font(.scaled(13, weight: .medium))
+                                .font(.subheadline.weight(.medium))
                                 .foregroundColor(.sForeground)
 
                             TextField("000000", text: $viewModel.verificationCode)
                                 .keyboardType(.numberPad)
-                                .font(.scaled(28, weight: .bold))
+                                .font(.title.weight(.bold))
                                 .tracking(14)
                                 .multilineTextAlignment(.center)
                                 .foregroundColor(.sForeground)
@@ -89,10 +89,10 @@ struct EmailVerificationView: View {
                         // Info banner
                         HStack(spacing: 8) {
                             Image(systemName: "clock")
-                                .font(.scaled(13))
+                                .font(.subheadline)
                                 .foregroundColor(.sMutedFG)
                             Text("Code expires in 10 minutes")
-                                .font(.scaled(13))
+                                .font(.subheadline)
                                 .foregroundColor(.sMutedFG)
                             Spacer()
                         }
@@ -108,10 +108,10 @@ struct EmailVerificationView: View {
                         if let error = viewModel.errorMessage {
                             HStack(spacing: 8) {
                                 Image(systemName: "exclamationmark.circle")
-                                    .font(.scaled(13))
+                                    .font(.subheadline)
                                     .foregroundColor(.sDestructive)
                                 Text(error)
-                                    .font(.scaled(13))
+                                    .font(.subheadline)
                                     .foregroundColor(.sDestructive)
                                 Spacer()
                             }
@@ -137,7 +137,7 @@ struct EmailVerificationView: View {
                                         .scaleEffect(0.85)
                                 } else {
                                     Text("Verify account")
-                                        .font(.scaled(15, weight: .semibold))
+                                        .font(.body.weight(.semibold))
                                         .foregroundColor(.sAccentFG)
                                 }
                             }
@@ -153,12 +153,12 @@ struct EmailVerificationView: View {
                             Task { await viewModel.resendVerification() }
                         } label: {
                             Text("Resend code")
-                                .font(.scaled(13, weight: .medium))
+                                .font(.subheadline.weight(.medium))
                                 .foregroundColor(.sAccent)
                         }
                         .disabled(viewModel.isLoading)
                     }
-                    .padding(20)
+                    .padding(AppSpacing.card)
                     .background(Color.sCard)
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
@@ -169,7 +169,7 @@ struct EmailVerificationView: View {
                         color: Color(UIColor.label).opacity(0.06),
                         radius: 20, x: 0, y: 8
                     )
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, AppSpacing.page)
                     .padding(.bottom, 40)
                 }
             }

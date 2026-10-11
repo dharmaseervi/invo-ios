@@ -17,7 +17,7 @@ struct InvoiceCustomerSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Customer")
-                .font(.scaled(13, weight: .medium))
+                .font(.subheadline.weight(.medium))
                 .foregroundColor(.sMutedFG)
 
             VStack(spacing: 0) {
@@ -27,7 +27,7 @@ struct InvoiceCustomerSection: View {
                         if let client = selectedClient {
                             if let quickSale = client.quickSaleAccount {
                                 Image(systemName: quickSale.icon)
-                                    .font(.scaled(16, weight: .semibold))
+                                    .font(.subheadline.weight(.semibold))
                                     .foregroundColor(.sAccentFG)
                                     .frame(width: 40, height: 40)
                                     .background(Color.sAccent)
@@ -35,15 +35,15 @@ struct InvoiceCustomerSection: View {
 
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text("\(client.name) sale")
-                                        .font(.scaled(15, weight: .semibold))
+                                        .font(.subheadline.weight(.semibold))
                                         .foregroundColor(.sForeground)
                                     Text("No customer details needed")
-                                        .font(.scaled(12))
+                                        .font(.footnote)
                                         .foregroundColor(.sMutedFG)
                                 }
                             } else {
                             Text(String(client.name.prefix(1)).uppercased())
-                                .font(.scaled(14, weight: .semibold))
+                                .font(.subheadline.weight(.semibold))
                                 .foregroundColor(.sAccentFG)
                                 .frame(width: 40, height: 40)
                                 .background(Color.sAccent)
@@ -51,12 +51,12 @@ struct InvoiceCustomerSection: View {
 
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(client.name)
-                                    .font(.scaled(15, weight: .semibold))
+                                    .font(.subheadline.weight(.semibold))
                                     .foregroundColor(.sForeground)
                                 let secondary = client.email.isEmpty ? client.phone : client.email
                                 if !secondary.isEmpty {
                                     Text(secondary)
-                                        .font(.scaled(12))
+                                        .font(.footnote)
                                         .foregroundColor(.sMutedFG)
                                         .lineLimit(1)
                                 }
@@ -64,7 +64,7 @@ struct InvoiceCustomerSection: View {
                             }
                         } else {
                             Image(systemName: "person.crop.circle.badge.plus")
-                                .font(.scaled(20))
+                                .font(.title3)
                                 .foregroundColor(.sAccent)
                                 .frame(width: 40, height: 40)
                                 .background(Color.sAccentMuted)
@@ -72,10 +72,10 @@ struct InvoiceCustomerSection: View {
 
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Select client")
-                                    .font(.scaled(15, weight: .medium))
+                                    .font(.subheadline.weight(.medium))
                                     .foregroundColor(.sForeground)
                                 Text("Choose who this invoice is for")
-                                    .font(.scaled(12))
+                                    .font(.footnote)
                                     .foregroundColor(.sMutedFG)
                             }
                         }
@@ -83,10 +83,10 @@ struct InvoiceCustomerSection: View {
                         Spacer()
 
                         Text(selectedClient == nil ? "" : "Change")
-                            .font(.scaled(13, weight: .medium))
+                            .font(.subheadline.weight(.medium))
                             .foregroundColor(.sAccent)
                         Image(systemName: "chevron.right")
-                            .font(.scaled(12, weight: .semibold))
+                            .font(.footnote.weight(.semibold))
                             .foregroundColor(.sMutedFG)
                     }
                     .padding(14)
@@ -110,12 +110,12 @@ struct InvoiceCustomerSection: View {
                     VStack(spacing: 0) {
                         HStack {
                             Text("Ship to")
-                                .font(.scaled(12, weight: .medium))
+                                .font(.footnote.weight(.medium))
                                 .foregroundColor(.sMutedFG)
                             Spacer()
                             Toggle(isOn: $isShippingSameAsBilling) {
                                 Text("Same as billing")
-                                    .font(.scaled(12))
+                                    .font(.footnote)
                                     .foregroundColor(.sMutedFG)
                             }
                             .toggleStyle(.switch)
@@ -154,7 +154,7 @@ struct InvoiceCustomerSection: View {
     ) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
-                .font(.scaled(12, weight: .medium))
+                .font(.footnote.weight(.medium))
                 .foregroundColor(.sMutedFG)
             addressBody(address: address, emptyText: emptyText, action: action)
         }
@@ -171,31 +171,31 @@ struct InvoiceCustomerSection: View {
             HStack(alignment: .top, spacing: 10) {
                 if address.isEmpty {
                     Image(systemName: "plus.circle")
-                        .font(.scaled(14))
+                        .font(.body)
                         .foregroundColor(.sAccent)
                     Text(emptyText)
-                        .font(.scaled(13, weight: .medium))
+                        .font(.subheadline.weight(.medium))
                         .foregroundColor(.sAccent)
                 } else {
                     VStack(alignment: .leading, spacing: 2) {
                         if !address.name.isEmpty {
                             Text(address.name)
-                                .font(.scaled(13, weight: .medium))
+                                .font(.subheadline.weight(.medium))
                                 .foregroundColor(.sForeground)
                         }
                         Text(formatted(address))
-                            .font(.scaled(13))
+                            .font(.subheadline)
                             .foregroundColor(.sForeground)
                             .lineLimit(2)
                         if !address.gstNumber.isEmpty {
                             Text("GSTIN \(address.gstNumber)")
-                                .font(.scaled(11))
+                                .font(.caption)
                                 .foregroundColor(.sMutedFG)
                         }
                     }
                     Spacer()
                     Text("Edit")
-                        .font(.scaled(13, weight: .medium))
+                        .font(.subheadline.weight(.medium))
                         .foregroundColor(.sAccent)
                 }
             }

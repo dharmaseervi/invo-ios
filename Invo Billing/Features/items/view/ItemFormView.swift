@@ -25,9 +25,9 @@ struct ItemFormView: View {
                             } label: {
                                 HStack(spacing: 8) {
                                     Image(systemName: "shippingbox.fill")
-                                        .font(.scaled(13, weight: .semibold))
+                                        .font(.subheadline.weight(.semibold))
                                     Text("Record stock received")
-                                        .font(.scaled(14, weight: .medium))
+                                        .font(.subheadline.weight(.medium))
                                 }
                                 .foregroundColor(.sAccent)
                                 .frame(maxWidth: .infinity)
@@ -39,7 +39,7 @@ struct ItemFormView: View {
                                 )
                                 .cornerRadius(10)
                             }
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, AppSpacing.page)
                             .padding(.top, 16)
                         }
                     }
@@ -66,9 +66,9 @@ struct ItemFormView: View {
                                     .scaleEffect(0.85)
                             } else {
                                 Image(systemName: "checkmark.circle.fill")
-                                    .font(.scaled(13, weight: .semibold))
+                                    .font(.subheadline.weight(.semibold))
                                 Text(vm.isEditMode ? "Save changes" : "Create item")
-                                    .font(.scaled(15, weight: .semibold))
+                                    .font(.subheadline.weight(.semibold))
                             }
                         }
                         .foregroundColor(.sAccentFG)
@@ -84,7 +84,7 @@ struct ItemFormView: View {
                             vm.resetForm()
                         }) {
                             Text("Clear")
-                                .font(.scaled(14, weight: .medium))
+                                .font(.subheadline.weight(.medium))
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 14)
                                 .foregroundColor(.sForeground)
@@ -98,7 +98,7 @@ struct ItemFormView: View {
                         .disabled(vm.isLoading)
                     }
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, AppSpacing.page)
                 .padding(.top, 14)
                 .padding(.bottom, 40)
                 .background(Color.sBackground)

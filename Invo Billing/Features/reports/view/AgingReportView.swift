@@ -2,10 +2,11 @@ import SwiftUI
 
 struct AgingReportView: View {
     @StateObject private var vm = AgingReportViewModel()
+    @State private var shareURL: URL?
 
     private let bucketColors: [Color] = [
-        Color(UIColor.systemGray),                          // Current
-        Color(red: 0.851, green: 0.588, blue: 0.082),        // 1-30
+        .sNeutral,                          // Current
+        .sWarning,        // 1-30
         Color(red: 0.910, green: 0.451, blue: 0.098),        // 31-60
         Color(red: 0.863, green: 0.259, blue: 0.149),        // 61-90
         Color(red: 0.702, green: 0.098, blue: 0.098)         // 90+
@@ -13,27 +14,56 @@ struct AgingReportView: View {
     private let bucketLabels = ["Current", "1-30d", "31-60d", "61-90d", "90d+"]
 
     var body: some View {
-        ZStack {
-            Color.sBackground.ignoresSafeArea()
-
+        Group {
             if vm.isLoading {
-                ProgressView().tint(.sAccent)
+                ProgressView()
+                    .tint(.sAccent)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let report = vm.report, report.clients.isEmpty {
                 emptyState
             } else if let report = vm.report {
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 20) {
-                        summaryCard(report)
-                        clientList(report)
+                List {
+                    summaryCard(report)
+                        .padding(.horizontal, AppSpacing.page)
+                        .padding(.top, 8)
+                        .padding(.bottom, 4)
+                        .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+
+                    ForEach(report.clients) { row in
+                        NavigationLink {
+                            LedgerListView(clientID: row.client_id)
+                        } label: {
+                            AgingClientRow(row: row, colors: bucketColors)
+                        }
+                        .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+                        .listRowSeparator(.hidden, edges: row.id == report.clients.first?.id ? .top : [])
                     }
-                    .padding(.top, 16)
-                    .padding(.bottom, 40)
                 }
+                .listStyle(.plain)
+                .contentMargins(.bottom, 16, for: .scrollContent)
                 .refreshable { await vm.load() }
             }
         }
         .navigationTitle("Client Aging")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    if let url = vm.exportCSV() { shareURL = url }
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                }
+                .disabled(vm.report == nil)
+            }
+        }
+        .sheet(item: Binding(
+            get: { shareURL.map { AgingShareWrapper(url: $0) } },
+            set: { shareURL = $0?.url }
+        )) { wrapper in
+            AgingShareSheet(activityItems: [wrapper.url])
+        }
         .task { await vm.load() }
         .alert("Error", isPresented: $vm.showAlert) {
             Button("OK", role: .cancel) {}
@@ -44,20 +74,20 @@ struct AgingReportView: View {
 
     // MARK: - Summary
     private func summaryCard(_ report: AgingReportResponse) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 1) {
                 Text("Total outstanding")
-                    .font(.scaled(13))
+                    .font(.subheadline)
                     .foregroundColor(.sMutedFG)
                 Text(Money.text(report.grand_total)).moneyLine()
-                    .font(.scaled(26, weight: .bold))
+                    .font(.title.bold())
                     .foregroundColor(.sForeground)
                 Text("Across \(report.clients.count) client\(report.clients.count == 1 ? "" : "s") · as of \(AppDate.text(fromWire: report.as_of))")
-                    .font(.scaled(12))
+                    .font(.footnote)
                     .foregroundColor(.sMutedFG)
             }
 
-            Rectangle().fill(Color.sBorder).frame(height: 0.5)
+            Divider()
 
             let values = [
                 report.totals.current, report.totals.days_1_30, report.totals.days_31_60,
@@ -71,68 +101,29 @@ struct AgingReportView: View {
                 )
             })
         }
-        .padding(18)
-        .background(Color.sCard)
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.sBorder, lineWidth: 0.5))
-        .cornerRadius(16)
-        .padding(.horizontal, 20)
-    }
-
-    // MARK: - Client List
-    private func clientList(_ report: AgingReportResponse) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("By client")
-                .font(.scaled(13, weight: .medium))
-                .foregroundColor(.sMutedFG)
-                .padding(.horizontal, 20)
-
-            VStack(spacing: 10) {
-                ForEach(report.clients) { row in
-                    NavigationLink {
-                        LedgerListView(clientID: row.client_id)
-                    } label: {
-                        AgingClientRow(row: row, colors: bucketColors)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal, 20)
-        }
+        .padding(12)
+        .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
     }
 
     // MARK: - Empty State
     private var emptyState: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "checkmark.circle")
-                .font(.scaled(32))
-                .foregroundColor(.sMutedFG)
-            Text("Nothing outstanding")
-                .font(.scaled(15, weight: .medium))
-                .foregroundColor(.sForeground)
-            Text("Every invoice is fully paid right now")
-                .font(.scaled(13))
-                .foregroundColor(.sMutedFG)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        ContentUnavailableView(
+            "Nothing outstanding",
+            systemImage: "checkmark.circle",
+            description: Text("Every invoice is fully paid right now")
+        )
     }
 }
 
-// MARK: - Client Row
-private struct AgingClientRow: View {
-    let row: ClientAgingRow
+// MARK: - Aging row (shared by the client and supplier reports)
+struct AgingBucketRow: View {
+    let name: String
+    let total: Double
+    let buckets: [Double]
     let colors: [Color]
 
-    private var initials: String {
-        let parts = row.client_name.split(separator: " ")
-        if parts.count >= 2 {
-            return String(parts[0].prefix(1) + parts[1].prefix(1)).uppercased()
-        }
-        return String(row.client_name.prefix(2)).uppercased()
-    }
-
     private var segments: [(Double, Color)] {
-        let values = [row.buckets.current, row.buckets.days_1_30, row.buckets.days_31_60, row.buckets.days_61_90, row.buckets.days_90_plus]
-        return zip(values, colors).filter { $0.0 > 0 }
+        zip(buckets, colors).filter { $0.0 > 0 }
     }
 
     /// The oldest bucket with money in it — used to color the trailing total, so the
@@ -142,37 +133,61 @@ private struct AgingClientRow: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 12) {
-                ZStack {
-                    Circle().fill(Color.sAccentMuted).frame(width: 36, height: 36)
-                    Text(initials)
-                        .font(.scaled(12, weight: .semibold))
-                        .foregroundColor(.sAccent)
-                }
-                Text(row.client_name)
-                    .font(.scaled(14, weight: .medium))
-                    .foregroundColor(.sForeground)
-                Spacer()
-                Text(Money.text(row.total)).moneyLine()
-                    .font(.scaled(14, weight: .semibold))
-                    .foregroundColor(worstColor)
-            }
+        HStack(spacing: 12) {
+            MinimalAvatarView(name: name)
 
-            GeometryReader { geo in
-                HStack(spacing: 2) {
-                    ForEach(Array(segments.enumerated()), id: \.offset) { _, segment in
-                        Capsule()
-                            .fill(segment.1)
-                            .frame(width: max(4, geo.size.width * (segment.0 / row.total)))
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text(name)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                    Spacer(minLength: 8)
+                    Text(Money.text(total)).moneyLine()
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(worstColor)
+                }
+
+                GeometryReader { geo in
+                    HStack(spacing: 2) {
+                        ForEach(Array(segments.enumerated()), id: \.offset) { _, segment in
+                            Capsule()
+                                .fill(segment.1)
+                                .frame(width: max(4, geo.size.width * (segment.0 / max(total, 0.01))))
+                        }
                     }
                 }
+                .frame(height: 5)
             }
-            .frame(height: 5)
+            .alignmentGuide(.listRowSeparatorLeading) { d in d[.leading] }
         }
-        .padding(14)
-        .background(Color.sCard)
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
-        .cornerRadius(12)
     }
+}
+
+private struct AgingClientRow: View {
+    let row: ClientAgingRow
+    let colors: [Color]
+
+    var body: some View {
+        AgingBucketRow(
+            name: row.client_name,
+            total: row.total,
+            buckets: [row.buckets.current, row.buckets.days_1_30, row.buckets.days_31_60,
+                      row.buckets.days_61_90, row.buckets.days_90_plus],
+            colors: colors
+        )
+    }
+}
+
+private struct AgingShareWrapper: Identifiable {
+    let id = UUID()
+    let url: URL
+}
+
+private struct AgingShareSheet: UIViewControllerRepresentable {
+    let activityItems: [Any]
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+    }
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }

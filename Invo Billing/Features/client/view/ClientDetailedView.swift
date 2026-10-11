@@ -31,7 +31,7 @@ struct ClientDetailedView: View {
                         MinimalAvatarView(name: client.name, size: 72)
 
                         Text(client.name)
-                            .font(.scaled(20, weight: .semibold))
+                            .font(.title3.weight(.semibold))
                             .foregroundColor(.sForeground)
                     }
                     .padding(.top, 20)
@@ -42,9 +42,9 @@ struct ClientDetailedView: View {
                     if hasContactDetails {
                     VStack(alignment: .leading, spacing: 0) {
                         Text("Contact information")
-                            .font(.scaled(13, weight: .medium))
+                            .font(.subheadline.weight(.medium))
                             .foregroundColor(.sMutedFG)
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, AppSpacing.page)
                             .padding(.top, 14)
                             .padding(.bottom, 10)
 
@@ -63,9 +63,9 @@ struct ClientDetailedView: View {
                     if hasAddress {
                     VStack(alignment: .leading, spacing: 0) {
                         Text("Address")
-                            .font(.scaled(13, weight: .medium))
+                            .font(.subheadline.weight(.medium))
                             .foregroundColor(.sMutedFG)
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, AppSpacing.page)
                             .padding(.top, 14)
                             .padding(.bottom, 10)
 
@@ -90,16 +90,16 @@ struct ClientDetailedView: View {
                     VStack(alignment: .leading, spacing: 0) {
                         HStack {
                             Text("Invoices")
-                                .font(.scaled(13, weight: .medium))
+                                .font(.subheadline.weight(.medium))
                                 .foregroundColor(.sMutedFG)
                             Spacer()
                             NavigationLink("View all") {
                                 InvoiceView(clientID: client.id, clientName: client.name)
                             }
-                            .font(.scaled(13))
+                            .font(.subheadline)
                             .foregroundColor(.sAccent)
                         }
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, AppSpacing.page)
                         .padding(.top, 14)
                         .padding(.bottom, 10)
 
@@ -108,10 +108,10 @@ struct ClientDetailedView: View {
                         if vm.invoices.isEmpty {
                             VStack(spacing: 8) {
                                 Image(systemName: "doc.text")
-                                    .font(.scaled(22))
+                                    .font(.title2)
                                     .foregroundColor(.sMutedFG)
                                 Text("No invoices yet")
-                                    .font(.scaled(13))
+                                    .font(.subheadline)
                                     .foregroundColor(.sMutedFG)
                             }
                             .frame(maxWidth: .infinity)
@@ -124,14 +124,14 @@ struct ClientDetailedView: View {
                                     } label: {
                                     HStack {
                                         Text(invoice.invoice_number)
-                                            .font(.scaled(13))
+                                            .font(.subheadline)
                                             .foregroundColor(.sForeground)
                                         Spacer()
                                         Text(Money.text(invoice.total)).moneyLine()
-                                            .font(.scaled(13, weight: .semibold))
+                                            .font(.subheadline.weight(.semibold))
                                             .foregroundColor(.sForeground)
                                     }
-                                    .padding(.horizontal, 16)
+                                    .padding(.horizontal, AppSpacing.page)
                                     .padding(.vertical, 12)
                                     }
 
@@ -153,9 +153,9 @@ struct ClientDetailedView: View {
                         } label: {
                             HStack {
                                 Image(systemName: "book")
-                                    .font(.scaled(13, weight: .semibold))
+                                    .font(.subheadline.weight(.semibold))
                                 Text("View ledger")
-                                    .font(.scaled(14, weight: .semibold))
+                                    .font(.subheadline.weight(.semibold))
                             }
                             .foregroundColor(.sAccentFG)
                             .frame(maxWidth: .infinity)
@@ -176,9 +176,9 @@ struct ClientDetailedView: View {
                         } label: {
                             HStack {
                                 Image(systemName: "creditcard")
-                                    .font(.scaled(13, weight: .semibold))
+                                    .font(.subheadline.weight(.semibold))
                                 Text("Record payment")
-                                    .font(.scaled(14, weight: .semibold))
+                                    .font(.subheadline.weight(.semibold))
                             }
                             .foregroundColor(.sForeground)
                             .frame(maxWidth: .infinity)
@@ -189,7 +189,7 @@ struct ClientDetailedView: View {
                         }
                     }
                 }
-                .padding(20)
+                .padding(AppSpacing.card)
                 .padding(.bottom, 20)
             }
         }
@@ -235,23 +235,23 @@ private struct DetailInfoRow: View {
         if !value.isEmpty {
             HStack(alignment: .center, spacing: 12) {
                 Image(systemName: icon)
-                    .font(.scaled(13))
+                    .font(.subheadline)
                     .foregroundColor(.sMutedFG)
                     .frame(width: 16)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.scaled(11))
+                        .font(.caption)
                         .foregroundColor(.sMutedFG)
                     Text(value)
-                        .font(.scaled(13, weight: .medium))
+                        .font(.subheadline.weight(.medium))
                         .foregroundColor(.sForeground)
                         .lineLimit(1)
                 }
                 Spacer()
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 16)
+            .padding(.horizontal, AppSpacing.page)
             .padding(.vertical, 12)
         }
     }

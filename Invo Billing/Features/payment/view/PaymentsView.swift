@@ -20,38 +20,45 @@ struct PaymentsView: View {
     @State private var reversalReason = ""
 
     var body: some View {
-        ZStack {
-            Color.sBackground.ignoresSafeArea()
-
+        Group {
             if vm.isLoading && vm.payments.isEmpty {
-                ProgressView().tint(.sAccent)
+                ProgressView()
+                    .tint(.sAccent)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if vm.payments.isEmpty {
                 emptyState
             } else {
-                ScrollView {
-                    LazyVStack(spacing: 10) {
-                        ForEach(vm.payments) { payment in
-                            paymentCard(payment)
-                                .task { await vm.loadMoreIfNeeded(currentItem: payment) }
-                        }
-
-                        if vm.loadMoreFailed {
-                            VStack(spacing: 6) {
-                                Text("Couldn't load more payments.")
-                                    .font(.scaled(13))
-                                    .foregroundColor(.sMutedFG)
-                                Button("Try again") { Task { await vm.retryLoadMore() } }
-                                    .font(.scaled(13, weight: .medium))
-                                    .foregroundColor(.sAccent)
+                List {
+                    ForEach(vm.payments) { payment in
+                        paymentRow(payment)
+                            .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 12))
+                            .listRowSeparator(.hidden, edges: payment.id == vm.payments.first?.id ? .top : [])
+                            .swipeActions(edge: .trailing) {
+                                if !payment.isReversed {
+                                    Button("Reverse", role: .destructive) { reversing = payment }
+                                    Button("Move") { moving = payment }
+                                        .tint(.sAccent)
+                                }
                             }
-                            .padding(.vertical, 12)
-                        }
-
-                        Spacer(minLength: 40)
+                            .task { await vm.loadMoreIfNeeded(currentItem: payment) }
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)
+
+                    if vm.loadMoreFailed {
+                        VStack(spacing: 6) {
+                            Text("Couldn't load more payments.")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            Button("Try again") { Task { await vm.retryLoadMore() } }
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(Color.sAccent)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .listRowSeparator(.hidden)
+                    }
                 }
+                .listStyle(.plain)
+                .contentMargins(.bottom, 16, for: .scrollContent)
                 .refreshable { await vm.load() }
             }
         }
@@ -101,84 +108,89 @@ struct PaymentsView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 10) {
-            Image(systemName: "indianrupeesign.circle")
-                .font(.scaled(30))
-                .foregroundColor(.sMutedFG)
-            Text("No payments yet")
-                .font(.scaled(15, weight: .medium))
-                .foregroundColor(.sForeground)
-            Text("Payments you record against invoices appear here.")
-                .font(.scaled(12))
-                .foregroundColor(.sMutedFG)
-        }
+        ContentUnavailableView(
+            "No payments yet",
+            systemImage: "indianrupeesign.circle",
+            description: Text("Payments you record against invoices appear here.")
+        )
     }
 
-    private func paymentCard(_ payment: PaymentHistoryRow) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(payment.client_name.isEmpty ? "—" : payment.client_name)
-                        .font(.scaled(14, weight: .medium))
-                        .foregroundColor(.sForeground)
-                    Text(subtitle(payment))
-                        .font(.scaled(12))
-                        .foregroundColor(.sMutedFG)
+    private func paymentRow(_ payment: PaymentHistoryRow) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(payment.client_name.isEmpty ? "—" : payment.client_name)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                Text(subtitle(payment))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                if payment.isReversed {
+                    Label(
+                        payment.reversal_reason?.isEmpty == false
+                            ? "Reversed — \(payment.reversal_reason!)"
+                            : "Reversed",
+                        systemImage: "arrow.uturn.backward"
+                    )
+                    .font(.caption)
+                    .foregroundStyle(Color.sDestructive)
+                    .lineLimit(1)
                 }
-                Spacer()
-                Text(Money.text(payment.amount)).moneyLine()
-                    .font(.scaled(15, weight: .semibold))
-                    .foregroundColor(payment.isReversed ? .sMutedFG : .sForeground)
-                    .strikethrough(payment.isReversed)
             }
 
-            if payment.isReversed {
-                Label(
-                    payment.reversal_reason?.isEmpty == false
-                        ? "Reversed — \(payment.reversal_reason!)"
-                        : "Reversed",
-                    systemImage: "arrow.uturn.backward"
-                )
-                .font(.scaled(12))
-                .foregroundColor(.sDestructive)
-            } else {
-                if !payment.applied_to.isEmpty {
-                    Text("Paid: \(payment.applied_to)")
-                        .font(.scaled(12))
-                        .foregroundColor(.sMutedFG)
-                }
-                if payment.onAccount > 0 {
+            Spacer(minLength: 8)
+
+            VStack(alignment: .trailing, spacing: 3) {
+                Text(Money.text(payment.amount)).moneyLine()
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(payment.isReversed ? .secondary : .primary)
+                    .strikethrough(payment.isReversed)
+                if !payment.isReversed && payment.onAccount > 0 {
                     // The advance. Worth stating plainly — it is money the shop is
                     // holding, and it is easy to forget it is there.
                     Text("\(Money.text(payment.onAccount)) on account")
-                        .font(.scaled(12, weight: .medium))
-                        .foregroundColor(.sAccent)
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(Color.sAccent)
                 }
+            }
+            .frame(minWidth: 88, alignment: .trailing)
 
-                HStack(spacing: 16) {
-                    Button("Move") { moving = payment }
-                    Button("Reverse") { reversing = payment }
-                        .foregroundColor(.sDestructive)
-                    if payment.onAccount > 0 {
-                        Button("Refund") { refunding = payment }
+            if !payment.isReversed {
+                Menu {
+                    Button { moving = payment } label: {
+                        Label("Move to other invoices", systemImage: "arrow.left.arrow.right")
                     }
+                    if payment.onAccount > 0 {
+                        Button { refunding = payment } label: {
+                            Label("Refund", systemImage: "arrow.uturn.left.circle")
+                        }
+                    }
+                    Divider()
+                    Button(role: .destructive) { reversing = payment } label: {
+                        Label("Reverse", systemImage: "arrow.uturn.backward")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 32, height: 32)
+                        .contentShape(Rectangle())
                 }
-                .font(.scaled(13, weight: .medium))
-                .foregroundColor(.sAccent)
-                .padding(.top, 2)
+                .buttonStyle(.borderless)
+                .accessibilityLabel("Payment actions")
+            } else {
+                Color.clear.frame(width: 32, height: 32)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(Color.sCard)
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.sBorder, lineWidth: 0.5))
-        .cornerRadius(14)
         .opacity(payment.isReversed ? 0.7 : 1)
     }
 
     private func subtitle(_ payment: PaymentHistoryRow) -> String {
         var parts: [String] = [AppDate.shortText(fromWire: payment.payment_date)]
-        if !payment.payment_method.isEmpty { parts.append(payment.payment_method) }
+        let method = payment.payment_method
+        if !method.isEmpty { parts.append(method.count <= 3 ? method.uppercased() : method.capitalized) }
+        if !payment.isReversed && !payment.applied_to.isEmpty { parts.append(payment.applied_to) }
         if !payment.reference.isEmpty { parts.append(payment.reference) }
         return parts.joined(separator: " · ")
     }
@@ -209,10 +221,10 @@ private struct MovePaymentSheet: View {
                 VStack(alignment: .leading, spacing: 14) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("\(Money.text(payment.amount)) from \(payment.client_name)")
-                            .font(.scaled(15, weight: .semibold))
+                            .font(.subheadline.weight(.semibold))
                             .foregroundColor(.sForeground)
                         Text("Put it against the invoices it should have paid. Anything left over stays on the customer's account.")
-                            .font(.scaled(12))
+                            .font(.footnote)
                             .foregroundColor(.sMutedFG)
                     }
 
@@ -220,7 +232,7 @@ private struct MovePaymentSheet: View {
                         ProgressView().tint(.sAccent).frame(maxWidth: .infinity)
                     } else if vm.movableInvoices.isEmpty {
                         Text("This customer has nothing outstanding. Moving it now leaves the whole payment on their account.")
-                            .font(.scaled(12))
+                            .font(.footnote)
                             .foregroundColor(.sMutedFG)
                     }
 
@@ -228,10 +240,10 @@ private struct MovePaymentSheet: View {
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(invoice.invoiceNumber)
-                                    .font(.scaled(13, weight: .medium))
+                                    .font(.subheadline.weight(.medium))
                                     .foregroundColor(.sForeground)
                                 Text("\(Money.text(invoice.remainingAmount)) owing")
-                                    .font(.scaled(12))
+                                    .font(.footnote)
                                     .foregroundColor(.sMutedFG)
                             }
                             Spacer()
@@ -253,11 +265,11 @@ private struct MovePaymentSheet: View {
 
                     if overAllocated {
                         Text("That's more than the payment is for.")
-                            .font(.scaled(12))
+                            .font(.footnote)
                             .foregroundColor(.sDestructive)
                     } else if leftOver > 0 {
                         Text("\(Money.text(leftOver)) will stay on the customer's account.")
-                            .font(.scaled(12))
+                            .font(.footnote)
                             .foregroundColor(.sMutedFG)
                     }
 
@@ -272,7 +284,7 @@ private struct MovePaymentSheet: View {
                         }
                     } label: {
                         Text("Save")
-                            .font(.scaled(15, weight: .semibold))
+                            .font(.subheadline.weight(.semibold))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
@@ -281,7 +293,7 @@ private struct MovePaymentSheet: View {
                     }
                     .disabled(overAllocated || vm.isWorking)
                 }
-                .padding(20)
+                .padding(AppSpacing.card)
             }
         }
         .navigationTitle("Move payment")
@@ -324,12 +336,12 @@ private struct RefundSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     Text("Returning money to \(clientName)")
-                        .font(.scaled(15, weight: .semibold))
+                        .font(.subheadline.weight(.semibold))
                         .foregroundColor(.sForeground)
 
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Amount")
-                            .font(.scaled(12))
+                            .font(.footnote)
                             .foregroundColor(.sMutedFG)
                         TextField("0.00", text: $amount)
                             .keyboardType(.decimalPad)
@@ -340,7 +352,7 @@ private struct RefundSheet: View {
 
                     VStack(alignment: .leading, spacing: 6) {
                         Text("How")
-                            .font(.scaled(12))
+                            .font(.footnote)
                             .foregroundColor(.sMutedFG)
                         Picker("", selection: $method) {
                             ForEach(methods, id: \.self) { Text($0).tag($0) }
@@ -350,7 +362,7 @@ private struct RefundSheet: View {
 
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Reference (optional)")
-                            .font(.scaled(12))
+                            .font(.footnote)
                             .foregroundColor(.sMutedFG)
                         TextField("UPI reference, cheque number…", text: $reference)
                             .padding(12)
@@ -374,7 +386,7 @@ private struct RefundSheet: View {
                         }
                     } label: {
                         Text("Record refund")
-                            .font(.scaled(15, weight: .semibold))
+                            .font(.subheadline.weight(.semibold))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
@@ -383,7 +395,7 @@ private struct RefundSheet: View {
                     }
                     .disabled((Double(amount) ?? 0) <= 0 || vm.isWorking)
                 }
-                .padding(20)
+                .padding(AppSpacing.card)
             }
         }
         .navigationTitle("Refund")

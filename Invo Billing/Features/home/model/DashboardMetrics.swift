@@ -9,14 +9,25 @@ struct DashboardResponse: Codable {
     let period: String
     let revenue: RevenueBlock
     let counts: CountBlock
+    let receivables: ReceivablesBlock?
+    let payables: PayablesBlock?
     let recentInvoices: [RecentInvoice]
-    
+
     enum CodingKeys: String, CodingKey {
-        case period
-        case revenue
-        case counts
+        case period, revenue, counts, receivables, payables
         case recentInvoices = "recent_invoices"
     }
+}
+
+struct ReceivablesBlock: Codable {
+    let total: Double
+    let overdue: Double
+    let count: Int
+}
+
+struct PayablesBlock: Codable {
+    let total: Double
+    let count: Int
 }
 
 struct RevenueBlock: Codable {

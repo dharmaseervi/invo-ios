@@ -22,7 +22,7 @@ struct ClientFormView: View {
                     // MARK: - Contact Information Section
                     VStack(alignment: .leading, spacing: 14) {
                         Text("Contact information")
-                            .font(.scaled(13, weight: .medium))
+                            .font(.subheadline.weight(.medium))
                             .foregroundColor(.sMutedFG)
 
                         VStack(spacing: 12) {
@@ -55,7 +55,7 @@ struct ClientFormView: View {
                     // MARK: - Address Section
                     VStack(alignment: .leading, spacing: 14) {
                         Text("Address")
-                            .font(.scaled(13, weight: .medium))
+                            .font(.subheadline.weight(.medium))
                             .foregroundColor(.sMutedFG)
 
                         VStack(spacing: 12) {
@@ -106,7 +106,7 @@ struct ClientFormView: View {
                                         .scaleEffect(0.85)
                                 } else {
                                     Text("Save client")
-                                        .font(.scaled(15, weight: .semibold))
+                                        .font(.subheadline.weight(.semibold))
                                         .foregroundColor(.sAccentFG)
                                 }
                             }
@@ -121,7 +121,7 @@ struct ClientFormView: View {
                             vm.resetForm()
                         } label: {
                             Text("Clear")
-                                .font(.scaled(14, weight: .medium))
+                                .font(.subheadline.weight(.medium))
                                 .foregroundColor(.sForeground)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 14)
@@ -136,7 +136,7 @@ struct ClientFormView: View {
                     }
                     .padding(.top, 4)
                 }
-                .padding(20)
+                .padding(AppSpacing.card)
             }
         }
         .navigationTitle("New client")
@@ -165,18 +165,18 @@ struct ClientField: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text(label)
-                    .font(.scaled(13, weight: .medium))
+                    .font(.subheadline.weight(.medium))
                     .foregroundColor(.sForeground)
                 if error != nil {
                     Image(systemName: "exclamationmark.circle")
-                        .font(.scaled(12))
+                        .font(.footnote)
                         .foregroundColor(.sDestructive)
                 }
             }
 
             TextField(placeholder, text: $text)
                 .keyboardType(keyboard)
-                .font(.scaled(14))
+                .font(.body)
                 .foregroundColor(.sForeground)
                 .tint(.sAccent)
                 .textInputAutocapitalization(.never)
@@ -192,7 +192,7 @@ struct ClientField: View {
 
             if let error = error {
                 Text(error)
-                    .font(.scaled(11))
+                    .font(.caption)
                     .foregroundColor(.sDestructive)
             }
         }

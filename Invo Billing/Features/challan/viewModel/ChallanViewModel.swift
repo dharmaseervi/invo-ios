@@ -80,7 +80,7 @@ class ChallanViewModel: ObservableObject {
 
         do {
             let result = try await service.createChallan(payload: payload)
-            successMessage = "Challan \(result.challan_number) created"
+            successMessage = "Challan \(result.challan_number) created successfully"
             showSuccess = true
             clearForm()
             await loadChallans()

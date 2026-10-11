@@ -7,205 +7,161 @@ struct ClientView: View {
     @StateObject var vm = ClientViewModel()
     @EnvironmentObject var session: SessionManager
 
-    /// Searching is the server's job: filtering here only ever matched the customers
-    /// that happened to be on the loaded page, so a shop with three thousand customers
-    /// could not find half of them.
     @State private var searchTask: Task<Void, Never>?
 
     var filteredClients: [ClientModel] { vm.clients }
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                Color.sBackground.ignoresSafeArea()
-
-                VStack(spacing: 0) {
-
-                    // MARK: - Search Bar
-                    HStack(spacing: 10) {
-                        Image(systemName: "magnifyingglass")
-                            .font(.scaled(14))
-                            .foregroundColor(.sMutedFG)
-
-                        TextField("Search name or email", text: $vm.searchText)
-                            .font(.scaled(14))
-                            .foregroundColor(.sForeground)
-                            .tint(.sAccent)
+            contentArea
+                .navigationTitle("Clients")
+                .searchable(text: $vm.searchText, prompt: "Search name or email")
+                .onChange(of: vm.searchText) { _ in
+                    searchTask?.cancel()
+                    searchTask = Task {
+                        try? await Task.sleep(nanoseconds: 300_000_000)
+                        guard !Task.isCancelled else { return }
+                        await vm.loadClients()
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 10)
-                    .background(Color.sCard)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color.sInput, lineWidth: 0.5)
-                    )
-                    .cornerRadius(8)
-                    .padding(.horizontal, 20)
-                    .padding(.top, 14)
-
-                    // MARK: - Content
-                    Group {
-                        // Only when the list is empty. Search runs on the server, so
-                        // this replaced the rows with a centred spinner on every
-                        // search — losing what you were reading and where you were in
-                        // it. With rows on screen the reload is shown quietly in the
-                        // overlay below instead.
-                        if vm.isLoading && vm.clients.isEmpty {
-                            VStack(spacing: 12) {
-                                ProgressView()
-                                    .tint(.sAccent)
-                                Text("Loading clients...")
-                                    .font(.scaled(13))
-                                    .foregroundColor(.sMutedFG)
-                            }
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        }
-                        else if let error = vm.errorMessage {
-                            VStack(spacing: 10) {
-                                Image(systemName: "exclamationmark.triangle")
-                                    .font(.scaled(28))
-                                    .foregroundColor(.sDestructive)
-                                Text(error)
-                                    .font(.scaled(13))
-                                    .foregroundColor(.sMutedFG)
-                                    .multilineTextAlignment(.center)
-                                Button {
-                                    Task { await vm.loadClients() }
-                                } label: {
-                                    Text("Retry")
-                                        .font(.scaled(13, weight: .medium))
-                                        .foregroundColor(.sAccent)
-                                }
-                            }
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .padding(24)
-                        }
-                        else if filteredClients.isEmpty {
-                            VStack(spacing: 16) {
-                                Image(systemName: "person.crop.circle.badge.plus")
-                                    .font(.scaled(40))
-                                    .foregroundColor(.sMutedFG)
-                                VStack(spacing: 4) {
-                                    Text(vm.searchText.isEmpty ? "No clients" : "No results")
-                                        .font(.scaled(15, weight: .semibold))
-                                        .foregroundColor(.sForeground)
-                                    Text(vm.searchText.isEmpty
-                                         ? "Add your first client to get started"
-                                         : "Try a different search")
-                                        .font(.scaled(13))
-                                        .foregroundColor(.sMutedFG)
-                                        .multilineTextAlignment(.center)
-                                }
-                                if vm.searchText.isEmpty {
-                                    NavigationLink(destination: ClientFormView()) {
-                                        Text("Add client")
-                                            .font(.scaled(13, weight: .semibold))
-                                            .foregroundColor(.sAccentFG)
-                                            .padding(.horizontal, 20)
-                                            .padding(.vertical, 10)
-                                            .background(Color.sPrimary)
-                                            .cornerRadius(8)
-                                    }
-                                    .padding(.top, 4)
-                                }
-                            }
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .padding(24)
-                        }
-                        else {
-                            ScrollView(.vertical, showsIndicators: false) {
-                                // Lazy on purpose. In a plain stack every row renders
-                                // at once, so the "near the end" trigger fires
-                                // immediately and walks the whole list in one go —
-                                // which is the thing paging was meant to stop.
-                                LazyVStack(spacing: 10) {
-                                    ForEach(filteredClients) { client in
-                                        NavigationLink {
-                                            ClientDetailedView(client: client)
-                                        } label: {
-                                            ClientListRowView(client: client)
-                                        }
-                                        .task {
-                                            // The next page is asked for as the last
-                                            // few rows appear, so scrolling does not
-                                            // stop at a page boundary.
-                                            if client.id == vm.clients.suffix(5).first?.id {
-                                                await vm.loadMoreClients()
-                                            }
-                                        }
-                                    }
-
-                                    if vm.isLoadingMoreClients {
-                                        ProgressView()
-                                            .tint(.sAccent)
-                                            .padding(.vertical, 12)
-                                    } else if vm.loadMoreClientsFailed {
-                                        VStack(spacing: 6) {
-                                            Text("Couldn't load more customers.")
-                                                .font(.scaled(13))
-                                                .foregroundColor(.sMutedFG)
-                                            Button("Try again") {
-                                                Task { await vm.retryLoadMoreClients() }
-                                            }
-                                            .font(.scaled(13, weight: .medium))
-                                            .foregroundColor(.sAccent)
-                                        }
-                                        .padding(.vertical, 12)
-                                    }
-                                }
-                                .padding(20)
-                            }
+                }
+                #if DEBUG
+                .navigationDestination(isPresented: $debugDetail) {
+                    if let first = filteredClients.first { ClientDetailedView(client: first) }
+                }
+                .onChange(of: filteredClients.count) { _ in
+                    if UserDefaults.standard.string(forKey: "startScreen") == "clientdetail",
+                       !filteredClients.isEmpty { debugDetail = true }
+                }
+                #endif
+                .navigationBarTitleDisplayMode(.large)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        NavigationLink { ClientFormView() } label: {
+                            Image(systemName: "plus")
                         }
                     }
-                    // A reload over rows that are already there.
-                    .overlay(alignment: .top) {
-                        if vm.isLoading && !vm.clients.isEmpty {
-                            ProgressView()
-                                .tint(.sAccent)
-                                .scaleEffect(0.8)
-                                .padding(8)
-                                .background(.ultraThinMaterial, in: Capsule())
-                                .padding(.top, 8)
-                                .transition(.opacity)
-                        }
-                    }
+                }
+                .task { await vm.loadClients() }
+                .onChange(of: SessionManager.shared.selectedCompanyId) { _ in
+                    Task { await vm.loadClients() }
+                }
+        }
+    }
 
-                    Spacer(minLength: 0)
+    @ViewBuilder
+    private var contentArea: some View {
+        if vm.isLoading && vm.clients.isEmpty {
+            VStack(spacing: 12) {
+                ProgressView().tint(.sAccent)
+                Text("Loading clients...")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if let error = vm.errorMessage {
+            VStack(spacing: 10) {
+                Image(systemName: "exclamationmark.triangle")
+                    .font(.title)
+                    .foregroundStyle(Color.sDestructive)
+                Text(error)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                Button {
+                    Task { await vm.loadClients() }
+                } label: {
+                    Text("Retry")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(Color.sAccent)
                 }
             }
-            .navigationTitle("Clients")
-            .onChange(of: vm.searchText) { _ in
-                // Debounced, so a six-letter name is one request rather than six.
-                searchTask?.cancel()
-                searchTask = Task {
-                    try? await Task.sleep(nanoseconds: 300_000_000)
-                    guard !Task.isCancelled else { return }
-                    await vm.loadClients()
-                }
-            }
-            #if DEBUG
-            .navigationDestination(isPresented: $debugDetail) {
-                if let first = filteredClients.first { ClientDetailedView(client: first) }
-            }
-            .onChange(of: filteredClients.count) { _ in
-                // onAppear fires before the list has loaded, so this waits for data.
-                if UserDefaults.standard.string(forKey: "startScreen") == "clientdetail",
-                   !filteredClients.isEmpty { debugDetail = true }
-            }
-            #endif
-            .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    NavigationLink { ClientFormView() } label: {
-                        Image(systemName: "plus")
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(24)
+        } else {
+            List {
+                if filteredClients.isEmpty {
+                    VStack(spacing: 16) {
+                        Image(systemName: "person.crop.circle.badge.plus")
+                            .font(.scaled(40))
+                            .foregroundStyle(.secondary)
+                        VStack(spacing: 4) {
+                            Text(vm.searchText.isEmpty ? "No clients" : "No results")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.primary)
+                            Text(vm.searchText.isEmpty
+                                 ? "Add your first client to get started"
+                                 : "Try a different search")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                        }
+                        if vm.searchText.isEmpty {
+                            NavigationLink(destination: ClientFormView()) {
+                                Text("Add client")
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundColor(.sAccentFG)
+                                    .padding(.horizontal, AppSpacing.page)
+                                    .padding(.vertical, 10)
+                                    .background(Color.sPrimary)
+                                    .cornerRadius(8)
+                            }
+                            .padding(.top, 4)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(24)
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
+                } else {
+                    ForEach(filteredClients) { client in
+                        NavigationLink {
+                            ClientDetailedView(client: client)
+                        } label: {
+                            ClientListRowView(client: client)
+                        }
+                        .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+                        .listRowSeparator(.hidden, edges: client.id == filteredClients.first?.id ? .top : [])
+                        .task {
+                            if client.id == vm.clients.suffix(5).first?.id {
+                                await vm.loadMoreClients()
+                            }
+                        }
+                    }
+
+                    if vm.isLoadingMoreClients {
+                        HStack { Spacer(); ProgressView().tint(.sAccent); Spacer() }
+                            .padding(.vertical, 12)
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                    } else if vm.loadMoreClientsFailed {
+                        VStack(spacing: 6) {
+                            Text("Couldn't load more customers.")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            Button("Try again") {
+                                Task { await vm.retryLoadMoreClients() }
+                            }
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(Color.sAccent)
+                        }
+                        .padding(.vertical, 12)
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
                     }
                 }
             }
-            .task {
-                await vm.loadClients()
-            }
-            .onChange(of: SessionManager.shared.selectedCompanyId) { _ in
-                Task { await vm.loadClients() }
+            .listStyle(.plain)
+            .contentMargins(.bottom, 16, for: .scrollContent)
+            .refreshable { await vm.loadClients() }
+            .overlay(alignment: .top) {
+                if vm.isLoading && !vm.clients.isEmpty {
+                    ProgressView()
+                        .tint(.sAccent)
+                        .padding(8)
+                        .background(.ultraThinMaterial, in: Capsule())
+                        .transition(.opacity)
+                }
             }
         }
     }
@@ -222,13 +178,13 @@ struct ClientListRowView: View {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(client.name)
-                        .font(.scaled(14, weight: .medium))
-                        .foregroundColor(.sForeground)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.primary)
 
                     if client.isQuickSaleAccount {
                         Text("Ledger")
-                            .font(.scaled(9, weight: .semibold))
-                            .foregroundColor(.sAccent)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Color.sAccent)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
                             .background(Color.sAccentMuted)
@@ -236,31 +192,21 @@ struct ClientListRowView: View {
                     }
                 }
 
-                if !client.email.isEmpty {
-                    Text(client.email)
-                        .font(.scaled(12))
-                        .foregroundColor(.sMutedFG)
-                }
-                if !client.phone.isEmpty {
-                    Text(client.phone)
-                        .font(.scaled(11))
-                        .foregroundColor(.sMutedFG)
+                if !contactLine.isEmpty {
+                    Text(contactLine)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
             }
 
-            Spacer()
-
-            Image(systemName: "chevron.right")
-                .font(.scaled(12, weight: .semibold))
-                .foregroundColor(.sMutedFG)
+            Spacer(minLength: 0)
         }
-        .padding(14)
-        .background(Color.sCard)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.sBorder, lineWidth: 0.5)
-        )
-        .cornerRadius(12)
+        .alignmentGuide(.listRowSeparatorLeading) { _ in 52 }
+    }
+
+    private var contactLine: String {
+        [client.email, client.phone].filter { !$0.isEmpty }.joined(separator: " · ")
     }
 }
 
@@ -272,6 +218,7 @@ struct ClientListRowView: View {
 /// screens. This is the circle: lighter in a long list, and two letters tell "Sanjay"
 /// from "Sanya" where one cannot.
 struct MinimalAvatarView: View {
+    @ScaledMetric(relativeTo: .body) private var scaledBase: CGFloat = 40
     let name: String
     var size: CGFloat = 40
 
@@ -287,9 +234,9 @@ struct MinimalAvatarView: View {
         ZStack {
             Circle()
                 .fill(Color.sAccentMuted)
-                .frame(width: size, height: size)
+                .frame(width: size * scaledBase / 40, height: size * scaledBase / 40)
             Text(initials)
-                .font(.scaled(13, weight: .semibold))
+                .font(.subheadline.weight(.semibold))
                 .foregroundColor(.sAccent)
         }
     }

@@ -18,6 +18,7 @@ struct ExpenseFormView: View {
     @State private var date = Date()
     @State private var description = ""
     @State private var paymentMethod = ""
+    @State private var category = ""
 
     private var formattedDate: String {
         let formatter = DateFormatter()
@@ -40,26 +41,26 @@ struct ExpenseFormView: View {
                     ScrollView(showsIndicators: false) {
                         VStack(spacing: 20) {
 
-                            EditorialField(
+                            FormFieldView(
                                 label: "Expense name",
                                 placeholder: "Office rent, Internet, Fuel…",
-                                text: $name,
-                                keyboard: .default
+                                text: $name
                             )
 
-                            EditorialField(
+                            FormFieldView(
                                 label: "Amount",
                                 placeholder: "₹ 0.00",
                                 text: $amount,
                                 keyboard: .decimalPad
                             )
 
+                            ExpenseCategoryPicker(selection: $category)
                             ExpensePaymentMethodPicker(selection: $paymentMethod)
 
                             // Date Picker
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("Date")
-                                    .font(.scaled(13, weight: .medium))
+                                    .font(.subheadline.weight(.medium))
                                     .foregroundColor(.sForeground)
 
                                 DatePicker(
@@ -76,11 +77,11 @@ struct ExpenseFormView: View {
                             // Description
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("Description")
-                                    .font(.scaled(13, weight: .medium))
+                                    .font(.subheadline.weight(.medium))
                                     .foregroundColor(.sForeground)
 
                                 TextEditor(text: $description)
-                                    .font(.scaled(14))
+                                    .font(.body)
                                     .foregroundColor(.sForeground)
                                     .scrollContentBackground(.hidden)
                                     .frame(height: 100)
@@ -93,7 +94,7 @@ struct ExpenseFormView: View {
                                     .cornerRadius(8)
                             }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.page)
                         .padding(.top, 20)
                         .padding(.bottom, 120)
                     }
@@ -108,7 +109,8 @@ struct ExpenseFormView: View {
                                     amount: Double(amount) ?? 0,
                                     description: description.isEmpty ? nil : description,
                                     date: formattedDate,
-                                    paymentMethod: paymentMethod
+                                    paymentMethod: paymentMethod,
+                                    category: category.isEmpty ? nil : category
                                 )
 
                                 if success {
@@ -122,7 +124,7 @@ struct ExpenseFormView: View {
                                         .scaleEffect(0.85)
                                 } else {
                                     Text("Save expense")
-                                        .font(.scaled(15, weight: .semibold))
+                                        .font(.subheadline.weight(.semibold))
                                 }
                             }
                             .foregroundColor(.sAccentFG)
@@ -137,7 +139,7 @@ struct ExpenseFormView: View {
                             resetForm()
                         } label: {
                             Text("Clear")
-                                .font(.scaled(14, weight: .medium))
+                                .font(.subheadline.weight(.medium))
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 14)
                                 .foregroundColor(.sForeground)
@@ -149,7 +151,7 @@ struct ExpenseFormView: View {
                                 .cornerRadius(10)
                         }
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, AppSpacing.page)
                     .padding(.bottom, 20)
                     .background(Color.sBackground)
                 }
@@ -172,6 +174,53 @@ struct ExpenseFormView: View {
         description = ""
         date = Date()
         paymentMethod = ""
+        category = ""
+    }
+}
+
+// MARK: - Category Picker
+
+let expenseCategories = [
+    "Rent", "Salaries", "Utilities", "Travel", "Food & Entertainment",
+    "Office supplies", "Marketing", "Professional fees", "Repairs & Maintenance",
+    "Insurance", "Taxes & levies", "Depreciation", "Other"
+]
+
+struct ExpenseCategoryPicker: View {
+    @Binding var selection: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Category")
+                .font(.subheadline.weight(.medium))
+                .foregroundColor(.sForeground)
+
+            Menu {
+                Button { selection = "" } label: {
+                    Label("Uncategorised", systemImage: selection.isEmpty ? "checkmark" : "")
+                }
+                ForEach(expenseCategories, id: \.self) { cat in
+                    Button { selection = cat } label: {
+                        Label(cat, systemImage: selection == cat ? "checkmark" : "")
+                    }
+                }
+            } label: {
+                HStack {
+                    Text(selection.isEmpty ? "Uncategorised" : selection)
+                        .font(.body)
+                        .foregroundColor(selection.isEmpty ? .sMutedFG : .sForeground)
+                    Spacer()
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.footnote)
+                        .foregroundColor(.sMutedFG)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(Color.sCard)
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.sInput, lineWidth: 0.5))
+                .cornerRadius(8)
+            }
+        }
     }
 }
 
@@ -181,52 +230,43 @@ struct ExpensePaymentMethodPicker: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Picker("Paid by", selection: $selection) {
-                Text("Not recorded").tag("")
+            Text("Paid by")
+                .font(.subheadline.weight(.medium))
+                .foregroundColor(.sForeground)
+
+            Menu {
+                Button { selection = "" } label: {
+                    Label("Not recorded", systemImage: selection.isEmpty ? "checkmark" : "")
+                }
                 ForEach(methods, id: \.self) { method in
-                    Text(method).tag(method)
+                    Button { selection = method } label: {
+                        Label(method, systemImage: selection == method ? "checkmark" : "")
+                    }
                 }
                 // Preserve values recorded by other clients, including older spellings.
                 if !selection.isEmpty && !methods.contains(selection) {
-                    Text(selection).tag(selection)
+                    Button { } label: { Label(selection, systemImage: "checkmark") }
                 }
-            }
-            .pickerStyle(.menu)
-            .tint(.sAccent)
-
-            Text("Choose Cash if this expense was paid from the drawer.")
-                .font(.scaled(12))
-                .foregroundColor(.sMutedFG)
-        }
-    }
-}
-
-
-struct EditorialField: View {
-    let label: String
-    let placeholder: String
-    @Binding var text: String
-    let keyboard: UIKeyboardType
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(label)
-                .font(.scaled(13, weight: .medium))
-                .foregroundColor(.sForeground)
-
-            TextField(placeholder, text: $text)
-                .keyboardType(keyboard)
-                .font(.scaled(14))
-                .foregroundColor(.sForeground)
-                .tint(.sAccent)
+            } label: {
+                HStack {
+                    Text(selection.isEmpty ? "Not recorded" : selection)
+                        .font(.body)
+                        .foregroundColor(selection.isEmpty ? .sMutedFG : .sForeground)
+                    Spacer()
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.footnote)
+                        .foregroundColor(.sMutedFG)
+                }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
                 .background(Color.sCard)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.sInput, lineWidth: 0.5)
-                )
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.sInput, lineWidth: 0.5))
                 .cornerRadius(8)
+            }
+
+            Text("Choose Cash if this expense was paid from the drawer.")
+                .font(.footnote)
+                .foregroundColor(.sMutedFG)
         }
     }
 }

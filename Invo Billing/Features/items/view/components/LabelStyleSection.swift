@@ -14,13 +14,13 @@ struct LabelStyleSection: View {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Text("Text & fields")
-                        .font(.scaled(13, weight: .medium))
+                        .font(.subheadline.weight(.medium))
                         .foregroundColor(.sMutedFG)
                     Spacer()
                     Button("Reset") {
                         styleManager.resetToDefault()
                     }
-                    .font(.scaled(12, weight: .medium))
+                    .font(.footnote.weight(.medium))
                     .foregroundColor(.sAccent)
                 }
 
@@ -35,15 +35,15 @@ struct LabelStyleSection: View {
                     Rectangle().fill(Color.sBorder).frame(height: 0.5)
 
                     Toggle(isOn: $styleManager.style.showPrice) {
-                        Text("Show price").font(.scaled(13)).foregroundColor(.sForeground)
+                        Text("Show price").font(.subheadline).foregroundColor(.sForeground)
                     }
                     .tint(.sAccent)
                     Toggle(isOn: $styleManager.style.showID) {
-                        Text("Show SKU").font(.scaled(13)).foregroundColor(.sForeground)
+                        Text("Show SKU").font(.subheadline).foregroundColor(.sForeground)
                     }
                     .tint(.sAccent)
                     Toggle(isOn: $styleManager.style.showCostCode) {
-                        Text("Show cost code").font(.scaled(13)).foregroundColor(.sForeground)
+                        Text("Show cost code").font(.subheadline).foregroundColor(.sForeground)
                     }
                     .tint(.sAccent)
                 }
@@ -59,7 +59,7 @@ struct LabelStyleSection: View {
     private var templateSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Label template")
-                .font(.scaled(13, weight: .medium))
+                .font(.subheadline.weight(.medium))
                 .foregroundColor(.sMutedFG)
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
@@ -70,11 +70,11 @@ struct LabelStyleSection: View {
                     } label: {
                         VStack(alignment: .leading, spacing: 4) {
                             Image(systemName: template.icon)
-                                .font(.scaled(16, weight: .medium))
+                                .font(.subheadline.weight(.medium))
                             Text(template.label)
-                                .font(.scaled(13, weight: .semibold))
+                                .font(.subheadline.weight(.semibold))
                             Text(template.subtitle)
-                                .font(.scaled(10))
+                                .font(.caption)
                                 .foregroundColor(isSelected ? .sAccentFG.opacity(0.8) : .sMutedFG)
                                 .lineLimit(1)
                         }
@@ -96,7 +96,7 @@ struct LabelStyleSection: View {
     private var alignmentRow: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Text alignment")
-                .font(.scaled(13))
+                .font(.subheadline)
                 .foregroundColor(.sForeground)
 
             HStack(spacing: 8) {
@@ -109,7 +109,7 @@ struct LabelStyleSection: View {
                             Image(systemName: alignment.icon)
                             Text(alignment.label)
                         }
-                        .font(.scaled(12, weight: .medium))
+                        .font(.footnote.weight(.medium))
                         .foregroundColor(isSelected ? .sAccentFG : .sForeground)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
@@ -129,11 +129,11 @@ struct LabelStyleSection: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text(label)
-                    .font(.scaled(13))
+                    .font(.subheadline)
                     .foregroundColor(.sForeground)
                 Spacer()
                 Text("\(Int(value.wrappedValue * 100))%")
-                    .font(.scaled(12))
+                    .font(.footnote)
                     .foregroundColor(.sMutedFG)
             }
             Slider(

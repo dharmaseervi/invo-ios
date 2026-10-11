@@ -51,7 +51,8 @@ class CompanyFormViewModel: ObservableObject {
             city: city,
             state: state,
             pincode: pincode,
-            invoice_footer: invoiceFooter
+            invoice_footer: invoiceFooter,
+            invoice_prefix: "INV"
         )
         
         if IndianStates.defaultState.isEmpty && !state.isEmpty {

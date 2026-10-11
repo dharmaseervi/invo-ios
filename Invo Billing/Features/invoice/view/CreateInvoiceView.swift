@@ -49,7 +49,7 @@ struct CreateInvoiceView: View {
                         onEditBilling: { showBillingSheet = true },
                         onEditShipping: { showShippingSheet = true }
                     )
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, AppSpacing.page)
                     .onChange(of: vm.selectedClient) { client in
                         guard client != nil else { return }
                         Task { await vm.loadClientAddresses() }
@@ -58,9 +58,10 @@ struct CreateInvoiceView: View {
                     InvoiceDetailsSection(
                         invoiceNumber: vm.invoiceNumber,
                         invoiceDate: $vm.invoiceDate,
-                        dueDate: $vm.dueDate
+                        dueDate: $vm.dueDate,
+                        docType: $vm.docType
                     )
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, AppSpacing.page)
 
                     ItemsSection(
                         invoiceItems: $vm.items,
@@ -88,10 +89,10 @@ struct CreateInvoiceView: View {
                 HStack(spacing: 14) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Total")
-                            .font(.scaled(11))
+                            .font(.caption)
                             .foregroundColor(.sMutedFG)
                         Text(Money.text(vm.total)).moneyLine()
-                            .font(.scaled(17, weight: .semibold))
+                            .font(.subheadline.weight(.semibold))
                             .foregroundColor(.sForeground)
                     }
                     Spacer()
@@ -116,7 +117,7 @@ struct CreateInvoiceView: View {
                                     .scaleEffect(0.85)
                             } else {
                                 Text("Create invoice")
-                                    .font(.scaled(15, weight: .semibold))
+                                    .font(.subheadline.weight(.semibold))
                             }
                         }
                         .foregroundColor(.sAccentFG)
@@ -127,7 +128,7 @@ struct CreateInvoiceView: View {
                     }
                     .disabled(vm.isLoading || !vm.isValid)
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, AppSpacing.page)
                 .padding(.vertical, 12)
                 .background(Color.sBackground)
             }

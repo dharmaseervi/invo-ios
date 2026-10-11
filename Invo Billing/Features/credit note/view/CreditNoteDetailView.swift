@@ -91,12 +91,12 @@ private extension CreditNoteDetailView {
     func creditInfoSection(_ cn: CreditNoteDetailModel) -> some View {
         VStack(spacing: 10) {
             Text(cn.credit_number)
-                .font(.scaled(22, weight: .light))
+                .font(.title2)
                 .tracking(1)
                 .foregroundColor(.sForeground)
             
             Text(cn.client_name)
-                .font(.scaled(13))
+                .font(.subheadline)
                 .foregroundColor(.sMutedFG)
             
             HStack(spacing: 8) {
@@ -104,7 +104,7 @@ private extension CreditNoteDetailView {
                 typeBadge(cn.type)
             }
         }
-        .padding(.horizontal, 24)
+        .padding(.horizontal, AppSpacing.page)
     }
     
     func summarySection(_ cn: CreditNoteDetailModel) -> some View {
@@ -123,33 +123,33 @@ private extension CreditNoteDetailView {
             Rectangle()
                 .stroke(Color.sBorder, lineWidth: 1)
         )
-        .padding(.horizontal, 24)
+        .padding(.horizontal, AppSpacing.page)
     }
     
     func itemsSection(_ items: [CreditNoteItemModel]) -> some View {
         VStack(alignment: .leading, spacing: 20) {
             
             Text("Items")
-                .font(.scaled(13, weight: .medium))
+                .font(.subheadline.weight(.medium))
                 .foregroundColor(.sMutedFG)
             
             ForEach(items) { item in
                 HStack {
                     VStack(alignment: .leading, spacing: 6) {
                         Text(item.item_name)
-                            .font(.scaled(14, weight: .light))
+                            .font(.subheadline)
                         
                         Text(
                             "Qty \(item.qty, specifier: "%.0f") × \(Money.text(item.rate))"
                         )
-                        .font(.scaled(10))
+                        .font(.caption)
                         .foregroundColor(.sMutedFG)
                     }
                     
                     Spacer()
                     
                     Text(Money.text(item.total)).moneyLine()
-                        .font(.scaled(14, weight: .light))
+                        .font(.subheadline)
                 }
                 
                 Rectangle()
@@ -162,7 +162,7 @@ private extension CreditNoteDetailView {
             Rectangle()
                 .stroke(Color.sBorder, lineWidth: 1)
         )
-        .padding(.horizontal, 24)
+        .padding(.horizontal, AppSpacing.page)
     }
     
     func totalsSection(_ cn: CreditNoteDetailModel) -> some View {
@@ -183,7 +183,7 @@ private extension CreditNoteDetailView {
             Rectangle()
                 .stroke(Color.sBorder, lineWidth: 1)
         )
-        .padding(.horizontal, 24)
+        .padding(.horizontal, AppSpacing.page)
     }
     
     func actionsSection(_ cn: CreditNoteDetailModel) -> some View {
@@ -205,11 +205,11 @@ private extension CreditNoteDetailView {
                 Text(cn.status == "cancelled"
                      ? "This credit note was cancelled."
                      : "This credit note has been used up.")
-                    .font(.scaled(12))
+                    .font(.footnote)
                     .foregroundColor(.sMutedFG)
             }
         }
-        .padding(.horizontal, 24)
+        .padding(.horizontal, AppSpacing.page)
     }
 }
 
@@ -219,31 +219,31 @@ private extension CreditNoteDetailView {
     func detailRow(_ title: String, _ value: String) -> some View {
         HStack {
             Text(title)
-                .font(.scaled(12))
+                .font(.footnote)
                 .foregroundColor(.sMutedFG)
             
             Spacer()
             
             Text(value)
-                .font(.scaled(12))
+                .font(.footnote)
         }
     }
     
     func amountRow(_ title: String, _ value: Double, bold: Bool = false) -> some View {
         HStack {
             Text(title)
-                .font(.scaled(13))
+                .font(.subheadline)
             
             Spacer()
             
             Text(Money.text(value)).moneyLine()
-                .font(.scaled(13, weight: bold ? .medium : .light))
+                .font(.subheadline.weight(bold ? .medium : .light))
         }
     }
     
     func statusBadge(_ status: String) -> some View {
         Text(status.capitalized)
-            .font(.scaled(11, weight: .medium))
+            .font(.caption.weight(.medium))
             .foregroundColor(.cnSuccess)
             .padding(.horizontal, 10)
             .padding(.vertical, 4)
@@ -253,7 +253,7 @@ private extension CreditNoteDetailView {
 
     func typeBadge(_ type: String) -> some View {
         Text(type.capitalized)
-            .font(.scaled(11, weight: .medium))
+            .font(.caption.weight(.medium))
             .foregroundColor(.sForeground)
             .padding(.horizontal, 10)
             .padding(.vertical, 4)
@@ -276,7 +276,7 @@ private extension CreditNoteDetailView {
         VStack(spacing: 16) {
             ProgressView()
             Text("Loading credit note...")
-                .font(.scaled(12))
+                .font(.footnote)
                 .foregroundColor(.sMutedFG)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -287,7 +287,7 @@ private extension CreditNoteDetailView {
 struct PrimaryCNButton: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.scaled(14, weight: .semibold))
+            .font(.subheadline.weight(.semibold))
             .foregroundColor(.sAccentFG)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
@@ -300,7 +300,7 @@ struct PrimaryCNButton: ButtonStyle {
 struct OutlineCNButton: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.scaled(14, weight: .semibold))
+            .font(.subheadline.weight(.semibold))
             .foregroundColor(.sForeground)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)

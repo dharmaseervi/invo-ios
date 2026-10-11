@@ -166,7 +166,7 @@ struct RecordPurchaseBillSheet: View {
                         .accessibilityLabel("Invoice amount in rupees")
                     if !invoiceAmount.isEmpty && (invoiceAmountValue ?? 0) <= 0 {
                         Text("Enter an amount greater than zero, using digits and up to two decimal places.")
-                            .font(.scaled(12))
+                            .font(.footnote)
                             .foregroundColor(.sDestructive)
                     }
                 } header: {
@@ -179,19 +179,19 @@ struct RecordPurchaseBillSheet: View {
                     ForEach($lines) { $line in
                         VStack(alignment: .leading, spacing: 6) {
                             Text(line.item.name)
-                                .font(.scaled(14, weight: .medium))
+                                .font(.subheadline.weight(.medium))
                             HStack {
-                                Text("Qty").font(.scaled(12)).foregroundColor(.sMutedFG)
+                                Text("Qty").font(.footnote).foregroundColor(.sMutedFG)
                                 TextField("0", text: $line.qty)
                                     .keyboardType(.numberPad)
                                     .frame(width: 60)
-                                Text("Rate").font(.scaled(12)).foregroundColor(.sMutedFG)
+                                Text("Rate").font(.footnote).foregroundColor(.sMutedFG)
                                 TextField("0.00", text: $line.rate)
                                     .keyboardType(.decimalPad)
                                     .frame(width: 90)
                                 Spacer()
                                 Text(Money.text((Double(line.qty) ?? 0) * (PurchaseAmountInput.parse(line.rate) ?? 0)))
-                                    .font(.scaled(13, weight: .medium))
+                                    .font(.subheadline.weight(.medium))
                             }
                         }
                     }
@@ -219,7 +219,7 @@ struct RecordPurchaseBillSheet: View {
                     LabeledContent("Subtotal", value: Money.text(subtotal))
                     LabeledContent("GST", value: Money.text(tax))
                     LabeledContent("Total", value: Money.text(total))
-                        .font(.scaled(15, weight: .semibold))
+                        .font(.subheadline.weight(.semibold))
                 }
             }
 
@@ -234,15 +234,15 @@ struct RecordPurchaseBillSheet: View {
                     }
                     if parsedPaid == nil {
                         Text("Enter a valid paid amount, or leave blank if unpaid.")
-                            .font(.scaled(12))
+                            .font(.footnote)
                             .foregroundColor(.sDestructive)
                     } else if paidValue > total + 0.004 {
                         Text("That's more than the bill comes to.")
-                            .font(.scaled(12))
+                            .font(.footnote)
                             .foregroundColor(.sDestructive)
                     } else if total - paidValue > 0 {
                         Text("\(Money.text(total - paidValue)) will be owed to this supplier.")
-                            .font(.scaled(12))
+                            .font(.footnote)
                             .foregroundColor(.sMutedFG)
                     }
                 }
@@ -335,7 +335,7 @@ private struct PurchaseItemPicker: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(item.name).foregroundColor(.sForeground)
                             Text("\(item.quantity) in stock · last cost \(Money.text(item.cost_price ?? 0))")
-                                .font(.scaled(12))
+                                .font(.footnote)
                                 .foregroundColor(.sMutedFG)
                         }
                     }

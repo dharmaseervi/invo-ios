@@ -18,33 +18,19 @@ struct CompanyBankListView: View {
     @State private var deletePassword = ""
 
     var body: some View {
-        ZStack {
-            Color.sBackground.ignoresSafeArea()
-
+        Group {
             if vm.isLoading {
-                ProgressView().tint(.sAccent)
+                ProgressView()
+                    .tint(.sAccent)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             else if vm.banks.isEmpty {
-                VStack(spacing: 16) {
-                    Image(systemName: "building.columns")
-                        .font(.scaled(36))
-                        .foregroundColor(.sMutedFG)
-
-                    Text("No bank accounts")
-                        .font(.scaled(15, weight: .semibold))
-                        .foregroundColor(.sForeground)
-
-                    Button {
-                        showForm = true
-                    } label: {
-                        Text("Add bank")
-                            .font(.scaled(13, weight: .semibold))
-                            .foregroundColor(.sAccentFG)
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 10)
-                            .background(Color.sPrimary)
-                            .cornerRadius(8)
-                    }
+                ContentUnavailableView {
+                    Label("No bank accounts", systemImage: "building.columns")
+                } actions: {
+                    Button("Add bank") { showForm = true }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.sAccent)
                 }
             }
             else {
@@ -54,22 +40,30 @@ struct CompanyBankListView: View {
                             selectedBank = bank
                             showForm = true
                         } label: {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 4) {
+                            HStack(spacing: 12) {
+                                Image(systemName: "building.columns")
+                                    .font(.body)
+                                    .foregroundStyle(Color.sAccent)
+                                    .frame(width: 40, height: 40)
+                                    .background(Color.sAccentMuted, in: Circle())
+                                    .accessibilityHidden(true)
+
+                                VStack(alignment: .leading, spacing: 3) {
                                     Text(bank.bank_name)
-                                        .font(.scaled(14, weight: .medium))
-                                        .foregroundColor(.sForeground)
+                                        .font(.subheadline.weight(.medium))
+                                        .foregroundStyle(.primary)
 
                                     Text("A/C: \(bank.account_number)")
-                                        .font(.scaled(12))
-                                        .foregroundColor(.sMutedFG)
+                                        .font(.footnote)
+                                        .foregroundStyle(.secondary)
                                 }
+                                .alignmentGuide(.listRowSeparatorLeading) { d in d[.leading] }
 
-                                Spacer()
+                                Spacer(minLength: 8)
 
                                 if bank.is_default {
                                     Text("Default")
-                                        .font(.scaled(11, weight: .medium))
+                                        .font(.caption.weight(.medium))
                                         .foregroundColor(.sAccent)
                                         .padding(.horizontal, 8)
                                         .padding(.vertical, 4)
@@ -78,7 +72,7 @@ struct CompanyBankListView: View {
                                 }
                             }
                         }
-                        .listRowBackground(Color.sCard)
+                        .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
                     }
                     .onDelete { indexSet in
                         if let index = indexSet.first {
@@ -89,7 +83,7 @@ struct CompanyBankListView: View {
                         }
                     }
                 }
-                .scrollContentBackground(.hidden)
+                .listStyle(.plain)
             }
         }
         .navigationTitle("Bank accounts")

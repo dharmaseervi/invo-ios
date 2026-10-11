@@ -3,49 +3,262 @@ import SwiftUI
 /// Visual language for the auth flow (login, signup, biometric lock).
 /// Adapts to the system's light/dark appearance, same as the rest of the app.
 enum AuthTheme {
-    static let background = Color(UIColor { t in
-        t.userInterfaceStyle == .dark
-        ? UIColor(red: 0.039, green: 0.039, blue: 0.063, alpha: 1) // #0A0A10
-        : UIColor(red: 0.980, green: 0.980, blue: 0.984, alpha: 1) // #FAFAFB
-    })
-    static let field = Color(UIColor { t in
-        t.userInterfaceStyle == .dark
-        ? UIColor(red: 0.078, green: 0.071, blue: 0.114, alpha: 1) // #14121D
-        : UIColor(red: 0.965, green: 0.961, blue: 0.984, alpha: 1) // #F6F5FB
-    })
-    static let border = Color(UIColor { t in
-        t.userInterfaceStyle == .dark
-        ? UIColor(red: 0.133, green: 0.122, blue: 0.188, alpha: 1) // #221F30
-        : UIColor(red: 0.902, green: 0.894, blue: 0.933, alpha: 1) // #E6E4EE
-    })
-    static let foreground = Color(UIColor { t in
-        t.userInterfaceStyle == .dark
-        ? UIColor(red: 0.945, green: 0.937, blue: 0.969, alpha: 1) // #F1EFF7
-        : UIColor(red: 0.078, green: 0.078, blue: 0.098, alpha: 1) // #141419
-    })
-    static let muted = Color(UIColor { t in
-        t.userInterfaceStyle == .dark
-        ? UIColor(red: 0.416, green: 0.400, blue: 0.518, alpha: 1) // #6A6684
-        : UIColor(red: 0.443, green: 0.427, blue: 0.518, alpha: 1) // #716D84
-    })
-    static let accent = Color(UIColor { t in
-        t.userInterfaceStyle == .dark
-        ? UIColor(red: 0.561, green: 0.420, blue: 0.941, alpha: 1) // #8F6BF0
-        : UIColor(red: 0.486, green: 0.227, blue: 0.929, alpha: 1) // #7C3AED
-    })
-    static let accentBright = Color(UIColor { t in
-        t.userInterfaceStyle == .dark
-        ? UIColor(red: 0.718, green: 0.612, blue: 1.0,   alpha: 1) // #B79CFF
-        : UIColor(red: 0.435, green: 0.196, blue: 0.847, alpha: 1) // #6F32D8
-    })
-    static let destructive = Color(UIColor { t in
-        t.userInterfaceStyle == .dark
-        ? UIColor(red: 0.933, green: 0.392, blue: 0.353, alpha: 1) // #EE645A
-        : UIColor(red: 0.863, green: 0.149, blue: 0.149, alpha: 1) // #DC2626
-    })
+    static let background = Color(uiColor: .systemBackground)
+    static let field = Color(uiColor: .secondarySystemFill)
+    static let border = Color.sInput
+    static let foreground = Color.sForeground
+    static let muted = Color.sMutedFG
+    static let accent = Color.sAccent
+    static let accentBright = Color.sAccent
+    static let destructive = Color.sDestructive
+    static let success = Color(red: 0.196, green: 0.769, blue: 0.478)
+    static let corner: CGFloat = 12
+    static let controlHeight: CGFloat = 48
 }
 
-// MARK: - Shared field style
+// MARK: - Backdrop (plain ground with a soft accent wash at the top)
+struct AuthBackdrop: View {
+    var body: some View {
+        ZStack(alignment: .top) {
+            AuthTheme.background
+            LinearGradient(
+                colors: [AuthTheme.accent.opacity(0.14), AuthTheme.accent.opacity(0)],
+                startPoint: .top, endPoint: .bottom
+            )
+            .frame(height: 340)
+        }
+        .ignoresSafeArea()
+    }
+}
+
+// MARK: - Header
+struct AuthHeader: View {
+    let title: String
+    let subtitle: String
+    var symbol: String? = nil
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            Group {
+                if let symbol {
+                    Image(systemName: symbol)
+                        .font(.title2.weight(.medium))
+                        .foregroundColor(AuthTheme.accent)
+                        .frame(width: 56, height: 56)
+                        .background(AuthTheme.accent.opacity(0.12),
+                                    in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .contentTransition(.symbolEffect(.replace))
+                } else {
+                    Image("LaunchLogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 56, height: 56)
+                }
+            }
+            .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(title)
+                    .font(.title.weight(.bold))
+                    .foregroundColor(AuthTheme.foreground)
+                Text(subtitle)
+                    .font(.subheadline)
+                    .foregroundColor(AuthTheme.muted)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+// MARK: - Grouped fields (one container, hairline dividers between rows)
+struct AuthFieldGroup<Content: View>: View {
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        VStack(spacing: 0) { content }
+            .background(AuthTheme.field, in: RoundedRectangle(cornerRadius: AuthTheme.corner, style: .continuous))
+    }
+}
+
+struct AuthRowDivider: View {
+    var inset: CGFloat = 48
+    var body: some View {
+        Divider().padding(.leading, inset)
+    }
+}
+
+struct AuthInputRow<Trailing: View>: View {
+    let icon: String?
+    let placeholder: String
+    @Binding var text: String
+    var keyboard: UIKeyboardType
+    var contentType: UITextContentType?
+    var isSecure: Bool
+    let trailing: Trailing
+
+    init(
+        icon: String?,
+        placeholder: String,
+        text: Binding<String>,
+        keyboard: UIKeyboardType = .default,
+        contentType: UITextContentType? = nil,
+        isSecure: Bool = false,
+        @ViewBuilder trailing: () -> Trailing
+    ) {
+        self.icon = icon
+        self.placeholder = placeholder
+        self._text = text
+        self.keyboard = keyboard
+        self.contentType = contentType
+        self.isSecure = isSecure
+        self.trailing = trailing()
+    }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            if let icon {
+                Image(systemName: icon)
+                    .font(.body)
+                    .foregroundColor(AuthTheme.muted)
+                    .frame(width: 22)
+                    .accessibilityHidden(true)
+            }
+
+            Group {
+                if isSecure {
+                    SecureField(placeholder, text: $text)
+                } else {
+                    TextField(placeholder, text: $text)
+                }
+            }
+            .font(.body)
+            .foregroundColor(AuthTheme.foreground)
+            .tint(AuthTheme.accent)
+            .keyboardType(keyboard)
+            .textContentType(contentType)
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
+
+            trailing
+        }
+        .padding(.horizontal, 14)
+        .frame(minHeight: 50)
+    }
+}
+
+extension AuthInputRow where Trailing == EmptyView {
+    init(
+        icon: String?,
+        placeholder: String,
+        text: Binding<String>,
+        keyboard: UIKeyboardType = .default,
+        contentType: UITextContentType? = nil,
+        isSecure: Bool = false
+    ) {
+        self.init(icon: icon, placeholder: placeholder, text: text, keyboard: keyboard,
+                  contentType: contentType, isSecure: isSecure) { EmptyView() }
+    }
+}
+
+struct AuthRevealButton: View {
+    @Binding var isRevealed: Bool
+
+    var body: some View {
+        Button { isRevealed.toggle() } label: {
+            Image(systemName: isRevealed ? "eye.slash" : "eye")
+                .font(.subheadline)
+                .foregroundColor(AuthTheme.muted)
+                .frame(width: 32, height: 32)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(isRevealed ? "Hide password" : "Show password")
+    }
+}
+
+// MARK: - Back button (auth screens hide the navigation bar)
+struct AuthBackButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "chevron.left")
+                .font(.body.weight(.semibold))
+                .foregroundColor(AuthTheme.foreground)
+                .frame(width: 40, height: 40)
+                .background(AuthTheme.field, in: Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Back")
+    }
+}
+
+// MARK: - One-time code entry (six boxes over a hidden field)
+struct AuthCodeField: View {
+    @Binding var code: String
+    var length = 6
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        ZStack {
+            TextField("", text: $code)
+                .keyboardType(.numberPad)
+                .textContentType(.oneTimeCode)
+                .focused($focused)
+                .foregroundColor(.clear)
+                .tint(.clear)
+                .accessibilityLabel("Verification code")
+
+            HStack(spacing: 8) {
+                ForEach(0..<length, id: \.self) { i in
+                    Text(digit(at: i))
+                        .font(.title2.weight(.semibold))
+                        .monospacedDigit()
+                        .foregroundColor(AuthTheme.foreground)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(AuthTheme.field, in: RoundedRectangle(cornerRadius: AuthTheme.corner, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: AuthTheme.corner, style: .continuous)
+                                .stroke(isActive(i) ? AuthTheme.accent : .clear, lineWidth: 1.5)
+                        )
+                }
+            }
+            .contentShape(Rectangle())
+            .onTapGesture { focused = true }
+            .accessibilityHidden(true)
+        }
+        .onChange(of: code) { newValue in
+            let cleaned = String(newValue.filter(\.isNumber).prefix(length))
+            if cleaned != newValue { code = cleaned }
+        }
+        .onAppear { focused = true }
+        .animation(.easeOut(duration: 0.15), value: code)
+    }
+
+    private func digit(at index: Int) -> String {
+        guard index < code.count else { return "" }
+        return String(code[code.index(code.startIndex, offsetBy: index)])
+    }
+
+    private func isActive(_ index: Int) -> Bool {
+        focused && index == min(code.count, length - 1)
+    }
+}
+
+/// Quiet one-line note under a field (e.g. code expiry).
+struct AuthHint: View {
+    let icon: String
+    let text: String
+
+    var body: some View {
+        Label(text, systemImage: icon)
+            .font(.footnote)
+            .foregroundColor(AuthTheme.muted)
+    }
+}
+
+// MARK: - Labelled single field (OTP login, forgot password)
 struct AuthField: View {
     let label: String
     let placeholder: String
@@ -57,39 +270,29 @@ struct AuthField: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(label)
-                .font(.scaled(12.5, weight: .medium))
+                .font(.footnote.weight(.medium))
                 .foregroundColor(AuthTheme.muted)
 
-            HStack(spacing: 10) {
-                Group {
-                    if isSecure {
-                        SecureField(placeholder, text: $text)
-                    } else {
-                        TextField(placeholder, text: $text)
-                    }
+            AuthFieldGroup {
+                AuthInputRow(icon: nil, placeholder: placeholder, text: $text,
+                             keyboard: keyboard, isSecure: isSecure) {
+                    if let trailing { trailing }
                 }
-                .font(.scaled(14))
-                .foregroundColor(AuthTheme.foreground)
-                .tint(AuthTheme.accentBright)
-                .keyboardType(keyboard)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-
-                if let trailing { trailing }
+                .accessibilityLabel(label)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
-            .background(AuthTheme.field)
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(AuthTheme.border, lineWidth: 1)
-            )
-            .cornerRadius(10)
         }
     }
 }
 
-// MARK: - Shared primary button (the signature violet glow)
+// MARK: - Buttons
+private struct AuthPressStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .opacity(configuration.isPressed ? 0.75 : 1)
+            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+    }
+}
+
 struct AuthPrimaryButton: View {
     let title: String
     let isLoading: Bool
@@ -97,27 +300,37 @@ struct AuthPrimaryButton: View {
 
     var body: some View {
         Button(action: action) {
-            HStack {
-                if isLoading {
-                    ProgressView().tint(.white).scaleEffect(0.85)
-                } else {
-                    Text(title)
-                        .font(.scaled(15, weight: .semibold))
-                        .foregroundColor(.white)
-                }
+            ZStack {
+                Text(title).opacity(isLoading ? 0 : 1)
+                if isLoading { ProgressView().tint(.white) }
             }
+            .font(.body.weight(.semibold))
+            .foregroundColor(.white)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 13)
-            .background(
-                LinearGradient(
-                    colors: [AuthTheme.accent, Color(red: 0.322, green: 0.188, blue: 0.741)],
-                    startPoint: .topLeading, endPoint: .bottomTrailing
-                )
-            )
-            .cornerRadius(10)
-            .shadow(color: AuthTheme.accent.opacity(0.45), radius: 18, x: 0, y: 8)
+            .frame(height: AuthTheme.controlHeight)
+            .background(AuthTheme.accent, in: RoundedRectangle(cornerRadius: AuthTheme.corner, style: .continuous))
         }
+        .buttonStyle(AuthPressStyle())
         .disabled(isLoading)
+        .accessibilityLabel(isLoading ? "\(title), in progress" : title)
+    }
+}
+
+/// Label for a quieter, tinted action — wrap in a Button or NavigationLink.
+struct AuthSecondaryLabel: View {
+    let icon: String
+    let title: String
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+            Text(title)
+        }
+        .font(.body.weight(.medium))
+        .foregroundColor(AuthTheme.accent)
+        .frame(maxWidth: .infinity)
+        .frame(height: AuthTheme.controlHeight)
+        .background(AuthTheme.accent.opacity(0.1), in: RoundedRectangle(cornerRadius: AuthTheme.corner, style: .continuous))
     }
 }
 
@@ -125,82 +338,27 @@ struct AuthPrimaryButton: View {
 struct AuthErrorBanner: View {
     let message: String
     var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "exclamationmark.circle")
-                .font(.scaled(13))
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Image(systemName: "exclamationmark.circle.fill")
             Text(message)
-                .font(.scaled(13))
-            Spacer()
+            Spacer(minLength: 0)
         }
+        .font(.footnote)
         .foregroundColor(AuthTheme.destructive)
         .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(AuthTheme.destructive.opacity(0.1))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10)
-                        .stroke(AuthTheme.destructive.opacity(0.3), lineWidth: 1)
-                )
-        )
+        .background(AuthTheme.destructive.opacity(0.08), in: RoundedRectangle(cornerRadius: AuthTheme.corner, style: .continuous))
     }
 }
 
-// MARK: - Legacy light-style field (still used by OTP login / forgot password)
+// MARK: - Legacy field name (still used by OTP login / forgot password)
 struct VioletField: View {
     let label: String
     let placeholder: String
     @Binding var text: String
     let keyboard: UIKeyboardType
     let isSecure: Bool
-
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(label)
-                .font(.scaled(13, weight: .medium))
-                .foregroundColor(.sForeground)
-
-            Group {
-                if isSecure {
-                    SecureField(placeholder, text: $text)
-                } else {
-                    TextField(placeholder, text: $text)
-                }
-            }
-            .font(.scaled(14))
-            .foregroundColor(.sForeground)
-            .tint(.sAccent)
-            .keyboardType(keyboard)
-            .textInputAutocapitalization(.never)
-            .autocorrectionDisabled()
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .background(Color.sCard)
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color.sInput, lineWidth: 0.5)
-            )
-            .cornerRadius(8)
-        }
-    }
-}
-
-// MARK: - Shared logo + glow
-struct AuthLogo: View {
-    var body: some View {
-        ZStack {
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [AuthTheme.accent.opacity(0.35), AuthTheme.accent.opacity(0)],
-                        center: .center, startRadius: 4, endRadius: 70
-                    )
-                )
-                .frame(width: 140, height: 140)
-
-            Image("LaunchLogo")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 76, height: 76)
-        }
+        AuthField(label: label, placeholder: placeholder, text: $text,
+                  keyboard: keyboard, isSecure: isSecure)
     }
 }

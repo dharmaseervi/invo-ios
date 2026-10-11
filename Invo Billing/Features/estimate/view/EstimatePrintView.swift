@@ -23,15 +23,15 @@ struct EstimatePrintView: View {
                     Button(action: { dismiss() }) {
                         HStack(spacing: 8) {
                             Image(systemName: "chevron.left")
-                                .font(.scaled(14, weight: .semibold))
+                                .font(.body.weight(.semibold))
                             Text("Back")
-                                .font(.scaled(14))
+                                .font(.body)
                         }
                         .foregroundColor(.sForeground)
                     }
                     Spacer()
                     Text("Print estimate")
-                        .font(.scaled(15, weight: .semibold))
+                        .font(.body.weight(.semibold))
                         .foregroundColor(.sForeground)
                     Spacer()
                     Menu {
@@ -43,12 +43,12 @@ struct EstimatePrintView: View {
                         }
                     } label: {
                         Image(systemName: "square.and.arrow.up")
-                            .font(.scaled(14, weight: .semibold))
+                            .font(.body.weight(.semibold))
                             .foregroundColor(pdfURL == nil ? .sMutedFG : .sAccent)
                     }
                     .disabled(pdfURL == nil)
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, AppSpacing.page)
                 .padding(.vertical, 16)
 
                 Rectangle().fill(Color.sBorder).frame(height: 0.5)
@@ -59,12 +59,12 @@ struct EstimatePrintView: View {
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: "paintpalette")
-                            .font(.scaled(12))
+                            .font(.footnote)
                         Text("Template: \(selectedTemplate.title)")
-                            .font(.scaled(13, weight: .medium))
+                            .font(.subheadline.weight(.medium))
                         Spacer()
                         Image(systemName: "chevron.right")
-                            .font(.scaled(11, weight: .semibold))
+                            .font(.caption.weight(.semibold))
                     }
                     .foregroundColor(.sForeground)
                     .padding(.horizontal, 14)
@@ -73,7 +73,7 @@ struct EstimatePrintView: View {
                     .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.sBorder, lineWidth: 0.5))
                     .cornerRadius(8)
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, AppSpacing.page)
                 .padding(.top, 12)
 
                 // MARK: - PDF Preview
@@ -82,21 +82,21 @@ struct EstimatePrintView: View {
                         ProgressView()
                             .tint(.sAccent)
                         Text("Preparing document...")
-                            .font(.scaled(13))
+                            .font(.subheadline)
                             .foregroundColor(.sMutedFG)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let errorMessage {
                     VStack(spacing: 10) {
                         Image(systemName: "exclamationmark.triangle")
-                            .font(.scaled(28))
+                            .font(.title)
                             .foregroundColor(.sDestructive)
                         Text(errorMessage)
-                            .font(.scaled(13))
+                            .font(.subheadline)
                             .foregroundColor(.sMutedFG)
                             .multilineTextAlignment(.center)
                         Button("Try again") { fetchPDF() }
-                            .font(.scaled(13, weight: .medium))
+                            .font(.subheadline.weight(.medium))
                             .foregroundColor(.sAccent)
                     }
                     .padding(24)
@@ -111,9 +111,9 @@ struct EstimatePrintView: View {
                     Button(action: printEstimate) {
                         HStack(spacing: 8) {
                             Image(systemName: "printer.fill")
-                                .font(.scaled(13, weight: .semibold))
+                                .font(.subheadline.weight(.semibold))
                             Text("Print")
-                                .font(.scaled(15, weight: .semibold))
+                                .font(.body.weight(.semibold))
                         }
                         .foregroundColor(.sAccentFG)
                         .frame(maxWidth: .infinity)
@@ -126,9 +126,9 @@ struct EstimatePrintView: View {
                     Button(action: sharePDF) {
                         HStack(spacing: 8) {
                             Image(systemName: "arrow.down.doc")
-                                .font(.scaled(13, weight: .semibold))
+                                .font(.subheadline.weight(.semibold))
                             Text("Download / Share")
-                                .font(.scaled(14, weight: .medium))
+                                .font(.body.weight(.medium))
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
@@ -139,7 +139,7 @@ struct EstimatePrintView: View {
                     }
                     .disabled(pdfURL == nil)
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, AppSpacing.page)
                 .padding(.vertical, 16)
                 .background(Color.sBackground)
             }

@@ -62,17 +62,17 @@ struct ReturnToSupplierSheet: View {
                     HStack {
                         ProgressView().tint(.sAccent)
                         Text("Loading the bill…")
-                            .font(.scaled(13))
+                            .font(.subheadline)
                             .foregroundColor(.sMutedFG)
                     }
                 } else {
                     ForEach(lines) { line in
                         VStack(alignment: .leading, spacing: 6) {
                             Text(line.item_name)
-                                .font(.scaled(14, weight: .medium))
+                                .font(.subheadline.weight(.medium))
                             HStack {
                                 Text("\(line.qty) came in at \(Money.text(line.rate))")
-                                    .font(.scaled(12))
+                                    .font(.footnote)
                                     .foregroundColor(.sMutedFG)
                                 Spacer()
                                 TextField("0", text: Binding(
@@ -85,7 +85,7 @@ struct ReturnToSupplierSheet: View {
                             }
                             if (Int(sending[line.item_id] ?? "") ?? 0) > line.qty {
                                 Text("Only \(line.qty) came in on this bill.")
-                                    .font(.scaled(12))
+                                    .font(.footnote)
                                     .foregroundColor(.sDestructive)
                             }
                         }
@@ -104,19 +104,19 @@ struct ReturnToSupplierSheet: View {
             if let errorMessage {
                 Section {
                     Text(errorMessage)
-                        .font(.scaled(13))
+                        .font(.subheadline)
                         .foregroundColor(.sDestructive)
                 }
             }
         }
-        .navigationTitle("Return to supplier")
+        .navigationTitle("Create debit note")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button("Cancel") { dismiss() }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                Button("Send back") { save() }.disabled(!canSave)
+                Button("Save") { save() }.disabled(!canSave)
             }
         }
         .task { await loadBill() }

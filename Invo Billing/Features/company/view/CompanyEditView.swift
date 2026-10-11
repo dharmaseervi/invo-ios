@@ -13,13 +13,14 @@ struct CompanyEditView: View {
     @State private var pincode: String
     @State private var state: String
     @State private var invoiceFooter: String
+    @State private var invoicePrefix: String
 
     @State private var isSaving = false
     @State private var errorMessage: String?
 
     private let service = CompanyService()
 
-    enum Field { case name, phone, gst, address, city, pincode, footer }
+    enum Field { case name, phone, gst, address, city, pincode, footer, prefix }
 
     init(company: CompanyResponse) {
         self.company = company
@@ -31,6 +32,7 @@ struct CompanyEditView: View {
         _pincode       = State(initialValue: company.pincode)
         _state         = State(initialValue: company.state)
         _invoiceFooter = State(initialValue: company.invoice_footer ?? "")
+        _invoicePrefix = State(initialValue: company.invoice_prefix ?? "INV")
     }
 
     var isValid: Bool { !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
@@ -44,7 +46,7 @@ struct CompanyEditView: View {
                     // MARK: Company info
                     VStack(alignment: .leading, spacing: 14) {
                         Text("Company information")
-                            .font(.scaled(13, weight: .medium))
+                            .font(.subheadline.weight(.medium))
                             .foregroundColor(.sMutedFG)
 
                         VStack(spacing: 12) {
@@ -68,7 +70,7 @@ struct CompanyEditView: View {
                     // MARK: Address
                     VStack(alignment: .leading, spacing: 14) {
                         Text("Address")
-                            .font(.scaled(13, weight: .medium))
+                            .font(.subheadline.weight(.medium))
                             .foregroundColor(.sMutedFG)
 
                         VStack(spacing: 12) {
@@ -78,7 +80,7 @@ struct CompanyEditView: View {
                                                      focused: focused == .address)
                             .focused($focused, equals: .address)
 
-                            HStack(spacing: 10) {
+                            AdaptiveFormRow {
                                 CompanyFormFieldHalf(title: "City", placeholder: "City",
                                                     text: $city, focused: focused == .city)
                                 .focused($focused, equals: .city)
@@ -92,19 +94,42 @@ struct CompanyEditView: View {
                         }
                     }
 
+                    // MARK: Invoice Number Prefix
+                    VStack(alignment: .leading, spacing: 14) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Invoice number prefix")
+                                .font(.subheadline.weight(.medium))
+                                .foregroundColor(.sMutedFG)
+                            Text("Used when generating invoice numbers, e.g. \"INV\" → INV/2025-26/0001.")
+                                .font(.caption)
+                                .foregroundColor(.sMutedFG)
+                        }
+                        TextField("INV", text: $invoicePrefix)
+                            .font(.body)
+                            .foregroundColor(.sForeground)
+                            .textInputAutocapitalization(.characters)
+                            .autocorrectionDisabled()
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 10)
+                            .background(Color.sCard)
+                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.sInput, lineWidth: 0.5))
+                            .cornerRadius(8)
+                            .focused($focused, equals: .prefix)
+                    }
+
                     // MARK: Invoice Footer
                     VStack(alignment: .leading, spacing: 14) {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Invoice footer")
-                                .font(.scaled(13, weight: .medium))
+                                .font(.subheadline.weight(.medium))
                                 .foregroundColor(.sMutedFG)
                             Text("Appears at the bottom of every invoice PDF — bank details, T&C, or a thank-you note.")
-                                .font(.scaled(11))
+                                .font(.caption)
                                 .foregroundColor(.sMutedFG)
                         }
 
                         TextEditor(text: $invoiceFooter)
-                            .font(.scaled(13))
+                            .font(.subheadline)
                             .foregroundColor(.sForeground)
                             .scrollContentBackground(.hidden)
                             .frame(minHeight: 90)
@@ -125,9 +150,9 @@ struct CompanyEditView: View {
                                     ProgressView().tint(.sAccentFG).scaleEffect(0.85)
                                 } else {
                                     Image(systemName: "checkmark.circle.fill")
-                                        .font(.scaled(13, weight: .semibold))
+                                        .font(.subheadline.weight(.semibold))
                                     Text("Save changes")
-                                        .font(.scaled(15, weight: .semibold))
+                                        .font(.subheadline.weight(.semibold))
                                 }
                             }
                             .foregroundColor(.sAccentFG)
@@ -140,7 +165,7 @@ struct CompanyEditView: View {
 
                         Button { dismiss() } label: {
                             Text("Cancel")
-                                .font(.scaled(14, weight: .medium))
+                                .font(.subheadline.weight(.medium))
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 14)
                                 .foregroundColor(.sForeground)
@@ -153,7 +178,7 @@ struct CompanyEditView: View {
 
                     Color.clear.frame(height: 40)
                 }
-                .padding(20)
+                .padding(AppSpacing.card)
             }
         }
         .navigationTitle("Edit company")
@@ -174,7 +199,8 @@ struct CompanyEditView: View {
             city: city,
             state: state,
             pincode: pincode,
-            invoice_footer: invoiceFooter
+            invoice_footer: invoiceFooter,
+            invoice_prefix: invoicePrefix.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "INV" : invoicePrefix.trimmingCharacters(in: .whitespacesAndNewlines)
         )
         do {
             try await service.updateCompany(id: company.id, payload: payload)

@@ -36,7 +36,7 @@ struct PDFLookView: View {
                     actionBar(showsBackLabel: true)
                     actionBar(showsBackLabel: false)
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, AppSpacing.page)
                 .padding(.vertical, 12)
                 .background(Color.black.opacity(0.95))
                 
@@ -119,7 +119,7 @@ extension PDFLookView {
                         Text("Back")
                     }
                 }
-                .font(.scaled(14, weight: .light))
+                .font(.body)
                 .foregroundColor(.white)
             }
             .accessibilityLabel("Back")
@@ -141,7 +141,7 @@ extension PDFLookView {
     ) -> some View {
         Button(action: action) {
             Image(systemName: symbol)
-                .font(.scaled(16, weight: .semibold))
+                .font(.subheadline.weight(.semibold))
                 .foregroundColor(.white)
         }
         .accessibilityLabel(label)

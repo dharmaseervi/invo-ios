@@ -33,7 +33,7 @@ struct ProfitLossView: View {
 
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, AppSpacing.page)
                     .padding(.top, 16)
                 }
                 .refreshable { await vm.load() }
@@ -90,25 +90,25 @@ struct ProfitLossView: View {
         let isLoss = r.net_profit < -0.004
         return VStack(alignment: .leading, spacing: 8) {
             Text(isLoss ? "Net loss" : "Net profit")
-                .font(.scaled(13))
+                .font(.subheadline)
                 .foregroundColor(.sMutedFG)
 
             Text(Money.text(abs(r.net_profit))).moneyLine()
-                .font(.scaled(32, weight: .bold))
-                .foregroundColor(isLoss ? .sDestructive : Color(red: 0.086, green: 0.639, blue: 0.341))
+                .font(.largeTitle.weight(.bold))
+                .foregroundColor(isLoss ? .sDestructive : .sSuccess)
 
             if r.revenue > 0 {
                 Text("\(String(format: "%.1f", r.net_margin_pct))% net margin · \(String(format: "%.1f", r.gross_margin_pct))% gross margin")
-                    .font(.scaled(12))
+                    .font(.footnote)
                     .foregroundColor(.sMutedFG)
             }
 
             Text(periodLabel(r))
-                .font(.scaled(11))
+                .font(.caption)
                 .foregroundColor(.sMutedFG)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(18)
+        .padding(AppSpacing.card)
         .background(Color.sCard)
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.sBorder, lineWidth: 0.5))
         .cornerRadius(16)
@@ -120,11 +120,11 @@ struct ProfitLossView: View {
         VStack(spacing: 0) {
             breakdownRow(
                 icon: "arrow.down.circle.fill",
-                iconColor: Color(red: 0.086, green: 0.639, blue: 0.341),
+                iconColor: .sSuccess,
                 label: "Revenue",
                 detail: "\(r.invoice_count) invoice\(r.invoice_count == 1 ? "" : "s")",
                 amount: r.revenue,
-                amountColor: Color(red: 0.086, green: 0.639, blue: 0.341),
+                amountColor: .sSuccess,
                 sign: "+"
             )
             rowDivider()
@@ -142,14 +142,14 @@ struct ProfitLossView: View {
             // Gross profit line
             HStack {
                 Text("Gross profit")
-                    .font(.scaled(13, weight: .medium))
+                    .font(.subheadline.weight(.medium))
                     .foregroundColor(.sForeground)
                 Spacer()
                 Text(Money.text(abs(r.gross_profit))).moneyLine()
-                    .font(.scaled(13, weight: .semibold))
+                    .font(.subheadline.weight(.semibold))
                     .foregroundColor(r.gross_profit < -0.004 ? .sDestructive : .sForeground)
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, AppSpacing.page)
             .padding(.vertical, 12)
             .background(Color.sCard.opacity(0.5))
 
@@ -180,26 +180,26 @@ struct ProfitLossView: View {
     ) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.scaled(15))
+                .font(.body)
                 .foregroundColor(iconColor)
                 .frame(width: 24)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(label)
-                    .font(.scaled(14, weight: .medium))
+                    .font(.subheadline.weight(.medium))
                     .foregroundColor(.sForeground)
                 Text(detail)
-                    .font(.scaled(11))
+                    .font(.caption)
                     .foregroundColor(.sMutedFG)
             }
 
             Spacer()
 
             Text(sign + Money.text(amount)).moneyLine()
-                .font(.scaled(14, weight: .semibold))
+                .font(.subheadline.weight(.semibold))
                 .foregroundColor(amountColor)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, AppSpacing.page)
         .padding(.vertical, 12)
     }
 
@@ -223,10 +223,10 @@ struct ProfitLossView: View {
     private func countCard(value: Int, label: String) -> some View {
         VStack(spacing: 4) {
             Text("\(value)")
-                .font(.scaled(20, weight: .bold))
+                .font(.title3.weight(.bold))
                 .foregroundColor(.sForeground)
             Text(label)
-                .font(.scaled(11))
+                .font(.caption)
                 .foregroundColor(.sMutedFG)
         }
         .frame(maxWidth: .infinity)
@@ -245,16 +245,16 @@ struct ProfitLossView: View {
     private var emptyState: some View {
         VStack(spacing: 10) {
             Image(systemName: "chart.bar.doc.horizontal")
-                .font(.scaled(30))
+                .font(.title)
                 .foregroundColor(.sMutedFG)
             Text("No data for this period")
-                .font(.scaled(15, weight: .medium))
+                .font(.subheadline.weight(.medium))
                 .foregroundColor(.sForeground)
             Text("Record invoices, bills and expenses and they will appear here.")
-                .font(.scaled(12))
+                .font(.footnote)
                 .foregroundColor(.sMutedFG)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 20)
+                .padding(.horizontal, AppSpacing.page)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 40)

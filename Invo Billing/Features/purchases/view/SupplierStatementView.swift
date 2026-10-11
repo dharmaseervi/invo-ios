@@ -22,51 +22,55 @@ struct SupplierStatementView: View {
     }
 
     var body: some View {
-        ZStack {
-            Color.sBackground.ignoresSafeArea()
-
+        Group {
             if vm.isLoading && vm.entries.isEmpty {
-                ProgressView().tint(.sAccent)
+                ProgressView()
+                    .tint(.sAccent)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                ScrollView {
-                    // A plain stack. The same list inside a LazyVStack built its rows
-                    // and never laid them out when they arrived after the first render,
-                    // and a statement page is 40 rows at most.
-                    VStack(alignment: .leading, spacing: 0) {
-                        balanceCard
-                            .padding(.horizontal, 20)
-                            .padding(.top, 16)
+                List {
+                    balanceCard
+                        .padding(.horizontal, AppSpacing.page)
+                        .padding(.top, 8)
+                        .padding(.bottom, 4)
+                        .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
 
-                        if vm.entries.isEmpty {
-                            emptyState
-                        } else {
-                            if vm.isLoadingEarlier {
-                                ProgressView()
-                                    .tint(.sAccent)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 14)
-                            } else if vm.hasMore {
-                                Button("Load earlier entries") {
-                                    Task { await vm.loadEarlier() }
-                                }
-                                .font(.scaled(13, weight: .medium))
-                                .foregroundColor(.sAccent)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 14)
+                    if vm.entries.isEmpty {
+                        ContentUnavailableView(
+                            "Nothing on this account yet",
+                            systemImage: "doc.text.magnifyingglass",
+                            description: Text("Record a bill from \(supplier.name) and it will show here, with every payment against it.")
+                        )
+                        .padding(.vertical, 24)
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                    } else {
+                        if vm.isLoadingEarlier {
+                            HStack { Spacer(); ProgressView().tint(.sAccent); Spacer() }
+                                .padding(.vertical, 4)
+                                .listRowSeparator(.hidden)
+                        } else if vm.hasMore {
+                            Button("Load earlier entries") {
+                                Task { await vm.loadEarlier() }
                             }
-
-                            VStack(spacing: 10) {
-                                ForEach(vm.entries, id: \.rowKey) { entry in
-                                    entryRow(entry)
-                                }
-                            }
-                            .padding(.horizontal, 20)
-                            .padding(.top, 14)
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(Color.sAccent)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 4)
+                            .listRowSeparator(.hidden)
                         }
 
-                        Spacer(minLength: 40)
+                        ForEach(vm.entries, id: \.rowKey) { entry in
+                            entryRow(entry)
+                                .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+                                .listRowSeparator(.hidden, edges: entry.rowKey == vm.entries.first?.rowKey ? .top : [])
+                        }
                     }
                 }
+                .listStyle(.plain)
+                .contentMargins(.bottom, 16, for: .scrollContent)
                 .refreshable { await vm.load() }
             }
         }
@@ -110,88 +114,88 @@ struct SupplierStatementView: View {
     private var balanceCard: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(vm.isInCredit ? "Paid ahead" : "Owed to them")
-                .font(.scaled(13))
+                .font(.subheadline)
                 .foregroundColor(.sMutedFG)
 
             if let balance = vm.balance {
                 Text(Money.text(abs(balance))).moneyLine()
-                    .font(.scaled(26, weight: .bold))
+                    .font(.title.bold())
                     .foregroundColor(
                         balance > 0.004
                             ? .sDestructive
-                            : Color(red: 0.086, green: 0.639, blue: 0.341)
+                            : .sSuccess
                     )
             } else {
                 // Not known rather than nothing owed.
                 Text("—").moneyLine()
-                    .font(.scaled(26, weight: .bold))
+                    .font(.title.bold())
                     .foregroundColor(.sMutedFG)
             }
 
             if vm.loadFailed {
                 Text(vm.summary == nil ? "Totals unavailable" : "Couldn't refresh — figures may be out of date")
-                    .font(.scaled(12))
+                    .font(.footnote)
                     .foregroundColor(.sDestructive)
                 Button("Try again") { Task { await vm.load() } }
             }
 
             if let summary = vm.summary {
                 Text("\(Money.text(summary.billed)) billed · \(Money.text(summary.paid)) paid")
-                    .font(.scaled(12))
+                    .font(.footnote)
                     .foregroundColor(.sMutedFG)
             } else if !vm.isLoading && !vm.loadFailed {
                 Button("Try again") { Task { await vm.load() } }
-                    .font(.scaled(12, weight: .medium))
+                    .font(.footnote.weight(.medium))
                     .foregroundColor(.sAccent)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(18)
-        .background(Color.sCard)
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.sBorder, lineWidth: 0.5))
-        .cornerRadius(16)
+        .padding(12)
+        .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
     }
 
     private func entryRow(_ entry: SupplierLedgerEntry) -> some View {
-        HStack(alignment: .top, spacing: 12) {
+        let detail = [AppDate.text(fromWire: entry.date),
+                      (!entry.reference.isEmpty && !entry.isBill) ? entry.reference : ""]
+            .filter { !$0.isEmpty }
+            .joined(separator: " · ")
+
+        return HStack(spacing: 12) {
             Image(systemName: entry.isBill ? "doc.text" : "indianrupeesign.circle")
-                .font(.scaled(15))
-                .foregroundColor(entry.isBill ? .sMutedFG : Color(red: 0.086, green: 0.639, blue: 0.341))
-                .frame(width: 22)
+                .font(.body)
+                .foregroundStyle(entry.isBill ? Color.sAccent : Color.sSuccess)
+                .frame(width: 40, height: 40)
+                .background((entry.isBill ? Color.sAccent : Color.sSuccess).opacity(0.12), in: Circle())
+                .accessibilityHidden(true)
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(entry.description)
-                    .font(.scaled(14, weight: .medium))
-                    .foregroundColor(.sForeground)
-                Text(AppDate.text(fromWire: entry.date))
-                    .font(.scaled(12))
-                    .foregroundColor(.sMutedFG)
-                if !entry.reference.isEmpty && !entry.isBill {
-                    Text(entry.reference)
-                        .font(.scaled(12))
-                        .foregroundColor(.sMutedFG)
-                }
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                Text(detail)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
+            .alignmentGuide(.listRowSeparatorLeading) { d in d[.leading] }
 
-            Spacer()
+            Spacer(minLength: 8)
 
-            VStack(alignment: .trailing, spacing: 2) {
+            VStack(alignment: .trailing, spacing: 3) {
                 // A bill adds to what is owed, a payment takes it away, and the sign
                 // says which without needing the words.
                 Text((entry.isBill ? "+" : "−") + Money.text(entry.isBill ? entry.debit : entry.credit))
                     .moneyLine()
-                    .font(.scaled(14, weight: .semibold))
-                    .foregroundColor(entry.isBill ? .sForeground : Color(red: 0.086, green: 0.639, blue: 0.341))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(entry.isBill ? Color.sForeground : Color.sSuccess)
 
                 Text(balanceLabel(entry.balance))
-                    .font(.scaled(11))
-                    .foregroundColor(.sMutedFG)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
+            .frame(minWidth: 88, alignment: .trailing)
         }
-        .padding(14)
-        .background(Color.sCard)
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.sBorder, lineWidth: 0.5))
-        .cornerRadius(14)
     }
 
     /// The balance after a line, said the way it would be read aloud.
@@ -199,23 +203,5 @@ struct SupplierStatementView: View {
         if value > 0.004 { return "\(Money.text(value)) owed" }
         if value < -0.004 { return "\(Money.text(abs(value))) ahead" }
         return "settled"
-    }
-
-    private var emptyState: some View {
-        VStack(spacing: 10) {
-            Image(systemName: "doc.text.magnifyingglass")
-                .font(.scaled(28))
-                .foregroundColor(.sMutedFG)
-            Text("Nothing on this account yet")
-                .font(.scaled(15, weight: .medium))
-                .foregroundColor(.sForeground)
-            Text("Record a bill from \(supplier.name) and it will show here, with every payment against it.")
-                .font(.scaled(12))
-                .foregroundColor(.sMutedFG)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 30)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 50)
     }
 }

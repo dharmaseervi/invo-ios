@@ -33,293 +33,239 @@ struct ItemsView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                Color.sBackground.ignoresSafeArea()
-
-                VStack(spacing: 0) {
-
-                    // MARK: - Search Bar
-                    HStack(spacing: 10) {
-                        Image(systemName: "magnifyingglass")
-                            .font(.scaled(14))
-                            .foregroundColor(.sMutedFG)
-
-                        TextField("Search name or SKU", text: $searchText)
-                            .font(.scaled(14))
-                            .foregroundColor(.sForeground)
-                            .tint(.sAccent)
-                            .autocorrectionDisabled()
-                            .onChange(of: searchText) { _, query in
-                                vm.search(query)
+            contentArea
+                .navigationTitle("Items")
+                #if DEBUG
+                .navigationDestination(isPresented: $debugItemForm) { ItemFormView() }
+                .onAppear {
+                    if UserDefaults.standard.string(forKey: "startScreen") == "itemform" { debugItemForm = true }
+                }
+                #endif
+                .navigationBarTitleDisplayMode(.large)
+                .searchable(text: $searchText, prompt: "Search name or SKU")
+                .onChange(of: searchText) { _, query in
+                    vm.search(query)
+                }
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        if isSelectMode {
+                            Button("Cancel") {
+                                isSelectMode = false
+                                selectedItemIDs.removeAll()
                             }
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 10)
-                    .background(Color.sCard)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color.sInput, lineWidth: 0.5)
-                    )
-                    .cornerRadius(8)
-                    .padding(.horizontal, 20)
-                    .padding(.top, 14)
-
-                    // MARK: - Content
-                    Group {
-                        // Only when there is nothing to show yet. Searching reloads from
-                        // the server, so this used to replace the whole list with a
-                        // centred spinner on every search — the rows you were reading
-                        // vanished, the scroll position went with them, and they
-                        // reappeared a moment later. A reload with rows already on
-                        // screen keeps them and says so quietly instead, in the
-                        // overlay below.
-                        if vm.isLoading && vm.items.isEmpty {
-                            VStack(spacing: 12) {
-                                ProgressView()
-                                    .tint(.sAccent)
-                                Text("Loading items...")
-                                    .font(.scaled(13))
-                                    .foregroundColor(.sMutedFG)
-                            }
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        } else if let error = vm.errorMessage {
-                            VStack(spacing: 10) {
-                                Image(systemName: "exclamationmark.triangle")
-                                    .font(.scaled(28))
-                                    .foregroundColor(.sDestructive)
-
-                                Text(error)
-                                    .font(.scaled(13))
-                                    .foregroundColor(.sMutedFG)
-                                    .multilineTextAlignment(.center)
-
-                                // Retrying a rejected token can only fail again, so the
-                                // button is offered only for failures a retry can fix.
-                                if !vm.sessionExpired {
-                                    Button(action: {
-                                        Task { await vm.loadItems() }
-                                    }) {
-                                        Text("Try again")
-                                            .font(.scaled(13, weight: .medium))
-                                            .foregroundColor(.sAccent)
-                                    }
-                                    .padding(.top, 4)
-                                }
-                            }
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .padding(24)
-                        } else if filteredItems.isEmpty {
-                            VStack(spacing: 16) {
-                                Image(systemName: "box.2")
-                                    .font(.scaled(40))
-                                    .foregroundColor(.sMutedFG)
-
-                                VStack(spacing: 4) {
-                                    Text("No items")
-                                        .font(.scaled(15, weight: .semibold))
-                                        .foregroundColor(.sForeground)
-
-                                    Text("Add your first item to get started")
-                                        .font(.scaled(13))
-                                        .foregroundColor(.sMutedFG)
-                                }
-
-                                NavigationLink {
-                                    ItemFormView()
-                                } label: {
-                                    Text("Add item")
-                                        .font(.scaled(13, weight: .semibold))
-                                        .foregroundColor(.sAccentFG)
-                                        .padding(.horizontal, 20)
-                                        .padding(.vertical, 10)
-                                        .background(Color.sPrimary)
-                                        .cornerRadius(8)
-                                }
-                                .padding(.top, 4)
-                            }
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
                         } else {
-                            ScrollView(.vertical, showsIndicators: false) {
-                                // Lazy: a plain VStack builds every row up front, and
-                                // each row's .task fires with it — so the whole
-                                // catalogue was constructed, and the next page asked
-                                // for, before anything had been scrolled.
-                                LazyVStack(spacing: 10) {
-                                    ForEach(filteredItems) { item in
-                                        ItemListRowView(
-                                            item: item,
-                                            onTapRow: {
-                                                if isSelectMode {
-                                                    if selectedItemIDs.contains(item.id) {
-                                                        selectedItemIDs.remove(item.id)
-                                                    } else {
-                                                        selectedItemIDs.insert(item.id)
-                                                    }
-                                                } else {
-                                                    selectedItemForEdit = item
-                                                }
-                                            },
-                                            onTapPrint: { itemToPrint = item },
-                                            isSelectMode: isSelectMode,
-                                            isSelected: selectedItemIDs.contains(item.id)
-                                        )
-                                        .task {
-                                            // Runs as each row is built; the view model
-                                            // only fetches when near the end of the list.
-                                            await vm.loadMoreIfNeeded(currentItem: item)
-                                        }
-                                    }
-
-                                    if vm.isLoadingMore {
-                                        ProgressView()
-                                            .tint(.sAccent)
-                                            .padding(.vertical, 12)
-                                    } else if vm.loadMoreFailed {
-                                        VStack(spacing: 6) {
-                                            Text("Couldn't load more items.")
-                                                .font(.scaled(13))
-                                                .foregroundColor(.sMutedFG)
-                                            Button("Try again") { Task { await vm.retryLoadMore() } }
-                                                .font(.scaled(13, weight: .medium))
-                                                .foregroundColor(.sAccent)
-                                        }
-                                        .padding(.vertical, 12)
-                                    } else if !vm.hasMore && filteredItems.count > 20 {
-                                        Text("All \(filteredItems.count) items loaded")
-                                            .font(.scaled(12))
-                                            .foregroundColor(.sMutedFG)
-                                            .padding(.vertical, 12)
-                                    }
-                                }
-                                .padding(20)
-                                .padding(.bottom, isSelectMode && !selectedItemIDs.isEmpty ? 70 : 0)
-                            }
-                        }
-                    }
-                    // A reload happening over rows that are already there. Small,
-                    // and above the list rather than in place of it.
-                    .overlay(alignment: .top) {
-                        if vm.isLoading && !vm.items.isEmpty {
-                            ProgressView()
-                                .tint(.sAccent)
-                                .scaleEffect(0.8)
-                                .padding(8)
-                                .background(.ultraThinMaterial, in: Capsule())
-                                .padding(.top, 8)
-                                .transition(.opacity)
-                        }
-                    }
-
-                    Spacer(minLength: 0)
-                }
-
-                if isSelectMode && !selectedItemIDs.isEmpty {
-                    VStack {
-                        Spacer()
-                        bulkPrintBar
-                    }
-                }
-            }
-            .navigationTitle("Items")
-            #if DEBUG
-            .navigationDestination(isPresented: $debugItemForm) { ItemFormView() }
-            .onAppear {
-                if UserDefaults.standard.string(forKey: "startScreen") == "itemform" { debugItemForm = true }
-            }
-            #endif
-            .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    if isSelectMode {
-                        Button("Cancel") {
-                            isSelectMode = false
-                            selectedItemIDs.removeAll()
-                        }
-                    } else {
-                        Button {
-                            showLookupScanner = true
-                        } label: {
-                            Image(systemName: "barcode.viewfinder")
-                        }
-                    }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    if isSelectMode {
-                        EmptyView()
-                    } else {
-                        HStack(spacing: 16) {
-                            Button("Select") { isSelectMode = true }
-                                .font(.scaled(15))
-                            Menu {
-                                NavigationLink {
-                                    ItemFormView()
-                                } label: {
-                                    Label("New product", systemImage: "plus")
-                                }
-                                Button {
-                                    showImport = true
-                                } label: {
-                                    Label("Import from CSV", systemImage: "tablecells")
-                                }
+                            Button {
+                                showLookupScanner = true
                             } label: {
-                                Image(systemName: "plus")
+                                Image(systemName: "barcode.viewfinder")
+                            }
+                        }
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        if isSelectMode {
+                            EmptyView()
+                        } else {
+                            HStack(spacing: 16) {
+                                Button("Select") { isSelectMode = true }
+                                    .font(.subheadline)
+                                Menu {
+                                    NavigationLink {
+                                        ItemFormView()
+                                    } label: {
+                                        Label("New product", systemImage: "plus")
+                                    }
+                                    Button {
+                                        showImport = true
+                                    } label: {
+                                        Label("Import from CSV", systemImage: "tablecells")
+                                    }
+                                } label: {
+                                    Image(systemName: "plus")
+                                }
                             }
                         }
                     }
                 }
-            }
-            .task {
-                await vm.loadItems()
-            }
-            .onChange(of: SessionManager.shared.selectedCompanyId) { _ in
-                Task { await vm.loadItems() }
-            }
-            .navigationDestination(item: $selectedItemForEdit) { item in
-                ItemFormView(existingItem: item)
-            }
-            .navigationDestination(item: $itemToPrint) { item in
-                PrintLabelScreen(item: item)
-            }
-            // A whole catalogue arriving at once changes the list underneath, so it
-            // reloads when the import closes — but only if something was written.
-            .navigationDestination(isPresented: $showImport) {
-                ImportItemsView { imported in
-                    if imported { Task { await vm.loadItems() } }
+                .task { await vm.loadItems() }
+                .onChange(of: SessionManager.shared.selectedCompanyId) { _ in
+                    Task { await vm.loadItems() }
                 }
-            }
-            .navigationDestination(isPresented: $showBulkPrint) {
-                BulkPrintLabelsScreen(items: vm.items.filter { selectedItemIDs.contains($0.id) })
-            }
-            .fullScreenCover(isPresented: $showLookupScanner) {
-                ItemScannerView(onCancel: { showLookupScanner = false }) { code in
-                    showLookupScanner = false
-                    // Asks the server: the scanned item may be on a page that was never
-                    // loaded, so checking only what is in memory would report "no match"
-                    // for an item that plainly exists.
-                    Task {
-                        if let match = await vm.findByCode(code) {
-                            lookupResult = match
-                        } else {
-                            lookupNotFoundCode = code
-                        }
+                .navigationDestination(item: $selectedItemForEdit) { item in
+                    ItemFormView(existingItem: item)
+                }
+                .navigationDestination(item: $itemToPrint) { item in
+                    PrintLabelScreen(item: item)
+                }
+                .navigationDestination(isPresented: $showImport) {
+                    ImportItemsView { imported in
+                        if imported { Task { await vm.loadItems() } }
                     }
                 }
-                .ignoresSafeArea()
+                .navigationDestination(isPresented: $showBulkPrint) {
+                    BulkPrintLabelsScreen(items: vm.items.filter { selectedItemIDs.contains($0.id) })
+                }
+                .fullScreenCover(isPresented: $showLookupScanner) {
+                    ItemScannerView(onCancel: { showLookupScanner = false }) { code in
+                        showLookupScanner = false
+                        Task {
+                            if let match = await vm.findByCode(code) {
+                                lookupResult = match
+                            } else {
+                                lookupNotFoundCode = code
+                            }
+                        }
+                    }
+                    .ignoresSafeArea()
+                }
+                .sheet(item: $lookupResult) { item in
+                    ItemLookupResultSheet(item: item)
+                        .presentationDetents([.medium])
+                }
+                .alert(
+                    "No match found",
+                    isPresented: Binding(
+                        get: { lookupNotFoundCode != nil },
+                        set: { if !$0 { lookupNotFoundCode = nil } }
+                    )
+                ) {
+                    Button("OK", role: .cancel) {}
+                } message: {
+                    Text("No item with SKU/barcode \"\(lookupNotFoundCode ?? "")\" was found.")
+                }
+        }
+    }
+
+    @ViewBuilder
+    private var contentArea: some View {
+        if vm.isLoading && vm.items.isEmpty {
+            VStack(spacing: 12) {
+                ProgressView().tint(.sAccent)
+                Text("Loading items...")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
             }
-            .sheet(item: $lookupResult) { item in
-                ItemLookupResultSheet(item: item)
-                    .presentationDetents([.medium])
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if let error = vm.errorMessage {
+            VStack(spacing: 10) {
+                Image(systemName: "exclamationmark.triangle")
+                    .font(.title)
+                    .foregroundStyle(Color.sDestructive)
+                Text(error)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                if !vm.sessionExpired {
+                    Button(action: {
+                        Task { await vm.loadItems() }
+                    }) {
+                        Text("Try again")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(Color.sAccent)
+                    }
+                    .padding(.top, 4)
+                }
             }
-            .alert(
-                "No match found",
-                isPresented: Binding(
-                    get: { lookupNotFoundCode != nil },
-                    set: { if !$0 { lookupNotFoundCode = nil } }
-                )
-            ) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text("No item with SKU/barcode \"\(lookupNotFoundCode ?? "")\" was found.")
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(24)
+        } else {
+            List {
+                if filteredItems.isEmpty {
+                    VStack(spacing: 16) {
+                        Image(systemName: "box.2")
+                            .font(.scaled(40))
+                            .foregroundStyle(.secondary)
+                        VStack(spacing: 4) {
+                            Text("No items")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.primary)
+                            Text("Add your first item to get started")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                        NavigationLink {
+                            ItemFormView()
+                        } label: {
+                            Text("Add item")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundColor(.sAccentFG)
+                                .padding(.horizontal, AppSpacing.page)
+                                .padding(.vertical, 10)
+                                .background(Color.sPrimary)
+                                .cornerRadius(8)
+                        }
+                        .padding(.top, 4)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
+                } else {
+                    ForEach(filteredItems) { item in
+                        ItemListRowView(
+                            item: item,
+                            onTapRow: {
+                                if isSelectMode {
+                                    if selectedItemIDs.contains(item.id) {
+                                        selectedItemIDs.remove(item.id)
+                                    } else {
+                                        selectedItemIDs.insert(item.id)
+                                    }
+                                } else {
+                                    selectedItemForEdit = item
+                                }
+                            },
+                            onTapPrint: { itemToPrint = item },
+                            isSelectMode: isSelectMode,
+                            isSelected: selectedItemIDs.contains(item.id)
+                        )
+                        .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+                        .listRowSeparator(.hidden, edges: item.id == filteredItems.first?.id ? .top : [])
+                        .task { await vm.loadMoreIfNeeded(currentItem: item) }
+                    }
+
+                    if vm.isLoadingMore {
+                        HStack { Spacer(); ProgressView().tint(.sAccent); Spacer() }
+                            .padding(.vertical, 12)
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                    } else if vm.loadMoreFailed {
+                        VStack(spacing: 6) {
+                            Text("Couldn't load more items.")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            Button("Try again") { Task { await vm.retryLoadMore() } }
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(Color.sAccent)
+                        }
+                        .padding(.vertical, 12)
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                    } else if !vm.hasMore && filteredItems.count > 20 {
+                        Text("All \(filteredItems.count) items loaded")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.vertical, 12)
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                    }
+                }
+            }
+            .listStyle(.plain)
+            .contentMargins(.bottom, isSelectMode && !selectedItemIDs.isEmpty ? 80 : 16, for: .scrollContent)
+            .overlay(alignment: .top) {
+                if vm.isLoading && !vm.items.isEmpty {
+                    ProgressView()
+                        .tint(.sAccent)
+                        .padding(8)
+                        .background(.ultraThinMaterial, in: Capsule())
+                        .transition(.opacity)
+                }
+            }
+            .safeAreaInset(edge: .bottom) {
+                if isSelectMode && !selectedItemIDs.isEmpty {
+                    bulkPrintBar
+                }
             }
         }
     }
@@ -329,8 +275,8 @@ extension ItemsView {
     fileprivate var bulkPrintBar: some View {
         HStack {
             Text("\(selectedItemIDs.count) selected")
-                .font(.scaled(13, weight: .medium))
-                .foregroundColor(.sMutedFG)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.secondary)
 
             Spacer()
 
@@ -341,18 +287,18 @@ extension ItemsView {
                     Image(systemName: "printer.fill")
                     Text("Print labels")
                 }
-                .font(.scaled(14, weight: .semibold))
+                .font(.subheadline.weight(.semibold))
                 .foregroundColor(.sAccentFG)
-                .padding(.horizontal, 18)
+                .padding(.horizontal, AppSpacing.page)
                 .padding(.vertical, 10)
                 .background(Color.sPrimary)
                 .cornerRadius(10)
             }
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, AppSpacing.page)
         .padding(.vertical, 14)
-        .background(Color.sCard)
-        .overlay(Rectangle().fill(Color.sBorder).frame(height: 0.5), alignment: .top)
+        .background(Color(UIColor.secondarySystemGroupedBackground))
+        .overlay(Rectangle().fill(Color(UIColor.separator)).frame(height: 0.5), alignment: .top)
     }
 }
 
@@ -368,38 +314,38 @@ struct ItemLookupResultSheet: View {
     var body: some View {
         VStack(spacing: 20) {
             Text(item.name)
-                .font(.scaled(18, weight: .semibold))
-                .foregroundColor(.sForeground)
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(.primary)
                 .padding(.top, 24)
 
             HStack(spacing: 0) {
                 VStack(spacing: 4) {
                     Text(Money.text(item.price)).moneyLine()
-                        .font(.scaled(22, weight: .bold))
-                        .foregroundColor(.sForeground)
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(.primary)
                     Text("Price")
-                        .font(.scaled(12))
-                        .foregroundColor(.sMutedFG)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity)
 
-                Rectangle().fill(Color.sBorder).frame(width: 0.5, height: 40)
+                Rectangle().fill(Color(UIColor.separator)).frame(width: 0.5, height: 40)
 
                 VStack(spacing: 4) {
                     Text("\(item.quantity)")
-                        .font(.scaled(22, weight: .bold))
-                        .foregroundColor(isLowStock ? .sDestructive : .sForeground)
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(isLowStock ? Color.sDestructive : .primary)
                     Text(item.unit ?? "In stock")
-                        .font(.scaled(12))
-                        .foregroundColor(.sMutedFG)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity)
             }
 
             if isLowStock {
                 Text(item.quantity <= 0 ? "Out of stock" : "Low stock")
-                    .font(.scaled(12, weight: .semibold))
-                    .foregroundColor(.sDestructive)
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Color.sDestructive)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
                     .background(Color.sDestructive.opacity(0.1))
@@ -408,7 +354,7 @@ struct ItemLookupResultSheet: View {
 
             Spacer()
         }
-        .padding(.horizontal, 24)
+        .padding(.horizontal, AppSpacing.page)
     }
 }
 
@@ -429,53 +375,53 @@ struct ItemListRowView: View {
         HStack(spacing: 12) {
             if isSelectMode {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.scaled(20))
-                    .foregroundColor(isSelected ? .sAccent : .sBorder)
+                    .font(.title3)
+                    .foregroundStyle(isSelected ? Color.sAccent : Color(UIColor.tertiaryLabel))
             }
 
             Button(action: onTapRow) {
                 HStack(spacing: 12) {
                     Text(String(item.name.prefix(1)).uppercased())
-                        .font(.scaled(14, weight: .semibold))
+                        .font(.subheadline.weight(.semibold))
                         .foregroundColor(.sAccentFG)
-                        .frame(width: 44, height: 44)
-                        .background(Color.sAccent)
-                        .cornerRadius(10)
+                        .frame(width: 40, height: 40)
+                        .background(Color.sAccent, in: RoundedRectangle(cornerRadius: 10))
 
                     VStack(alignment: .leading, spacing: 4) {
                         HStack(spacing: 6) {
                             Text(item.name)
-                                .font(.scaled(14, weight: .medium))
-                                .foregroundColor(.sForeground)
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(.primary)
 
                             if isLowStock {
                                 Text(item.quantity <= 0 ? "Out of stock" : "Low stock")
-                                    .font(.scaled(9, weight: .semibold))
-                                    .foregroundColor(.sDestructive)
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(Color.sDestructive)
                                     .padding(.horizontal, 6)
                                     .padding(.vertical, 2)
                                     .background(Color.sDestructive.opacity(0.1))
                                     .cornerRadius(4)
                             }
                         }
+                        .alignmentGuide(.listRowSeparatorLeading) { d in d[.leading] }
 
                         HStack(spacing: 8) {
                             Text(Money.text(item.price)).moneyLine()
-                                .font(.scaled(12))
-                                .foregroundColor(.sForeground)
+                                .font(.footnote)
+                                .foregroundStyle(.primary)
 
                             Text("•")
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(.tertiary)
                             Text("\(item.quantity) \(item.unit ?? "in stock")")
-                                .font(.scaled(11))
-                                .foregroundColor(isLowStock ? .sDestructive : .sMutedFG)
+                                .font(.caption)
+                                .foregroundStyle(isLowStock ? Color.sDestructive : .secondary)
 
                             if let desc = item.description, !desc.isEmpty {
                                 Text("•")
-                                    .foregroundColor(.sMutedFG)
+                                    .foregroundStyle(.tertiary)
                                 Text(desc)
-                                    .font(.scaled(11))
-                                    .foregroundColor(.sMutedFG)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
                                     .lineLimit(1)
                             }
                         }
@@ -490,18 +436,11 @@ struct ItemListRowView: View {
             if !isSelectMode {
                 Button(action: onTapPrint) {
                     Image(systemName: "qrcode")
-                        .font(.scaled(14, weight: .semibold))
-                        .foregroundColor(.sMutedFG)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(14)
-        .background(Color.sCard)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.sBorder, lineWidth: 0.5)
-        )
-        .cornerRadius(12)
     }
 }

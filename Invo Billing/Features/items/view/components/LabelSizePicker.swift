@@ -48,7 +48,7 @@ struct PrintLabelScreen: View {
                         LabelStyleSection()
                         quantitySection
                     }
-                    .padding(20)
+                    .padding(AppSpacing.card)
                 }
 
                 actionBar
@@ -91,26 +91,26 @@ struct PrintLabelScreen: View {
                     .frame(height: 160)
                     .overlay(
                         Text("Preview unavailable")
-                            .font(.scaled(13))
+                            .font(.subheadline)
                             .foregroundColor(.sMutedFG)
                     )
             }
 
             Text("\(selectedSize.subtitle) label · \(codeType.rawValue)")
-                .font(.scaled(12))
+                .font(.footnote)
                 .foregroundColor(.sMutedFG)
 
             Text(includedSummary)
-                .font(.scaled(11))
+                .font(.caption)
                 .foregroundColor(.sMutedFG)
                 .multilineTextAlignment(.center)
 
             if let warning = dataWarning {
                 Text(warning)
-                    .font(.scaled(11))
-                    .foregroundColor(Color(red: 0.851, green: 0.588, blue: 0.082))
+                    .font(.caption)
+                    .foregroundColor(.sWarning)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, AppSpacing.page)
             }
         }
         .frame(maxWidth: .infinity)
@@ -153,7 +153,7 @@ struct PrintLabelScreen: View {
     private var codeTypeSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Code type")
-                .font(.scaled(13, weight: .medium))
+                .font(.subheadline.weight(.medium))
                 .foregroundColor(.sMutedFG)
 
             HStack(spacing: 8) {
@@ -164,9 +164,9 @@ struct PrintLabelScreen: View {
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: type == .qr ? "qrcode" : "barcode")
-                                .font(.scaled(13, weight: .medium))
+                                .font(.subheadline.weight(.medium))
                             Text(type.rawValue)
-                                .font(.scaled(13, weight: .medium))
+                                .font(.subheadline.weight(.medium))
                         }
                         .foregroundColor(isSelected ? .sAccentFG : .sForeground)
                         .frame(maxWidth: .infinity)
@@ -187,7 +187,7 @@ struct PrintLabelScreen: View {
     private var sizeSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Label size")
-                .font(.scaled(13, weight: .medium))
+                .font(.subheadline.weight(.medium))
                 .foregroundColor(.sMutedFG)
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
@@ -198,9 +198,9 @@ struct PrintLabelScreen: View {
                     } label: {
                         VStack(spacing: 3) {
                             Text(size.label)
-                                .font(.scaled(13, weight: .medium))
+                                .font(.subheadline.weight(.medium))
                             Text(size.subtitle)
-                                .font(.scaled(10))
+                                .font(.caption)
                                 .foregroundColor(isSelected ? .sAccentFG.opacity(0.8) : .sMutedFG)
                         }
                         .foregroundColor(isSelected ? .sAccentFG : .sForeground)
@@ -222,7 +222,7 @@ struct PrintLabelScreen: View {
     private var quantitySection: some View {
         HStack {
             Text("Copies")
-                .font(.scaled(13, weight: .medium))
+                .font(.subheadline.weight(.medium))
                 .foregroundColor(.sMutedFG)
 
             Spacer()
@@ -232,7 +232,7 @@ struct PrintLabelScreen: View {
                     if quantity > 1 { quantity -= 1 }
                 }
                 Text("\(quantity)")
-                    .font(.scaled(15, weight: .semibold))
+                    .font(.subheadline.weight(.semibold))
                     .foregroundColor(.sForeground)
                     .frame(minWidth: 36)
                 stepperButton(systemImage: "plus") {
@@ -248,7 +248,7 @@ struct PrintLabelScreen: View {
     private func stepperButton(systemImage: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: systemImage)
-                .font(.scaled(12, weight: .semibold))
+                .font(.footnote.weight(.semibold))
                 .foregroundColor(.sForeground)
                 .frame(width: 32, height: 32)
         }
@@ -267,7 +267,7 @@ struct PrintLabelScreen: View {
                         Image(systemName: "square.and.arrow.up")
                         Text("Share")
                     }
-                    .font(.scaled(14, weight: .medium))
+                    .font(.subheadline.weight(.medium))
                     .foregroundColor(.sForeground)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
@@ -287,7 +287,7 @@ struct PrintLabelScreen: View {
                             Text("Print\(quantity > 1 ? " ×\(quantity)" : "")")
                         }
                     }
-                    .font(.scaled(14, weight: .semibold))
+                    .font(.subheadline.weight(.semibold))
                     .foregroundColor(.sAccentFG)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
@@ -296,7 +296,7 @@ struct PrintLabelScreen: View {
                 }
                 .disabled(isPrinting)
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, AppSpacing.page)
         }
         .padding(.bottom, 12)
         .background(Color.sBackground)

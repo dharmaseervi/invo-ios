@@ -1,5 +1,11 @@
 import Foundation
 
+private struct APIError: Decodable { let error: String? }
+private struct ChallanServiceError: LocalizedError {
+    let message: String
+    var errorDescription: String? { message }
+}
+
 class ChallanService {
     private let baseURL = AppEnvironment.baseURL
 
@@ -13,11 +19,21 @@ class ChallanService {
         return req
     }
 
+    private func check(_ data: Data, _ response: URLResponse) throws {
+        guard let http = response as? HTTPURLResponse else { throw URLError(.badServerResponse) }
+        guard (200...299).contains(http.statusCode) else {
+            let msg = (try? JSONDecoder().decode(APIError.self, from: data))?.error
+                ?? "Server error \(http.statusCode)"
+            throw ChallanServiceError(message: msg)
+        }
+    }
+
     func createChallan(payload: ChallanRequestDTO) async throws -> CreateChallanResponse {
         guard let url = URL(string: "\(baseURL)/challans") else { throw URLError(.badURL) }
         var req = authorizedRequest(url: url, method: "POST")
         req.httpBody = try JSONEncoder().encode(payload)
-        let (data, _) = try await URLSession.shared.data(for: req)
+        let (data, response) = try await URLSession.shared.data(for: req)
+        try check(data, response)
         return try JSONDecoder().decode(CreateChallanResponse.self, from: data)
     }
 
@@ -26,23 +42,24 @@ class ChallanService {
         components.queryItems = [URLQueryItem(name: "company_id", value: "\(companyID)")]
         guard let url = components.url else { throw URLError(.badURL) }
         let req = authorizedRequest(url: url, method: "GET")
-        let (data, _) = try await URLSession.shared.data(for: req)
-        return try JSONDecoder().decode([ChallanResponse].self, from: data)
+        let (data, response) = try await URLSession.shared.data(for: req)
+        try check(data, response)
+        struct Wrapper: Decodable { let challans: [ChallanResponse] }
+        return try JSONDecoder().decode(Wrapper.self, from: data).challans
     }
 
     func getChallanByID(_ id: Int) async throws -> ChallanDetailResponse {
         guard let url = URL(string: "\(baseURL)/challans/\(id)") else { throw URLError(.badURL) }
         let req = authorizedRequest(url: url, method: "GET")
-        let (data, _) = try await URLSession.shared.data(for: req)
+        let (data, response) = try await URLSession.shared.data(for: req)
+        try check(data, response)
         return try JSONDecoder().decode(ChallanDetailResponse.self, from: data)
     }
 
     func dispatchChallan(_ id: Int) async throws {
         guard let url = URL(string: "\(baseURL)/challans/\(id)/dispatch") else { throw URLError(.badURL) }
         let req = authorizedRequest(url: url, method: "PATCH")
-        let (_, response) = try await URLSession.shared.data(for: req)
-        guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
-            throw URLError(.badServerResponse)
-        }
+        let (data, response) = try await URLSession.shared.data(for: req)
+        try check(data, response)
     }
 }

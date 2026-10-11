@@ -37,142 +37,90 @@ struct SignupView: View {
         if !filled { return AuthTheme.border }
         switch passwordStrength {
         case 0, 1: return AuthTheme.destructive
-        case 2:    return Color(red: 0.851, green: 0.588, blue: 0.082)
-        default:   return Color(red: 0.196, green: 0.769, blue: 0.478)
+        case 2:    return .sWarning
+        default:   return AuthTheme.success
         }
+    }
+
+    private var showMismatch: Bool {
+        !viewModel.confirmPassword.isEmpty && !passwordsMatch
     }
 
     var body: some View {
         ZStack {
-            AuthTheme.background.ignoresSafeArea()
+            AuthBackdrop()
 
             ScrollView(showsIndicators: false) {
-                VStack(spacing: 0) {
-                    Spacer().frame(height: 44)
+                VStack(alignment: .leading, spacing: 32) {
+                    AuthHeader(title: "Create account", subtitle: "Start managing your invoices")
 
-                    // MARK: - Logo
-                    VStack(spacing: 16) {
-                        AuthLogo()
-                        VStack(spacing: 5) {
-                            Text("Create account")
-                                .font(.scaled(24, weight: .bold))
-                                .foregroundColor(AuthTheme.foreground)
-                            Text("Start managing your invoices")
-                                .font(.scaled(13))
-                                .foregroundColor(AuthTheme.muted)
-                        }
-                    }
-                    .padding(.bottom, 36)
-
-                    // MARK: - Form
-                    VStack(spacing: 16) {
-
-                        AuthField(
-                            label: "Email",
-                            placeholder: "name@company.com",
-                            text: $viewModel.email,
-                            keyboard: .emailAddress
-                        )
-
-                        // Password
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Password")
-                                .font(.scaled(12.5, weight: .medium))
-                                .foregroundColor(AuthTheme.muted)
-
-                            HStack(spacing: 10) {
-                                Group {
-                                    if showPassword {
-                                        TextField("Create a password", text: $viewModel.password)
-                                    } else {
-                                        SecureField("Create a password", text: $viewModel.password)
-                                    }
-                                }
-                                .font(.scaled(14))
-                                .foregroundColor(AuthTheme.foreground)
-                                .tint(AuthTheme.accentBright)
-                                .textInputAutocapitalization(.never)
-                                .autocorrectionDisabled()
-
-                                Button {
-                                    showPassword.toggle()
-                                } label: {
-                                    Image(systemName: showPassword ? "eye.slash" : "eye")
-                                        .font(.scaled(14))
-                                        .foregroundColor(AuthTheme.muted)
+                    VStack(alignment: .leading, spacing: 10) {
+                        AuthFieldGroup {
+                            AuthInputRow(
+                                icon: "envelope",
+                                placeholder: "Email",
+                                text: $viewModel.email,
+                                keyboard: .emailAddress,
+                                contentType: .username
+                            )
+                            AuthRowDivider()
+                            AuthInputRow(
+                                icon: "lock",
+                                placeholder: "Password",
+                                text: $viewModel.password,
+                                contentType: .newPassword,
+                                isSecure: !showPassword
+                            ) {
+                                AuthRevealButton(isRevealed: $showPassword)
+                            }
+                            AuthRowDivider()
+                            AuthInputRow(
+                                icon: "lock.rotation",
+                                placeholder: "Confirm password",
+                                text: $viewModel.confirmPassword,
+                                contentType: .newPassword,
+                                isSecure: !showConfirm
+                            ) {
+                                if viewModel.confirmPassword.isEmpty {
+                                    AuthRevealButton(isRevealed: $showConfirm)
+                                } else {
+                                    Image(systemName: passwordsMatch ? "checkmark.circle.fill" : "xmark.circle.fill")
+                                        .font(.subheadline)
+                                        .foregroundColor(passwordsMatch ? AuthTheme.success : AuthTheme.destructive)
+                                        .frame(width: 32, height: 32)
+                                        .accessibilityLabel(passwordsMatch ? "Passwords match" : "Passwords do not match")
                                 }
                             }
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 12)
-                            .background(AuthTheme.field)
-                            .overlay(RoundedRectangle(cornerRadius: 10).stroke(AuthTheme.border, lineWidth: 1))
-                            .cornerRadius(10)
+                        }
 
-                            if !viewModel.password.isEmpty {
-                                HStack(spacing: 6) {
+                        if !viewModel.password.isEmpty {
+                            HStack(spacing: 10) {
+                                HStack(spacing: 4) {
                                     ForEach(0..<4, id: \.self) { i in
-                                        RoundedRectangle(cornerRadius: 2)
+                                        Capsule()
                                             .fill(strengthColor(for: i))
-                                            .frame(height: 3)
+                                            .frame(height: 4)
                                     }
                                 }
                                 Text(strengthLabel)
-                                    .font(.scaled(11))
+                                    .font(.caption.weight(.medium))
                                     .foregroundColor(strengthColor(for: 0))
+                                    .frame(width: 48, alignment: .trailing)
                             }
+                            .padding(.horizontal, 4)
+                            .accessibilityElement(children: .ignore)
+                            .accessibilityLabel("Password strength: \(strengthLabel)")
                         }
 
-                        // Confirm password
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Confirm password")
-                                .font(.scaled(12.5, weight: .medium))
-                                .foregroundColor(AuthTheme.muted)
-
-                            HStack(spacing: 10) {
-                                Group {
-                                    if showConfirm {
-                                        TextField("Repeat your password", text: $viewModel.confirmPassword)
-                                    } else {
-                                        SecureField("Repeat your password", text: $viewModel.confirmPassword)
-                                    }
-                                }
-                                .font(.scaled(14))
-                                .foregroundColor(AuthTheme.foreground)
-                                .tint(AuthTheme.accentBright)
-                                .textInputAutocapitalization(.never)
-                                .autocorrectionDisabled()
-
-                                if !viewModel.confirmPassword.isEmpty {
-                                    Image(systemName: passwordsMatch ? "checkmark.circle.fill" : "xmark.circle.fill")
-                                        .font(.scaled(15))
-                                        .foregroundColor(passwordsMatch
-                                                         ? Color(red: 0.196, green: 0.769, blue: 0.478)
-                                                         : AuthTheme.destructive)
-                                } else {
-                                    Button {
-                                        showConfirm.toggle()
-                                    } label: {
-                                        Image(systemName: showConfirm ? "eye.slash" : "eye")
-                                            .font(.scaled(14))
-                                            .foregroundColor(AuthTheme.muted)
-                                    }
-                                }
-                            }
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 12)
-                            .background(AuthTheme.field)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 10)
-                                    .stroke(
-                                        !viewModel.confirmPassword.isEmpty && !passwordsMatch
-                                        ? AuthTheme.destructive.opacity(0.6)
-                                        : AuthTheme.border,
-                                        lineWidth: 1
-                                    )
-                            )
-                            .cornerRadius(10)
+                        if showMismatch {
+                            Text("Passwords don't match")
+                                .font(.caption)
+                                .foregroundColor(AuthTheme.destructive)
+                                .padding(.horizontal, 4)
                         }
+                    }
 
+                    VStack(spacing: 12) {
                         if let error = viewModel.errorMessage {
                             AuthErrorBanner(message: error)
                         }
@@ -185,33 +133,33 @@ struct SignupView: View {
                             }
                             Task { await viewModel.register() }
                         }
-                        .padding(.top, 4)
 
                         Text("By creating an account you agree to our [Terms of Service](https://invobilling.com/terms) and [Privacy Policy](https://invobilling.com/privacy).")
-                            .font(.scaled(11))
+                            .font(.caption)
                             .foregroundColor(AuthTheme.muted)
                             .tint(AuthTheme.accent)
                             .multilineTextAlignment(.center)
-                            .padding(.top, 4)
+                            .frame(maxWidth: .infinity)
+                            .padding(.horizontal, 8)
                     }
-                    .padding(.horizontal, 24)
 
-                    // Sign in link
                     HStack(spacing: 4) {
                         Text("Already have an account?")
-                            .font(.scaled(13))
                             .foregroundColor(AuthTheme.muted)
                         Button {
                             presentationMode.wrappedValue.dismiss()
                         } label: {
                             Text("Sign in")
-                                .font(.scaled(13, weight: .semibold))
-                                .foregroundColor(AuthTheme.accentBright)
+                                .fontWeight(.semibold)
+                                .foregroundColor(AuthTheme.accent)
                         }
                     }
-                    .padding(.top, 28)
-                    .padding(.bottom, 40)
+                    .font(.subheadline)
+                    .frame(maxWidth: .infinity)
                 }
+                .padding(.horizontal, 24)
+                .padding(.top, 48)
+                .padding(.bottom, 32)
             }
         }
         .navigationBarHidden(true)

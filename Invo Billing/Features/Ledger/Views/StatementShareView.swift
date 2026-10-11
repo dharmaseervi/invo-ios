@@ -80,15 +80,15 @@ struct StatementShareView: View {
                     Spacer()
                     VStack(spacing: 10) {
                         Image(systemName: "exclamationmark.triangle")
-                            .font(.scaled(26))
+                            .font(.title2)
                             .foregroundColor(.sMutedFG)
                         Text(errorMessage)
-                            .font(.scaled(13))
+                            .font(.subheadline)
                             .foregroundColor(.sMutedFG)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 30)
                         Button("Try again") { fetch() }
-                            .font(.scaled(14, weight: .medium))
+                            .font(.subheadline.weight(.medium))
                             .foregroundColor(.sAccent)
                     }
                     Spacer()
@@ -133,22 +133,22 @@ struct StatementShareView: View {
             .pickerStyle(.segmented)
 
             if period == .custom {
-                HStack(spacing: 12) {
+                AdaptiveFormRow {
                     DatePicker("", selection: $customFrom, displayedComponents: .date)
                         .labelsHidden()
                     Text("to")
-                        .font(.scaled(12))
+                        .font(.footnote)
                         .foregroundColor(.sMutedFG)
                     DatePicker("", selection: $customTo, displayedComponents: .date)
                         .labelsHidden()
                     Spacer()
                     Button("Apply") { fetch() }
-                        .font(.scaled(13, weight: .medium))
+                        .font(.subheadline.weight(.medium))
                         .foregroundColor(.sAccent)
                 }
             }
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, AppSpacing.page)
         .padding(.vertical, 12)
     }
 

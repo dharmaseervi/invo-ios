@@ -10,10 +10,7 @@ struct ActiveSessionsView: View {
     private let currentSessionID = KeychainManager.shared.loadSessionID()
 
     var body: some View {
-        ZStack {
-            Color.sBackground.ignoresSafeArea()
-
-            Group {
+        Group {
                 if isLoading {
                     ProgressView()
                         .tint(.sAccent)
@@ -21,14 +18,14 @@ struct ActiveSessionsView: View {
                 } else if let errorMessage {
                     VStack(spacing: 12) {
                         Image(systemName: "exclamationmark.triangle")
-                            .font(.scaled(28))
+                            .font(.title)
                             .foregroundColor(.sDestructive)
                         Text(errorMessage)
-                            .font(.scaled(13))
+                            .font(.subheadline)
                             .foregroundColor(.sMutedFG)
                             .multilineTextAlignment(.center)
                         Button("Try again") { loadSessions() }
-                            .font(.scaled(13, weight: .medium))
+                            .font(.subheadline.weight(.medium))
                             .foregroundColor(.sAccent)
                     }
                     .padding(24)
@@ -36,7 +33,6 @@ struct ActiveSessionsView: View {
                 } else {
                     sessionList
                 }
-            }
         }
         .navigationTitle("Active sessions")
         .navigationBarTitleDisplayMode(.inline)
@@ -46,7 +42,7 @@ struct ActiveSessionsView: View {
                     Button("Sign out all") {
                         showRevokeAllConfirm = true
                     }
-                    .font(.scaled(13))
+                    .font(.subheadline)
                     .foregroundColor(.sDestructive)
                 }
             }
@@ -68,88 +64,68 @@ struct ActiveSessionsView: View {
     // MARK: - Session list
 
     private var sessionList: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                VStack(spacing: 1) {
-                    ForEach(sessions) { session in
-                        sessionRow(session)
-                    }
+        List {
+            Section {
+                ForEach(sessions) { session in
+                    sessionRow(session)
                 }
-                .background(Color.sCard)
-                .cornerRadius(12)
-                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
-                .padding(.horizontal, 20)
-                .padding(.top, 16)
-
+            } footer: {
                 Text("\(sessions.count) active session\(sessions.count == 1 ? "" : "s")")
-                    .font(.scaled(12))
-                    .foregroundColor(.sMutedFG)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 24)
-                    .padding(.top, 8)
             }
-            .padding(.bottom, 24)
         }
+        .listStyle(.insetGrouped)
     }
 
     // MARK: - Single row
 
-    @ViewBuilder
     private func sessionRow(_ session: DeviceSession) -> some View {
         let isCurrent = session.id == currentSessionID
+        let detail = [relativeTime(session.last_seen), session.ip_address]
+            .filter { !$0.isEmpty }
+            .joined(separator: " · ")
 
-        HStack(spacing: 14) {
+        return HStack(spacing: 12) {
             Image(systemName: platformIcon(session.platform))
-                .font(.scaled(20))
-                .foregroundColor(isCurrent ? .sAccent : .sMutedFG)
-                .frame(width: 32)
+                .font(.body)
+                .foregroundStyle(isCurrent ? Color.sAccent : .secondary)
+                .frame(width: 28)
+                .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(session.device_name)
-                        .font(.scaled(14, weight: .medium))
-                        .foregroundColor(.sForeground)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
                     if isCurrent {
                         Text("This device")
-                            .font(.scaled(11, weight: .semibold))
-                            .foregroundColor(.sAccent)
-                            .padding(.horizontal, 7)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Color.sAccent)
+                            .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(Color.sAccent.opacity(0.1))
-                            .cornerRadius(4)
+                            .background(Color.sAccent.opacity(0.1), in: Capsule())
                     }
                 }
-                Text(relativeTime(session.last_seen))
-                    .font(.scaled(12))
-                    .foregroundColor(.sMutedFG)
-                if !session.ip_address.isEmpty {
-                    Text(session.ip_address)
-                        .font(.scaled(11))
-                        .foregroundColor(.sMutedFG.opacity(0.7))
-                }
+                Text(detail)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
+            .alignmentGuide(.listRowSeparatorLeading) { d in d[.leading] }
 
-            Spacer()
+            Spacer(minLength: 8)
 
             if !isCurrent {
-                Button {
-                    revokeSession(session)
-                } label: {
-                    Text("Revoke")
-                        .font(.scaled(12, weight: .medium))
-                        .foregroundColor(.sDestructive)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(Color.sDestructive.opacity(0.08))
-                        .cornerRadius(6)
-                }
+                Button("Revoke") { revokeSession(session) }
+                    .font(.footnote.weight(.medium))
+                    .foregroundStyle(Color.sDestructive)
+                    .buttonStyle(.borderless)
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
-
-        if session.id != sessions.last?.id {
-            Divider().padding(.leading, 62)
+        .swipeActions(edge: .trailing) {
+            if !isCurrent {
+                Button("Revoke", role: .destructive) { revokeSession(session) }
+            }
         }
     }
 

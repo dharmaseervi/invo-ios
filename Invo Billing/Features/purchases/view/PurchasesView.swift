@@ -12,74 +12,68 @@ struct PurchasesView: View {
 
     @State private var showAddSupplier = false
     @State private var showRecordBill = false
+    @State private var showCreateDebitNote = false
     @State private var payingSupplier: Supplier?
-    @State private var returningBill: PurchaseBill?
-    @State private var cancellingBill: PurchaseBill?
+    @State private var debitNotePDFURL: DebitNoteURLWrapper?
+    @State private var isLoadingDebitNote = false
 
     var body: some View {
-        ZStack {
-            Color.sBackground.ignoresSafeArea()
-
-            if vm.isLoading && vm.bills.isEmpty && vm.suppliers.isEmpty {
-                ProgressView().tint(.sAccent)
+        Group {
+            if vm.isLoading && vm.suppliers.isEmpty {
+                ProgressView()
+                    .tint(.sAccent)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 14) {
-                        dueCard
+                List {
+                    dueCard
+                        .padding(.horizontal, AppSpacing.page)
+                        .padding(.top, 8)
+                        .padding(.bottom, 4)
+                        .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
 
-                        if vm.suppliers.isEmpty {
-                            emptyState
-                        } else {
-                            sectionHeader("Suppliers")
+                    if vm.suppliers.isEmpty {
+                        emptyState
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                    } else {
+                        Section {
                             ForEach(vm.suppliers) { supplier in
-                                supplierCard(supplier)
-                            }
-
-
-                            sectionHeader("Bills")
-                            filterRow
-                            if vm.bills.isEmpty {
-                                Text("No bills here yet.")
-                                    .font(.scaled(13))
-                                    .foregroundColor(.sMutedFG)
-                                    .padding(.vertical, 20)
-                                    .frame(maxWidth: .infinity)
-                            }
-                            ForEach(vm.bills) { bill in
-                                billCard(bill)
-                                    .contextMenu {
-                                        if !bill.isAmountOnly && !bill.isCancelled {
-                                            Button {
-                                                returningBill = bill
-                                            } label: {
-                                                Label("Return to supplier", systemImage: "arrow.uturn.backward")
-                                            }
-                                        }
-                                        if !bill.isCancelled {
-                                            Button(role: .destructive) {
-                                                cancellingBill = bill
-                                            } label: {
-                                                Label("Cancel bill", systemImage: "xmark.circle")
-                                            }
+                                supplierRow(supplier)
+                                    .listRowInsets(rowInsets)
+                                    .swipeActions(edge: .trailing) {
+                                        if supplier.due > 0 {
+                                            Button("Pay") { payingSupplier = supplier }
+                                                .tint(.sAccent)
                                         }
                                     }
                             }
-                            if vm.isLoadingMoreBills {
-                                ProgressView()
-                            } else if let error = vm.pageError {
-                                Text(error).foregroundColor(.sDestructive)
-                                Button("Try again") { Task { await vm.loadMoreBills(retry: true) } }
-                            } else if vm.hasMoreBills {
-                                Button("Load more bills") { Task { await vm.loadMoreBills() } }
-                            }
-
+                        } header: {
+                            Text("Suppliers")
                         }
 
-                        Spacer(minLength: 40)
+                        if !vm.returns.isEmpty {
+                            Section {
+                                ForEach(vm.returns) { ret in
+                                    returnRow(ret)
+                                        .listRowInsets(rowInsets)
+                                        .contextMenu {
+                                            Button {
+                                                fetchDebitNote(ret)
+                                            } label: {
+                                                Label("View debit note", systemImage: "doc.text")
+                                            }
+                                        }
+                                }
+                            } header: {
+                                Text("Returns")
+                            }
+                        }
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)
                 }
+                .listStyle(.plain)
+                .contentMargins(.bottom, 16, for: .scrollContent)
                 .refreshable { await vm.load() }
             }
         }
@@ -92,6 +86,13 @@ struct PurchasesView: View {
                         showRecordBill = true
                     } label: {
                         Label("Record a bill", systemImage: "doc.text")
+                    }
+                    .disabled(vm.suppliers.isEmpty)
+
+                    Button {
+                        showCreateDebitNote = true
+                    } label: {
+                        Label("New debit note", systemImage: "arrow.uturn.backward.circle")
                     }
                     .disabled(vm.suppliers.isEmpty)
 
@@ -120,153 +121,129 @@ struct PurchasesView: View {
         .sheet(item: $payingSupplier) { supplier in
             NavigationStack { PaySupplierSheet(supplier: supplier, vm: vm) }
         }
-        .sheet(item: $returningBill) { bill in
-            NavigationStack { ReturnToSupplierSheet(bill: bill, vm: vm) }
-        }
-        .alert("Cancel bill?", isPresented: Binding(
-            get: { cancellingBill != nil },
-            set: { if !$0 { cancellingBill = nil } }
-        )) {
-            Button("Cancel bill", role: .destructive) {
-                guard let bill = cancellingBill else { return }
-                cancellingBill = nil
-                Task { await vm.cancelBill(id: bill.id) }
-            }
-            Button("Keep it", role: .cancel) { cancellingBill = nil }
-        } message: {
-            if let bill = cancellingBill {
-                Text("This will void bill \(bill.bill_number) and reverse its stock. Payments will settle other open bills; any remainder stays as a supplier advance.")
-            }
+        .sheet(isPresented: $showCreateDebitNote) {
+            NavigationStack { CreateDebitNoteSheet(vm: vm) }
         }
         .alert("Purchases", isPresented: $vm.showError) {
             Button("OK", role: .cancel) {}
         } message: {
             Text(vm.errorMessage ?? "Something went wrong")
         }
+        .sheet(item: $debitNotePDFURL) { wrapper in
+            NavigationStack { PDFLookView(pdfURL: wrapper.url) }
+        }
+        .overlay {
+            if isLoadingDebitNote {
+                ZStack {
+                    Color.black.opacity(0.3).ignoresSafeArea()
+                    VStack(spacing: 10) {
+                        ProgressView().tint(.white)
+                        Text("Generating debit note…")
+                            .font(.subheadline)
+                            .foregroundColor(.white)
+                    }
+                    .padding(24)
+                    .background(Color.black.opacity(0.7))
+                    .cornerRadius(14)
+                }
+            }
+        }
+    }
+
+    private func fetchDebitNote(_ ret: PurchaseReturn) {
+        guard let companyID = SessionManager.shared.selectedCompanyId else { return }
+        isLoadingDebitNote = true
+        Task {
+            defer { isLoadingDebitNote = false }
+            do {
+                let url = try await PurchasesService().debitNotePDF(companyID: companyID, returnID: ret.id)
+                debitNotePDFURL = DebitNoteURLWrapper(url: url)
+            } catch {
+                vm.errorMessage = "Could not load debit note PDF"
+                vm.showError = true
+            }
+        }
     }
 
     private var dueCard: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("Owed to suppliers")
-                .font(.scaled(13))
+                .font(.subheadline)
                 .foregroundColor(.sMutedFG)
 
             if let due = vm.totalDue {
                 Text(Money.text(due)).moneyLine()
-                    .font(.scaled(26, weight: .bold))
-                    .foregroundColor(due > 0 ? .sDestructive : Color(red: 0.086, green: 0.639, blue: 0.341))
+                    .font(.title.bold())
+                    .foregroundColor(due > 0 ? .sDestructive : .sSuccess)
                 if vm.loadFailed {
                     // The figure is real but it is the one from before the failed
                     // refresh, and saying so is the difference between a stale number
                     // and a wrong one.
                     Text("Couldn't refresh — this may be out of date")
-                        .font(.scaled(12))
+                        .font(.footnote)
                         .foregroundColor(.sDestructive)
                 } else {
                     Text("Across \(vm.suppliers.filter { $0.due > 0 }.count) supplier\(vm.suppliers.filter { $0.due > 0 }.count == 1 ? "" : "s")")
-                        .font(.scaled(12))
+                        .font(.footnote)
                         .foregroundColor(.sMutedFG)
                 }
             } else {
                 // Never loaded. A dash, not ₹0.00 — the shop is not being told it owes
                 // nothing, it is being told we do not know.
                 Text("—").moneyLine()
-                    .font(.scaled(26, weight: .bold))
+                    .font(.title.bold())
                     .foregroundColor(.sMutedFG)
                 if vm.loadFailed {
                     Button("Try again") { Task { await vm.load() } }
-                        .font(.scaled(12, weight: .medium))
+                        .font(.footnote.weight(.medium))
                         .foregroundColor(.sAccent)
                 } else {
                     Text("Loading…")
-                        .font(.scaled(12))
+                        .font(.footnote)
                         .foregroundColor(.sMutedFG)
                 }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(18)
-        .background(Color.sCard)
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.sBorder, lineWidth: 0.5))
-        .cornerRadius(16)
+        .padding(12)
+        .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
     }
 
-    private func sectionHeader(_ title: String) -> some View {
-        Text(title)
-            .font(.scaled(13, weight: .medium))
-            .foregroundColor(.sMutedFG)
-            .padding(.top, 6)
-    }
+    private var rowInsets: EdgeInsets { EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20) }
 
-    private var filterRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                filterPill("All", nil)
-                filterPill("Owed", "owed")
-                filterPill("Overdue", "overdue")
-                filterPill("Paid", "paid")
-            }
-        }
-    }
-
-    private func filterPill(_ label: String, _ value: String?) -> some View {
-        let selected = vm.billFilter == value
-        return Button {
-            vm.billFilter = value
+    private func supplierRow(_ supplier: Supplier) -> some View {
+        NavigationLink {
+            SupplierDetailView(supplier: supplier)
         } label: {
-            Text(label)
-                .font(.scaled(13, weight: selected ? .medium : .regular))
-                .foregroundColor(selected ? .sForeground : .sMutedFG)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 7)
-                .background(selected ? Color.sCard : Color.clear)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(selected ? Color.sBorder : Color.clear, lineWidth: 0.5)
-                )
-                .cornerRadius(20)
-        }
-    }
-
-    private func supplierCard(_ supplier: Supplier) -> some View {
-        // The card opens their statement; Pay sits outside the link rather than inside
-        // it, because a button nested in a NavigationLink can fire both at once — the
-        // sheet opening on top of a screen that is already pushing.
-        HStack(spacing: 10) {
-            NavigationLink {
-                SupplierStatementView(supplier: supplier)
-            } label: {
-                HStack(spacing: 8) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(supplier.name)
-                            .font(.scaled(14, weight: .medium))
-                            .foregroundColor(.sForeground)
-                        Text(supplierSubtitle(supplier))
-                            .font(.scaled(12))
-                            .foregroundColor(.sMutedFG)
-                    }
-                    Spacer()
-                    Text(Money.text(supplier.due)).moneyLine()
-                        .font(.scaled(14, weight: .semibold))
-                        .foregroundColor(supplier.due > 0 ? .sDestructive : .sMutedFG)
-                    Image(systemName: "chevron.right")
-                        .font(.scaled(11, weight: .semibold))
-                        .foregroundColor(.sMutedFG)
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(supplier.name)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                    Text(supplierSubtitle(supplier))
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
 
-            if supplier.due > 0 {
-                Button("Pay") { payingSupplier = supplier }
-                    .font(.scaled(13, weight: .medium))
-                    .foregroundColor(.sAccent)
+                Spacer(minLength: 8)
+
+                VStack(alignment: .trailing, spacing: 3) {
+                    Text(Money.text(supplier.due)).moneyLine()
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(supplier.due > 0 ? Color.sDestructive : .secondary)
+                    // Borderless so a tap here pays rather than also opening the statement.
+                    if supplier.due > 0 {
+                        Button("Pay") { payingSupplier = supplier }
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Color.sAccent)
+                            .buttonStyle(.borderless)
+                    }
+                }
+                .frame(minWidth: 88, alignment: .trailing)
             }
         }
-        .padding(14)
-        .background(Color.sCard)
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.sBorder, lineWidth: 0.5))
-        .cornerRadius(14)
     }
 
     /// What is going on with this supplier, in one line. An advance is said out loud:
@@ -284,82 +261,52 @@ struct PurchasesView: View {
             : "Nothing owing"
     }
 
-    private func billCard(_ bill: PurchaseBill) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(bill.supplier_name)
-                        .font(.scaled(14, weight: .medium))
-                        .foregroundColor(.sForeground)
-                    Text("\(bill.bill_number) · \(AppDate.shortText(fromWire: bill.bill_date))")
-                        .font(.scaled(12))
-                        .foregroundColor(.sMutedFG)
-                    if bill.isAmountOnly {
-                        Text("Amount only · No stock entry")
-                            .font(.scaled(12))
-                            .foregroundColor(.sMutedFG)
-                    }
-                }
-                Spacer()
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text(Money.text(bill.total)).moneyLine()
-                        .font(.scaled(14, weight: .semibold))
-                        .foregroundColor(.sForeground)
-                    statusPill(bill)
+    private func returnRow(_ ret: PurchaseReturn) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(ret.supplier_name)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                Text("\(ret.return_number) · \(AppDate.shortText(fromWire: ret.return_date))")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                let detail = [ret.bill_number.isEmpty ? "" : "Bill \(ret.bill_number)", ret.reason]
+                    .filter { !$0.isEmpty }
+                    .joined(separator: " · ")
+                if !detail.isEmpty {
+                    Text(detail)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
             }
 
-            if bill.remaining_amount > 0 {
-                Text("\(Money.text(bill.remaining_amount)) still owing")
-                    .font(.scaled(12))
-                    .foregroundColor(bill.isOverdue ? .sDestructive : .sMutedFG)
-            }
+            Spacer(minLength: 8)
+
+            Text(Money.text(ret.total)).moneyLine()
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color.sDestructive)
+                .frame(minWidth: 88, alignment: .trailing)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(Color.sCard)
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.sBorder, lineWidth: 0.5))
-        .cornerRadius(14)
-    }
-
-    private func statusPill(_ bill: PurchaseBill) -> some View {
-        let (label, colour): (String, Color) = {
-            if bill.isOverdue { return ("Overdue", .sDestructive) }
-            switch bill.status {
-            case "cancelled": return ("Cancelled", .sMutedFG)
-            case "paid": return ("Paid", Color(red: 0.086, green: 0.639, blue: 0.341))
-            case "partial": return ("Part paid", .sAccent)
-            default: return ("Unpaid", .sMutedFG)
-            }
-        }()
-        return Text(label)
-            .font(.scaled(11, weight: .medium))
-            .foregroundColor(colour)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .background(colour.opacity(0.12))
-            .cornerRadius(6)
     }
 
     private var emptyState: some View {
-        VStack(spacing: 10) {
-            Image(systemName: "shippingbox")
-                .font(.scaled(30))
-                .foregroundColor(.sMutedFG)
-            Text("No suppliers yet")
-                .font(.scaled(15, weight: .medium))
-                .foregroundColor(.sForeground)
+        ContentUnavailableView {
+            Label("No suppliers yet", systemImage: "shippingbox")
+        } description: {
             Text("Add the people you buy from, then record an invoice amount or add the items you received.")
-                .font(.scaled(12))
-                .foregroundColor(.sMutedFG)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 20)
+        } actions: {
             Button("Add supplier") { showAddSupplier = true }
-                .font(.scaled(14, weight: .medium))
-                .foregroundColor(.sAccent)
-                .padding(.top, 4)
+                .buttonStyle(.borderedProminent)
+                .tint(.sAccent)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 40)
+        .padding(.vertical, 24)
     }
+}
+
+private struct DebitNoteURLWrapper: Identifiable {
+    let id = UUID()
+    let url: URL
 }

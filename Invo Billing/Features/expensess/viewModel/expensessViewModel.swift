@@ -28,9 +28,23 @@ class ExpenseViewModel: ObservableObject {
     private var requestID = 0
     @Published var showAlert = false
     @Published var errorMessage: String?
-    
+
+    // Search and filter state — changing these triggers a fresh fetch.
+    @Published var searchText: String = ""
+    @Published var filterCategory: String = ""
+    @Published var filterFrom: Date? = nil
+    @Published var filterTo: Date? = nil
+
     private let service = ExpenseService()
     private var companyId: Int { SessionManager.shared.selectedCompanyId ?? 0 }
+
+    private static let isoFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.calendar = Calendar(identifier: .gregorian)
+        return f
+    }()
  
    
     
@@ -53,9 +67,15 @@ class ExpenseViewModel: ObservableObject {
                 return
             }
 
+            let fromStr = filterFrom.map { Self.isoFormatter.string(from: $0) }
+            let toStr   = filterTo.map   { Self.isoFormatter.string(from: $0) }
+            let search  = searchText.isEmpty ? nil : searchText
+            let cat     = filterCategory.isEmpty ? nil : filterCategory
+
             async let summaryResult = try? service.getExpenseSummary(companyId: companyId)
             let page = try await service.getExpenses(
-                companyId: companyId, limit: Self.pageSize, offset: 0
+                companyId: companyId, limit: Self.pageSize, offset: 0,
+                search: search, from: fromStr, to: toStr, category: cat
             )
             let newSummary = await summaryResult
             guard request == requestID else { return }
@@ -99,8 +119,13 @@ class ExpenseViewModel: ObservableObject {
         let askedAt = offset
 
         do {
+            let fromStr = filterFrom.map { Self.isoFormatter.string(from: $0) }
+            let toStr   = filterTo.map   { Self.isoFormatter.string(from: $0) }
+            let search  = searchText.isEmpty ? nil : searchText
+            let cat     = filterCategory.isEmpty ? nil : filterCategory
             let page = try await service.getExpenses(
-                companyId: companyId, limit: Self.pageSize, offset: askedAt
+                companyId: companyId, limit: Self.pageSize, offset: askedAt,
+                search: search, from: fromStr, to: toStr, category: cat
             )
             // Dropped if the list was reloaded while this page was out.
             guard request == requestID, askedAt == offset else { return }
@@ -122,11 +147,12 @@ class ExpenseViewModel: ObservableObject {
         amount: Double,
         description: String?,
         date: String,
-        paymentMethod: String
+        paymentMethod: String,
+        category: String? = nil
     ) async -> Bool {
         isLoading = true
         errorMessage = nil
-        
+
         do {
             guard companyId > 0 else {
                 errorMessage = "No company selected"
@@ -134,14 +160,15 @@ class ExpenseViewModel: ObservableObject {
                 isLoading = false
                 return false
             }
-            
+
             let payload = ExpenseCreatePayload(
                 companyId: companyId,
                 name: name,
                 amount: amount,
                 description: description,
                 date: date,
-                paymentMethod: paymentMethod
+                paymentMethod: paymentMethod,
+                category: category
             )
             
             let success = try await service.createExpense(payload: payload)
@@ -168,18 +195,20 @@ class ExpenseViewModel: ObservableObject {
         amount: Double,
         description: String?,
         date: String,
-        paymentMethod: String
+        paymentMethod: String,
+        category: String? = nil
     ) async -> Bool {
         isLoading = true
         errorMessage = nil
-        
+
         do {
             let payload = ExpenseUpdatePayload(
                 name: name.isEmpty ? nil : name,
                 amount: amount > 0 ? amount : nil,
                 description: description,
                 date: date.isEmpty ? nil : date,
-                paymentMethod: paymentMethod
+                paymentMethod: paymentMethod,
+                category: category
             )
             let success = try await service.updateExpense(id: id, payload: payload)
             

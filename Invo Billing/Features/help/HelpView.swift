@@ -40,7 +40,7 @@ struct HelpView: View {
                         .background(Color.sCard)
                         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
                         .cornerRadius(12)
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.page)
                         .padding(.bottom, 24)
 
                         // MARK: About
@@ -53,7 +53,7 @@ struct HelpView: View {
                         .background(Color.sCard)
                         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
                         .cornerRadius(12)
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.page)
                     }
                     .padding(.top, 20)
                 }
@@ -67,9 +67,9 @@ struct HelpView: View {
 
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
-            .font(.scaled(13, weight: .medium))
+            .font(.subheadline.weight(.medium))
             .foregroundColor(.sMutedFG)
-            .padding(.horizontal, 20)
+            .padding(.horizontal, AppSpacing.page)
             .padding(.bottom, 10)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -77,13 +77,13 @@ struct HelpView: View {
     private func row(_ title: String) -> some View {
         HStack {
             Text(title)
-                .font(.scaled(14))
+                .font(.body)
                 .foregroundColor(.sForeground)
 
             Spacer()
 
             Image(systemName: "chevron.right")
-                .font(.scaled(12, weight: .semibold))
+                .font(.footnote.weight(.semibold))
                 .foregroundColor(.sMutedFG)
         }
         .padding(.vertical, 12)
@@ -92,7 +92,7 @@ struct HelpView: View {
     private func infoRow(_ title: String) -> some View {
         HStack {
             Text(title)
-                .font(.scaled(14))
+                .font(.body)
                 .foregroundColor(.sMutedFG)
             Spacer()
         }

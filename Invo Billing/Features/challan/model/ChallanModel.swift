@@ -23,12 +23,10 @@ struct ChallanRequestDTO: Codable {
 struct ChallanResponse: Codable, Identifiable {
     let id: Int
     let challan_number: String
-    let client_id: Int
     let client_name: String?
     let challan_date: String
     let status: ChallanStatus
     let invoice_id: Int?
-    let notes: String?
     let created_at: String
 }
 
@@ -40,20 +38,23 @@ struct ChallanItemDetail: Codable, Identifiable {
     let description: String?
 }
 
+struct ChallanClient: Codable {
+    let id: Int
+    let name: String
+}
+
 struct ChallanDetailResponse: Codable {
     let id: Int
     let challan_number: String
-    let client_id: Int
-    let client_name: String?
+    let client: ChallanClient
     let challan_date: String
     let status: ChallanStatus
     let invoice_id: Int?
     let notes: String?
     let items: [ChallanItemDetail]
-    let created_at: String
 }
 
 struct CreateChallanResponse: Codable {
-    let challan_id: Int
+    let id: Int
     let challan_number: String
 }

@@ -11,108 +11,83 @@ struct LedgerView: View {
 
     var body: some View {
         Group {
-            ZStack {
-                Color.sBackground.ignoresSafeArea()
+            Group {
+                // Once the first load is done the summary and the search box stay
+                // mounted, whatever the rows are doing — empty, loading, or being
+                // searched. Everything else renders underneath them.
+                //
+                // Each earlier version of this took the field away at a different
+                // moment: first on every keystroke, then on an empty box with an
+                // empty list, which is the state during the debounce right after a
+                // no-results search is cleared.
+                if isFirstLoad {
+                    ProgressView()
+                        .tint(.sAccent)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    List {
+                        summaryCard
+                            .padding(.horizontal, AppSpacing.page)
+                            .padding(.top, 8)
+                            .padding(.bottom, 4)
+                            .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
 
-                VStack(spacing: 0) {
-
-                    // Once the first load is done the summary and the search box stay
-                    // mounted, whatever the rows are doing — empty, loading, or being
-                    // searched. Everything else renders underneath them.
-                    //
-                    // Each earlier version of this took the field away at a different
-                    // moment: first on every keystroke, then on an empty box with an
-                    // empty list, which is the state during the debounce right after a
-                    // no-results search is cleared.
-                    if isFirstLoad {
-                        Spacer()
-                        ProgressView().tint(.sAccent)
-                        Spacer()
-                    } else {
-                        ScrollView {
-                            VStack(spacing: 0) {
-                                summaryCard.padding(.top, 16)
-
-                                // MARK: Search
-                                HStack(spacing: 10) {
-                                    Image(systemName: "magnifyingglass")
-                                        .font(.scaled(14))
-                                        .foregroundColor(.sMutedFG)
-
-                                    TextField("Search clients", text: $vm.searchText)
-                                        .font(.scaled(14))
-                                        .foregroundColor(.sForeground)
-                                        .tint(.sAccent)
-                                        .autocorrectionDisabled()
-
-                                    if !vm.searchText.isEmpty {
-                                        Button { vm.searchText = "" } label: {
-                                            Image(systemName: "xmark.circle.fill")
-                                                .font(.scaled(14))
-                                                .foregroundColor(.sMutedFG)
-                                        }
-                                    }
-                                }
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 10)
-                                .background(Color.sCard)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .stroke(Color.sInput, lineWidth: 0.5)
-                                )
-                                .cornerRadius(8)
-                                .padding(.horizontal, 20)
-                                .padding(.top, 16)
-
-                                if vm.isLoading {
-                                    ProgressView()
-                                        .tint(.sAccent)
-                                        .frame(minHeight: 240)
-                                } else if vm.filteredClients.isEmpty {
-                                    // "No customers yet" when there is genuinely
-                                    // nothing, "no matches" when a search found
-                                    // nothing — both below the search box, which stays
-                                    // where it is either way.
-                                    if vm.searchText.isEmpty {
-                                        emptyState.frame(minHeight: 320)
-                                    } else {
-                                        noResultsState.padding(.top, 60)
-                                    }
+                        if vm.isLoading {
+                            HStack { Spacer(); ProgressView().tint(.sAccent); Spacer() }
+                                .padding(.vertical, 60)
+                                .listRowSeparator(.hidden)
+                        } else if vm.filteredClients.isEmpty {
+                            // "No customers yet" when there is genuinely nothing, "no
+                            // matches" when a search found nothing — both below the
+                            // search box, which stays where it is either way.
+                            Group {
+                                if vm.searchText.isEmpty {
+                                    emptyState
                                 } else {
-                                    LazyVStack(spacing: 10) {
-                                        ForEach(vm.filteredClients) { client in
-                                            NavigationLink {
-                                                LedgerListView(clientID: client.clientID)
-                                            } label: {
-                                                LedgerRow(client: client)
-                                            }
-                                            .buttonStyle(.plain)
-                                            .task { await vm.loadMoreIfNeeded(currentItem: client) }
-                                        }
-
-                                        if vm.isLoadingMore {
-                                            ProgressView()
-                                                .tint(.sAccent)
-                                                .padding(.vertical, 12)
-                                        } else if vm.loadMoreFailed {
-                                            VStack(spacing: 6) {
-                                                Text("Couldn't load more customers.")
-                                                    .font(.scaled(13))
-                                                    .foregroundColor(.sMutedFG)
-                                                Button("Try again") { Task { await vm.retryLoadMore() } }
-                                                    .font(.scaled(13, weight: .medium))
-                                                    .foregroundColor(.sAccent)
-                                            }
-                                            .padding(.vertical, 12)
-                                        }
-                                    }
-                                    .padding(20)
+                                    ContentUnavailableView.search(text: vm.searchText)
                                 }
+                            }
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                        } else {
+                            ForEach(vm.filteredClients) { client in
+                                NavigationLink {
+                                    LedgerListView(clientID: client.clientID)
+                                } label: {
+                                    LedgerRow(client: client)
+                                }
+                                .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+                                .listRowSeparator(.hidden, edges: client.id == vm.filteredClients.first?.id ? .top : [])
+                                .task { await vm.loadMoreIfNeeded(currentItem: client) }
+                            }
+
+                            if vm.isLoadingMore {
+                                HStack { Spacer(); ProgressView().tint(.sAccent); Spacer() }
+                                    .padding(.vertical, 12)
+                                    .listRowSeparator(.hidden)
+                            } else if vm.loadMoreFailed {
+                                VStack(spacing: 6) {
+                                    Text("Couldn't load more customers.")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                    Button("Try again") { Task { await vm.retryLoadMore() } }
+                                        .font(.subheadline.weight(.medium))
+                                        .foregroundStyle(Color.sAccent)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .listRowSeparator(.hidden)
                             }
                         }
                     }
+                    .listStyle(.plain)
+                    .contentMargins(.bottom, 16, for: .scrollContent)
+                    .refreshable { await vm.fetchCompanyLedger() }
                 }
             }
+            .searchable(text: $vm.searchText, prompt: "Search clients")
             .navigationTitle("Ledger")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
@@ -146,81 +121,50 @@ struct LedgerView: View {
     private var summaryCard: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Total receivable")
-                .font(.scaled(13))
+                .font(.subheadline)
                 .foregroundColor(.sMutedFG)
             // A dash when the figure could not be fetched: ₹0 reads as "nobody owes
             // anything", which is the opposite of "we could not check".
             Text(vm.totalsFailed ? "—" : Money.text(vm.totalReceivable)).moneyLine()
-                .font(.scaled(26, weight: .bold))
+                .font(.title.bold())
                 .foregroundColor(
                     vm.totalsFailed ? .sMutedFG
-                        : (vm.totalReceivable > 0 ? .sDestructive : Color(red: 0.086, green: 0.639, blue: 0.341))
+                        : (vm.totalReceivable > 0 ? .sDestructive : .sSuccess)
                 )
             if vm.totalsFailed {
                 Button("Totals unavailable — retry") {
                     Task { await vm.fetchCompanyLedger() }
                 }
-                .font(.scaled(12))
+                .font(.footnote)
                 .foregroundColor(.sAccent)
             } else {
                 // Every customer with history, counted by the server — not the rows
                 // that happen to be loaded.
                 Text("Across \(vm.totals.clients) client\(vm.totals.clients == 1 ? "" : "s")")
-                    .font(.scaled(12))
+                    .font(.footnote)
                     .foregroundColor(.sMutedFG)
                 if vm.totalPayable > 0 {
                     // Advances and credit balances, which netting into the receivable
                     // would hide.
                     Text("\(Money.text(vm.totalPayable)) in customer credit")
-                        .font(.scaled(12))
+                        .font(.footnote)
                         .foregroundColor(.sMutedFG)
                 }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(18)
-        .background(Color.sCard)
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.sBorder, lineWidth: 0.5))
-        .cornerRadius(16)
-        .padding(.horizontal, 20)
+        .padding(12)
+        .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
     }
 
-    // MARK: - Empty States
+    // MARK: - Empty State
     private var emptyState: some View {
-        VStack(spacing: 12) {
-            Spacer()
-            ZStack {
-                Circle()
-                    .fill(Color.sMuted)
-                    .overlay(Circle().stroke(Color.sBorder, lineWidth: 0.5))
-                    .frame(width: 60, height: 60)
-                Image(systemName: "book")
-                    .font(.scaled(22))
-                    .foregroundColor(.sMutedFG)
-            }
-            Text("No ledger activity yet")
-                .font(.scaled(15, weight: .medium))
-                .foregroundColor(.sForeground)
-            Text("Client balances will show up here once invoices or payments are recorded")
-                .font(.scaled(13))
-                .foregroundColor(.sMutedFG)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    private var noResultsState: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "magnifyingglass")
-                .font(.scaled(22))
-                .foregroundColor(.sMutedFG)
-            Text("No matching clients")
-                .font(.scaled(14, weight: .medium))
-                .foregroundColor(.sForeground)
-        }
-        .frame(maxWidth: .infinity)
+        ContentUnavailableView(
+            "No ledger activity yet",
+            systemImage: "book",
+            description: Text("Client balances will show up here once invoices or payments are recorded")
+        )
+        .padding(.vertical, 40)
     }
 }
 
@@ -228,16 +172,8 @@ struct LedgerRow: View {
 
     let client: ClientLedger
 
-    private var initials: String {
-        let parts = client.clientName.split(separator: " ")
-        if parts.count >= 2 {
-            return String(parts[0].prefix(1) + parts[1].prefix(1)).uppercased()
-        }
-        return String(client.clientName.prefix(2)).uppercased()
-    }
-
     private var balanceColor: Color {
-        client.balance > 0 ? .sDestructive : Color(red: 0.086, green: 0.639, blue: 0.341)
+        client.balance > 0 ? .sDestructive : .sSuccess
     }
 
     private var balanceLabel: String {
@@ -247,38 +183,25 @@ struct LedgerRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(Color.sAccentMuted)
-                    .frame(width: 40, height: 40)
-                Text(initials)
-                    .font(.scaled(13, weight: .semibold))
-                    .foregroundColor(.sAccent)
-            }
+            MinimalAvatarView(name: client.clientName)
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(client.clientName)
-                    .font(.scaled(14, weight: .medium))
-                    .foregroundColor(.sForeground)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
                 Text(balanceLabel)
-                    .font(.scaled(12))
-                    .foregroundColor(.sMutedFG)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
+            .alignmentGuide(.listRowSeparatorLeading) { d in d[.leading] }
 
-            Spacer()
+            Spacer(minLength: 8)
 
-            VStack(alignment: .trailing, spacing: 3) {
-                Text(Money.text(abs(client.balance))).moneyLine()
-                    .font(.scaled(14, weight: .semibold))
-                    .foregroundColor(client.balance == 0 ? .sForeground : balanceColor)
-                Image(systemName: "chevron.right")
-                    .font(.scaled(11, weight: .semibold))
-                    .foregroundColor(.sMutedFG)
-            }
+            Text(Money.text(abs(client.balance))).moneyLine()
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(client.balance == 0 ? Color.sForeground : balanceColor)
+                .frame(minWidth: 88, alignment: .trailing)
         }
-        .padding(14)
-        .background(Color.sCard)
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
-        .cornerRadius(12)
     }
 }

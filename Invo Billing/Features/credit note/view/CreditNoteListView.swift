@@ -10,7 +10,6 @@ struct CreditNoteListView: View {
     /// otherwise take the search box away with it.
     @State private var hasLoadedOnce = false
     @State private var selectedFilter: CNFilterType = .all
-    @State private var appearAnimation = false
 
     // MARK: - Filters
     enum CNFilterType: String, CaseIterable {
@@ -65,39 +64,73 @@ struct CreditNoteListView: View {
     var discountCount: Int { vm.summary.discounts }
 
     var body: some View {
-        ZStack {
-            Color.sBackground.ignoresSafeArea()
-            
-            VStack(spacing: 0) {
-                // Only the very first load replaces the screen. Every search set
-                // isLoading, and this branch took the search field and keyboard with
-                // it on each keystroke.
-                if vm.isLoading && !hasLoadedOnce {
-                    cnLoadingView
-                } else {
-                    ScrollView(.vertical, showsIndicators: false) {
-                        VStack(spacing: 0) {
-                            cnSearchBar.padding(.top, 16)
-                            cnfilterPills.padding(.top, 20)
-                            
-                            if filteredNotes.isEmpty {
-                                cnEmptyView.frame(minHeight: 400)
-                            } else {
-                                cnStatsSection.padding(.top, 32)
-                                cnListSection.padding(.top, 32)
+        Group {
+            // Only the very first load replaces the screen. Every search set
+            // isLoading, and this branch took the search field and keyboard with
+            // it on each keystroke.
+            if vm.isLoading && !hasLoadedOnce {
+                ProgressView()
+                    .tint(.sAccent)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                List {
+                    cnFilterPills
+                        .padding(.top, 4)
+                        .padding(.bottom, 8)
+                        .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+
+                    if filteredNotes.isEmpty {
+                        cnEmptyView
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                    } else {
+                        cnSummaryCard
+                            .padding(.horizontal, AppSpacing.page)
+                            .padding(.bottom, 4)
+                            .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+
+                        ForEach(filteredNotes) { cn in
+                            NavigationLink {
+                                CreditNoteDetailView(creditNoteID: cn.id)
+                            } label: {
+                                CNRowView(cn: cn)
                             }
-                            
-                            Spacer(minLength: 100)
+                            .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+                            .listRowSeparator(.hidden, edges: cn.id == filteredNotes.first?.id ? .top : [])
+                            // Per row, a few from the end: keyed on the count it fired again on
+                            // every change to the list, which is both eager and repetitive.
+                            .task { await vm.loadMoreIfNeeded(currentItem: cn) }
                         }
-                        .opacity(appearAnimation ? 1 : 0)
-                        .offset(y: appearAnimation ? 0 : 20)
-                    }
-                    .refreshable {
-                        await reload()
+
+                        if vm.isLoadingMore {
+                            HStack { Spacer(); ProgressView().tint(.sAccent); Spacer() }
+                                .padding(.vertical, 12)
+                                .listRowSeparator(.hidden)
+                        } else if vm.loadMoreFailed {
+                            VStack(spacing: 6) {
+                                Text("Couldn't load more credit notes.")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                Button("Try again") { Task { await vm.retryLoadMore() } }
+                                    .font(.subheadline.weight(.medium))
+                                    .foregroundStyle(Color.sAccent)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .listRowSeparator(.hidden)
+                        }
                     }
                 }
+                .listStyle(.plain)
+                .contentMargins(.bottom, 16, for: .scrollContent)
+                .refreshable { await reload() }
             }
         }
+        .searchable(text: $searchText, prompt: "Search by number or client")
         .navigationTitle("Credit notes")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -127,11 +160,7 @@ struct CreditNoteListView: View {
         }
         .onAppear {
             Task { await reload() }
-            withAnimation(.easeOut(duration: 0.6).delay(0.1)) {
-                appearAnimation = true
-            }
         }
-        // ✅ Move onChange here — outside the if/else block
         .onChange(of: SessionManager.shared.selectedCompanyId) { _ in
             Task {
                 vm.creditNotes = []
@@ -145,83 +174,18 @@ struct CreditNoteListView: View {
         }
     }
 
-    // MARK: - Search Bar
-    private var cnSearchBar: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass")
-                .font(.scaled(14))
-                .foregroundColor(.sMutedFG)
-
-            TextField("Search by number or client", text: $searchText)
-                .font(.scaled(14))
-                .foregroundColor(.sForeground)
-                .tint(.sAccent)
-                .autocorrectionDisabled()
-
-            if !searchText.isEmpty {
-                Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        searchText = ""
-                    }
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.scaled(14))
-                        .foregroundColor(.sMutedFG)
-                }
-            }
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .background(Color.sCard)
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.sInput, lineWidth: 0.5)
-        )
-        .cornerRadius(8)
-        .padding(.horizontal, 20)
-    }
-
     // MARK: - Filters
-    private var cnfilterPills: some View {
+    private var cnFilterPills: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
+            HStack(spacing: AppSpacing.inline) {
                 ForEach(CNFilterType.allCases, id: \.self) { filter in
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.15)) {
-                            selectedFilter = filter
-                        }
-                    } label: {
-                        HStack(spacing: 5) {
-                            Image(systemName: filter.icon)
-                                .font(.scaled(11))
-                            Text(filter.rawValue.capitalized)
-                                .font(.scaled(13, weight: selectedFilter == filter ? .medium : .regular))
-                            let count = countFor(filter)
-                            if count > 0 {
-                                Text("\(count)")
-                                    .font(.scaled(11))
-                                    .foregroundColor(.sMutedFG)
-                            }
-                        }
-                        .foregroundColor(selectedFilter == filter ? .sForeground : .sMutedFG)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 7)
-                        .background(
-                            RoundedRectangle(cornerRadius: 6)
-                                .fill(selectedFilter == filter ? Color.sCard : Color.clear)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 6)
-                                        .stroke(selectedFilter == filter ? Color.sBorder : Color.clear, lineWidth: 0.5)
-                                )
-                        )
+                    AppFilterChip(title: "\(filter.rawValue.capitalized) \(countFor(filter))",
+                                  isSelected: selectedFilter == filter) {
+                        selectedFilter = filter
                     }
                 }
             }
-            .padding(3)
-            .background(Color.sMuted)
-            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.sBorder, lineWidth: 0.5))
-            .cornerRadius(8)
-            .padding(.horizontal, 20)
+            .padding(.horizontal, AppSpacing.page)
         }
     }
 
@@ -235,372 +199,114 @@ struct CreditNoteListView: View {
         }
     }
 
-    // MARK: - Stats Section
-    private var cnStatsSection: some View {
-        VStack(spacing: 0) {
-            // Section Header
-            HStack {
-                Text("Overview")
-                    .font(.scaled(13, weight: .medium))
-                    .foregroundColor(.sMutedFG)
-
-                Spacer()
-            }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 16)
-
-            if vm.summaryFailed {
+    // MARK: - Summary
+    private var cnSummaryCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 1) {
+                Text("Total credited")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
                 // Dashes and a retry, not zeroes: "₹0 credited, 0 returns" above a
                 // page of real credit notes reads as fact, and it is not.
-                VStack(spacing: 6) {
-                    Text("Totals unavailable")
-                        .font(.scaled(13, weight: .medium))
-                        .foregroundColor(.sForeground)
-                    Button("Try again") { Task { await reload() } }
-                        .font(.scaled(13, weight: .medium))
-                        .foregroundColor(.sAccent)
+                Text(vm.summaryFailed ? "—" : Money.text(totalAmount))
+                    .font(.title.bold())
+                    .monospacedDigit()
+                    .foregroundStyle(.primary)
+                if vm.summaryFailed {
+                    Button("Retry") { Task { await reload() } }
+                        .font(.footnote)
+                        .tint(Color.sAccent)
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 20)
-                .background(Color.sMuted.opacity(0.4))
-                .overlay(Rectangle().stroke(Color.sBorder, lineWidth: 1))
-                .padding(.horizontal, 24)
-            } else {
-
-            // Stats Cards
-            HStack(spacing: 0) {
-                CNStatCardView(
-                    value: formatAmount(totalAmount),
-                    label: "Total credits",
-                    valueColor: .sForeground
-                )
-
-                Rectangle()
-                    .fill(Color.sBorder)
-                    .frame(width: 1)
-                    .padding(.vertical, 20)
-
-                CNStatCardView(
-                    value: "\(returnCount)",
-                    label: "Item returns",
-                    valueColor: .sForeground
-                )
-
-                Rectangle()
-                    .fill(Color.sBorder)
-                    .frame(width: 1)
-                    .padding(.vertical, 20)
-
-                CNStatCardView(
-                    value: "\(adjustmentCount)",
-                    label: "Adjustments",
-                    valueColor: .sForeground
-                )
             }
-            .background(Color.sMuted.opacity(0.4))
-            .overlay(
-                Rectangle()
-                    .stroke(Color.sBorder, lineWidth: 1)
-            )
-            .padding(.horizontal, 24)
-            }
+
+            Divider()
+
+            AdaptiveStatRow(stats: [
+                .init(label: "Returns", value: vm.summaryFailed ? "—" : "\(returnCount)"),
+                .init(label: "Adjustments", value: vm.summaryFailed ? "—" : "\(adjustmentCount)"),
+                .init(label: "Discounts", value: vm.summaryFailed ? "—" : "\(discountCount)")
+            ])
         }
-    }
-
-    // MARK: - List Section
-    private var cnListSection: some View {
-        LazyVStack(spacing: 0) {
-            // Section Header
-            HStack {
-                Text("All credit notes")
-                    .font(.scaled(13, weight: .medium))
-                    .foregroundColor(.sMutedFG)
-
-                Spacer()
-
-                Text("\(filteredNotes.count) items")
-                    .font(.scaled(11))
-                    .foregroundColor(.sMutedFG)
-            }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 16)
-
-            // List
-            Rectangle()
-                .fill(Color.sBorder)
-                .frame(height: 1)
-                .padding(.horizontal, 24)
-
-            ForEach(Array(filteredNotes.enumerated()), id: \.element.id) {
-                index,
-                cn in
-                NavigationLink {
-                    CreditNoteDetailView(creditNoteID: cn.id)
-                } label: {
-                    CNRowView(cn: cn, index: index + 1)
-                }
-                // Per row, a few from the end: keyed on the count it fired again on
-                // every change to the list, which is both eager and repetitive.
-                .task { await vm.loadMoreIfNeeded(currentItem: cn) }
-                .buttonStyle(.plain)
-
-                Rectangle()
-                    .fill(Color.sBorder)
-                    .frame(height: 1)
-                    .padding(.horizontal, 24)
-            }
-
-
-            if vm.isLoadingMore {
-                ProgressView()
-                    .tint(.sAccent)
-                    .padding(.vertical, 12)
-            } else if vm.loadMoreFailed {
-                VStack(spacing: 6) {
-                    Text("Couldn't load more credit notes.")
-                        .font(.scaled(13))
-                        .foregroundColor(.sMutedFG)
-                    Button("Try again") { Task { await vm.retryLoadMore() } }
-                        .font(.scaled(13, weight: .medium))
-                        .foregroundColor(.sAccent)
-                }
-                .padding(.vertical, 12)
-            }
-        }
+        .padding(12)
+        .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
     }
 
     // MARK: - Empty View
     private var cnEmptyView: some View {
-        VStack(spacing: 32) {
-            Spacer()
-
-            // Decorative Element
-            VStack(spacing: 16) {
-                Rectangle()
-                    .fill(Color.sBorder)
-                    .frame(width: 60, height: 1)
-
-                ZStack {
-                    Circle()
-                        .stroke(Color.sBorder, lineWidth: 1)
-                        .frame(width: 80, height: 80)
-
-                    Image(systemName: "arrow.uturn.backward.circle")
-                        .font(.scaled(32, weight: .ultraLight))
-                        .foregroundColor(.sMutedFG)
-                }
-
-                Rectangle()
-                    .fill(Color.sBorder)
-                    .frame(width: 60, height: 1)
+        let isUnfiltered = searchText.isEmpty && selectedFilter == .all
+        return ContentUnavailableView {
+            Label(isUnfiltered ? "No credit notes" : "No results",
+                  systemImage: "arrow.uturn.backward.circle")
+        } description: {
+            Text(isUnfiltered
+                 ? "Create a credit note for returns or adjustments"
+                 : "Try adjusting your search or filters")
+        } actions: {
+            if isUnfiltered {
+                Button("Create credit note") { showCreate = true }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.sAccent)
             }
-
-            // Text
-            VStack(spacing: 8) {
-                Text(
-                    searchText.isEmpty && selectedFilter == .all
-                        ? "No credit notes" : "No results"
-                )
-                .font(.scaled(15, weight: .semibold))
-                .foregroundColor(.sForeground)
-
-                Text(
-                    searchText.isEmpty && selectedFilter == .all
-                        ? "Create a credit note for returns\nor adjustments"
-                        : "Try adjusting your search or filters"
-                )
-                .font(.scaled(13))
-                .foregroundColor(.sMutedFG)
-                .multilineTextAlignment(.center)
-            }
-
-            // Create Button (only show when no filters)
-            if searchText.isEmpty && selectedFilter == .all {
-                Button {
-                    showCreate = true
-                } label: {
-                    HStack(spacing: 8) {
-                        Text("Create credit note")
-                            .font(.scaled(13, weight: .semibold))
-
-                        Image(systemName: "arrow.right")
-                            .font(.scaled(11, weight: .light))
-                    }
-                    .foregroundColor(.sAccentFG)
-                    .padding(.horizontal, 32)
-                    .padding(.vertical, 16)
-                    .background(Color.sPrimary)
-                    .cornerRadius(10)
-                }
-            }
-
-            Spacer()
         }
-        .padding(24)
-    }
-
-    // MARK: - Loading View
-    private var cnLoadingView: some View {
-        VStack(spacing: 24) {
-            ZStack {
-                Circle()
-                    .stroke(Color.sBorder, lineWidth: 1)
-                    .frame(width: 44, height: 44)
-
-                Circle()
-                    .trim(from: 0, to: 0.3)
-                    .stroke(Color.sAccent, lineWidth: 1)
-                    .frame(width: 44, height: 44)
-                    .rotationEffect(.degrees(appearAnimation ? 360 : 0))
-                    .animation(
-                        .linear(duration: 1)
-                            .repeatForever(autoreverses: false),
-                        value: appearAnimation
-                    )
-            }
-
-            Text("Loading...")
-                .font(.scaled(13))
-                .foregroundColor(.sMutedFG)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onAppear {
-            appearAnimation = true
-        }
-    }
-
-    // MARK: - Helper
-    /// The second local money formatter this app grew. Both are gone; ``Money`` is the
-    /// only one, so a figure reads the same here as on every other screen.
-    private func formatAmount(_ value: Double) -> String {
-        Money.compact(value)
-    }
-}
-
-// MARK: - Stat Card View
-struct CNStatCardView: View {
-    let value: String
-    let label: String
-    let valueColor: Color
-
-    var body: some View {
-        VStack(spacing: 6) {
-            Text(value)
-                .font(.scaled(18, weight: .semibold))
-                .foregroundColor(valueColor)
-
-            Text(label)
-                .font(.scaled(11))
-                .foregroundColor(.sMutedFG)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 20)
+        .padding(.vertical, 40)
     }
 }
 
 // MARK: - Credit Note Row View
 struct CNRowView: View {
     let cn: CreditNoteModel
-    let index: Int
 
     var typeConfig: (icon: String, color: Color, label: String) {
         switch cn.type.lowercased() {
         case "return":
-            return ("cube.box", .sForeground, "Item return")
+            return ("cube.box", .sAccent, "Item return")
         case "discount":
-            return ("percent", .cnSuccess, "Discount")
+            return ("percent", .sSuccess, "Discount")
         default:  // adjustment
-            return ("indianrupeesign.circle", .cnAmber, "Adjustment")
+            return ("indianrupeesign.circle", .sWarning, "Adjustment")
         }
+    }
+
+    private var dateText: String? {
+        let raw = cn.credit_date.trimmingCharacters(in: .whitespacesAndNewlines)
+        return raw.isEmpty ? nil : AppDate.text(fromWire: raw)
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 16) {
-            // Index Number
-            Text(String(format: "%02d", index))
-                .font(.scaled(11))
-                .foregroundColor(.sMutedFG)
-                .frame(width: 20)
+        HStack(spacing: 12) {
+            Image(systemName: typeConfig.icon)
+                .font(.body)
+                .foregroundStyle(typeConfig.color)
+                .frame(width: 40, height: 40)
+                .background(typeConfig.color.opacity(0.12), in: Circle())
+                .accessibilityHidden(true)
 
-            // Left Content
-            VStack(alignment: .leading, spacing: 8) {
-                // Credit Note Number
+            VStack(alignment: .leading, spacing: 3) {
                 Text(cn.credit_number)
-                    .font(.scaled(14, weight: .medium))
-                    .foregroundColor(.sForeground)
-
-                // Client Name
-                Text(cn.client_name)
-                    .font(.scaled(12))
-                    .foregroundColor(.sMutedFG)
-
-                // Type Badge
-                HStack(spacing: 6) {
-                    Image(systemName: typeConfig.icon)
-                        .font(.scaled(10, weight: .medium))
-
-                    Text(typeConfig.label)
-                        .font(.scaled(11, weight: .medium))
-                }
-                .foregroundColor(typeConfig.color)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(typeConfig.color.opacity(0.08))
-                .cornerRadius(6)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                Text("\(cn.client_name) · \(typeConfig.label)")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
+            .alignmentGuide(.listRowSeparatorLeading) { d in d[.leading] }
 
-            Spacer()
+            Spacer(minLength: 8)
 
-            // Right Content - Amount
-            VStack(alignment: .trailing, spacing: 8) {
+            VStack(alignment: .trailing, spacing: 3) {
                 Text(Money.text(cn.total)).moneyLine()
-                    .font(.scaled(16, weight: .light))
-                    .tracking(0.5)
-                    .foregroundColor(.sForeground)
-
-                // Date if available
-                if !cn.credit_date.trimmingCharacters(
-                    in: .whitespacesAndNewlines
-                ).isEmpty {
-                    Text(formatDate(cn.credit_date))
-                        .font(.scaled(10, weight: .light))
-                        .foregroundColor(.sMutedFG)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                if let dateText {
+                    Text(dateText)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
-
-                // Arrow
-                Image(systemName: "chevron.right")
-                    .font(.scaled(10, weight: .light))
-                    .foregroundColor(.sBorder)
             }
+            .frame(minWidth: 88, alignment: .trailing)
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 16)
-        .background(Color.sCard)
-    }
-
-    private func formatDate(_ dateString: String) -> String {
-        // Try ISO8601
-        let isoFormatter = ISO8601DateFormatter()
-        if let date = isoFormatter.date(from: dateString) {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "MMM dd"
-            return formatter.string(from: date).uppercased()
-        }
-
-        // Try simple date format
-        let simpleFormatter = DateFormatter()
-        simpleFormatter.dateFormat = "yyyy-MM-dd"
-        // Pinned: an unpinned formatter follows the device calendar, so a phone set
-        // to the Indian National calendar sent 1948-06-21 for 12 September 2026.
-        simpleFormatter.locale = Locale(identifier: "en_US_POSIX")
-        simpleFormatter.calendar = Calendar(identifier: .gregorian)
-        if let date = simpleFormatter.date(from: dateString) {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "MMM dd"
-            return formatter.string(from: date).uppercased()
-        }
-
-        return dateString
     }
 }
 

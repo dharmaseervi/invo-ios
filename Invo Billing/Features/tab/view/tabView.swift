@@ -18,6 +18,7 @@ struct TabViewMain: View {
     
     var body: some View {
         TabView(selection: $selectedTab) {
+            Group {
             HomeView()
                 .environmentObject(session)
                 .tabItem {
@@ -48,8 +49,11 @@ struct TabViewMain: View {
                     Label("More", systemImage: "ellipsis")
                 }
                 .tag(4)
+            }
+            .toolbarBackground(Color(uiColor: .systemBackground), for: .tabBar)
+            .toolbarBackgroundVisibility(.visible, for: .tabBar)
         }
-        .tint(Color.sAccent) // ← violet accent
+        .tint(Color.sAccent)
     }
 }
 

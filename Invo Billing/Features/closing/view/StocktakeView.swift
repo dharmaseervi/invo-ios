@@ -17,31 +17,34 @@ struct StocktakeView: View {
     @State private var showDiscardConfirm = false
 
     var body: some View {
-        ZStack {
-            Color.sBackground.ignoresSafeArea()
-
+        Group {
             if vm.isLoading && vm.stocktake == nil {
-                ProgressView().tint(.sAccent)
+                ProgressView()
+                    .tint(.sAccent)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                ScrollView {
-                    // A plain stack: a count is a few dozen lines at most, and inside a
-                    // lazy one the rows were built and never laid out.
-                    VStack(alignment: .leading, spacing: 12) {
-                        progressCard
+                List {
+                    progressCard
+                        .padding(.horizontal, AppSpacing.page)
+                        .padding(.top, 8)
+                        .padding(.bottom, 4)
+                        .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
 
-                        if vm.hasCounted {
-                            ForEach(vm.lines) { line in
-                                lineCard(line)
-                            }
-                        } else {
-                            emptyState
+                    if vm.hasCounted {
+                        ForEach(vm.lines) { line in
+                            lineRow(line)
+                                .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+                                .listRowSeparator(.hidden, edges: line.id == vm.lines.first?.id ? .top : [])
                         }
-
-                        Spacer(minLength: 40)
+                    } else {
+                        emptyState
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)
                 }
+                .listStyle(.plain)
                 .refreshable { await vm.reload() }
             }
         }
@@ -100,103 +103,73 @@ struct StocktakeView: View {
     }
 
     private var progressCard: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 1) {
             Text("Counted so far")
-                .font(.scaled(13))
+                .font(.subheadline)
                 .foregroundColor(.sMutedFG)
             Text("\(vm.lines.count) item\(vm.lines.count == 1 ? "" : "s")")
-                .font(.scaled(24, weight: .bold))
+                .font(.title.bold())
                 .foregroundColor(.sForeground)
             Text(vm.itemsOff == 0
                  ? "All matching the books so far"
                  : "\(vm.itemsOff) not matching the books")
-                .font(.scaled(12))
+                .font(.footnote)
                 .foregroundColor(vm.itemsOff == 0
-                                 ? Color(red: 0.086, green: 0.639, blue: 0.341)
+                                 ? .sSuccess
                                  : .sDestructive)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(18)
-        .background(Color.sCard)
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.sBorder, lineWidth: 0.5))
-        .cornerRadius(16)
+        .padding(12)
+        .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
     }
 
-    private func lineCard(_ line: StocktakeLine) -> some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
+    private func lineRow(_ line: StocktakeLine) -> some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(line.item_name)
-                    .font(.scaled(14, weight: .medium))
+                    .font(.subheadline.weight(.medium))
                     .foregroundColor(.sForeground)
                 Text("Books said \(line.expected) · you counted \(line.counted)")
-                    .font(.scaled(12))
+                    .font(.footnote)
                     .foregroundColor(.sMutedFG)
             }
-            Spacer()
+            Spacer(minLength: 8)
             Text(line.varianceText)
-                .font(.scaled(12, weight: .medium))
-                .foregroundColor(line.isOff ? .sDestructive : Color(red: 0.086, green: 0.639, blue: 0.341))
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(
-                    (line.isOff ? Color.sDestructive : Color(red: 0.086, green: 0.639, blue: 0.341))
-                        .opacity(0.12)
-                )
-                .cornerRadius(6)
+                .font(.caption.weight(.medium))
+                .foregroundColor(line.isOff ? .sDestructive : .sSuccess)
+                .padding(.horizontal, 7)
+                .padding(.vertical, 2)
+                .background((line.isOff ? Color.sDestructive : .sSuccess).opacity(0.1), in: Capsule())
         }
-        .padding(14)
-        .background(Color.sCard)
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.sBorder, lineWidth: 0.5))
-        .cornerRadius(14)
     }
 
     private var finishBar: some View {
-        VStack(spacing: 0) {
-            Rectangle().fill(Color.sBorder).frame(height: 0.5)
-            HStack(spacing: 14) {
-                Button("Throw away") { showDiscardConfirm = true }
-                    .font(.scaled(14))
-                    .foregroundColor(.sDestructive)
-                Spacer()
-                Button {
-                    showFinishConfirm = true
-                } label: {
-                    Text("Finish count")
-                        .font(.scaled(15, weight: .semibold))
-                        .foregroundColor(.sAccentFG)
-                        .padding(.horizontal, 22)
-                        .padding(.vertical, 13)
-                        .background(Color.sPrimary)
-                        .cornerRadius(10)
-                }
+        HStack(spacing: 14) {
+            Button("Throw away", role: .destructive) { showDiscardConfirm = true }
+                .font(.subheadline)
+            Spacer()
+            Button("Finish count") { showFinishConfirm = true }
+                .font(.subheadline.weight(.semibold))
+                .buttonStyle(.borderedProminent)
+                .tint(.sAccent)
                 .disabled(vm.isWorking)
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 12)
-            .background(Color.sBackground)
         }
+        .padding(.horizontal, AppSpacing.page)
+        .padding(.vertical, 10)
+        .background(.bar)
     }
 
     private var emptyState: some View {
-        VStack(spacing: 10) {
-            Image(systemName: "checklist")
-                .font(.scaled(30))
-                .foregroundColor(.sMutedFG)
-            Text("Nothing counted yet")
-                .font(.scaled(15, weight: .medium))
-                .foregroundColor(.sForeground)
+        ContentUnavailableView {
+            Label("Nothing counted yet", systemImage: "checklist")
+        } description: {
             Text("Add an item, type what is actually on the floor, and the app works out what is missing. You can stop and come back — the count waits for you.")
-                .font(.scaled(12))
-                .foregroundColor(.sMutedFG)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 20)
+        } actions: {
             Button("Count an item") { showItemPicker = true }
-                .font(.scaled(14, weight: .medium))
-                .foregroundColor(.sAccent)
-                .padding(.top, 4)
+                .buttonStyle(.borderedProminent)
+                .tint(.sAccent)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 40)
+        .padding(.vertical, 16)
     }
 }
 
@@ -278,7 +251,7 @@ private struct StocktakeItemPicker: View {
                             Text(item.name).foregroundColor(.sForeground)
                             Spacer()
                             Text("\(item.quantity)")
-                                .font(.scaled(13))
+                                .font(.subheadline)
                                 .foregroundColor(.sMutedFG)
                         }
                     }

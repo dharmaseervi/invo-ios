@@ -49,7 +49,7 @@ struct RecordPaymentView: View {
                     invoiceListSection
                 }
             }
-            .padding(20)
+            .padding(AppSpacing.card)
         }
         .scrollDismissesKeyboard(.interactively)
     }
@@ -62,16 +62,16 @@ struct RecordPaymentView: View {
                     .fill(Color.sAccentMuted)
                     .frame(width: 42, height: 42)
                 Text(initials(for: vm.clientName))
-                    .font(.scaled(14, weight: .semibold))
+                    .font(.subheadline.weight(.semibold))
                     .foregroundColor(.sAccent)
             }
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(vm.clientName.isEmpty ? "Client" : vm.clientName)
-                    .font(.scaled(14, weight: .semibold))
+                    .font(.subheadline.weight(.semibold))
                     .foregroundColor(.sForeground)
                 Text(vm.invoiceNumber ?? "Applies to outstanding invoices")
-                    .font(.scaled(12))
+                    .font(.footnote)
                     .foregroundColor(.sMutedFG)
             }
 
@@ -80,10 +80,10 @@ struct RecordPaymentView: View {
             if let due = vm.dueAmount {
                 VStack(alignment: .trailing, spacing: 2) {
                     Text(Money.text(due)).moneyLine()
-                        .font(.scaled(14, weight: .semibold))
+                        .font(.subheadline.weight(.semibold))
                         .foregroundColor(.sForeground)
                     Text("Due")
-                        .font(.scaled(11))
+                        .font(.caption)
                         .foregroundColor(.sMutedFG)
                 }
             }
@@ -105,16 +105,16 @@ struct RecordPaymentView: View {
     private var amountSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Amount")
-                .font(.scaled(13, weight: .medium))
+                .font(.subheadline.weight(.medium))
                 .foregroundColor(.sMutedFG)
 
             HStack(spacing: 6) {
                 Text("₹")
-                    .font(.scaled(26, weight: .semibold))
+                    .font(.title2.weight(.semibold))
                     .foregroundColor(.sMutedFG)
                 TextField("0.00", text: $vm.amount)
                     .keyboardType(.decimalPad)
-                    .font(.scaled(26, weight: .semibold))
+                    .font(.title2.weight(.semibold))
                     .foregroundColor(.sForeground)
                     .tint(.sAccent)
                     .focused($amountFocused)
@@ -138,7 +138,7 @@ struct RecordPaymentView: View {
             vm.amount = Money.editable(amount)
         } label: {
             Text(label)
-                .font(.scaled(12, weight: .medium))
+                .font(.footnote.weight(.medium))
                 .foregroundColor(isSelected ? .sAccentFG : .sForeground)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
@@ -155,7 +155,7 @@ struct RecordPaymentView: View {
     private var methodSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Payment method")
-                .font(.scaled(13, weight: .medium))
+                .font(.subheadline.weight(.medium))
                 .foregroundColor(.sMutedFG)
 
             HStack(spacing: 8) {
@@ -173,9 +173,9 @@ struct RecordPaymentView: View {
         } label: {
             VStack(spacing: 6) {
                 Image(systemName: icon(for: method))
-                    .font(.scaled(16, weight: .medium))
+                    .font(.subheadline.weight(.medium))
                 Text(label(for: method))
-                    .font(.scaled(11, weight: .medium))
+                    .font(.caption.weight(.medium))
             }
             .foregroundColor(isSelected ? .sAccentFG : .sForeground)
             .frame(maxWidth: .infinity)
@@ -211,10 +211,10 @@ struct RecordPaymentView: View {
         VStack(alignment: .leading, spacing: 10) {
             VStack(alignment: .leading, spacing: 6) {
                 Text("Reference (optional)")
-                    .font(.scaled(12))
+                    .font(.footnote)
                     .foregroundColor(.sMutedFG)
                 TextField("Transaction ID, cheque no...", text: $vm.reference)
-                    .font(.scaled(14))
+                    .font(.body)
                     .foregroundColor(.sForeground)
                     .tint(.sAccent)
                     .padding(.horizontal, 12)
@@ -226,10 +226,10 @@ struct RecordPaymentView: View {
 
             VStack(alignment: .leading, spacing: 6) {
                 Text("Notes (optional)")
-                    .font(.scaled(12))
+                    .font(.footnote)
                     .foregroundColor(.sMutedFG)
                 TextField("Add a note", text: $vm.notes)
-                    .font(.scaled(14))
+                    .font(.body)
                     .foregroundColor(.sForeground)
                     .tint(.sAccent)
                     .padding(.horizontal, 12)
@@ -244,18 +244,18 @@ struct RecordPaymentView: View {
     private var invoiceListSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Applied to invoices")
-                .font(.scaled(13, weight: .medium))
+                .font(.subheadline.weight(.medium))
                 .foregroundColor(.sMutedFG)
 
             VStack(spacing: 0) {
                 ForEach(Array(vm.unpaidInvoices.enumerated()), id: \.element.id) { idx, invoice in
                     HStack {
                         Text(invoice.invoiceNumber)
-                            .font(.scaled(13))
+                            .font(.subheadline)
                             .foregroundColor(.sForeground)
                         Spacer()
                         Text(Money.text(invoice.remainingAmount)).moneyLine()
-                            .font(.scaled(13, weight: .medium))
+                            .font(.subheadline.weight(.medium))
                             .foregroundColor(.sForeground)
                     }
                     .padding(.vertical, 10)
@@ -288,7 +288,7 @@ struct RecordPaymentView: View {
                         .scaleEffect(0.85)
                 } else {
                     Text("Save payment")
-                        .font(.scaled(15, weight: .semibold))
+                        .font(.subheadline.weight(.semibold))
                 }
             }
             .frame(maxWidth: .infinity)
@@ -298,7 +298,7 @@ struct RecordPaymentView: View {
             .cornerRadius(10)
         }
         .disabled(!vm.isValid || vm.isLoading)
-        .padding(20)
+        .padding(AppSpacing.card)
         .padding(.bottom, 30)
     }
 }

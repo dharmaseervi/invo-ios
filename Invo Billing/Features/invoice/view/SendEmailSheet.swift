@@ -25,12 +25,12 @@ struct SendEmailSheet: View {
                         // Info banner
                         HStack(spacing: 10) {
                             Image(systemName: "paperclip")
-                                .font(.scaled(13))
+                                .font(.subheadline)
                                 .foregroundColor(.sMutedFG)
                             Text(isReminder
                                  ? "A payment reminder with the invoice PDF attached will be sent"
                                  : "The invoice PDF will be attached automatically")
-                                .font(.scaled(13))
+                                .font(.subheadline)
                                 .foregroundColor(.sMutedFG)
                             Spacer()
                         }
@@ -45,11 +45,11 @@ struct SendEmailSheet: View {
                         // Name field
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Recipient name")
-                                .font(.scaled(13, weight: .medium))
+                                .font(.subheadline.weight(.medium))
                                 .foregroundColor(.sForeground)
                             
                             TextField("John Doe", text: $toName)
-                                .font(.scaled(14))
+                                .font(.body)
                                 .foregroundColor(.sForeground)
                                 .tint(.sAccent)
                                 .padding(.horizontal, 12)
@@ -65,12 +65,12 @@ struct SendEmailSheet: View {
                         // Email field
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Email address")
-                                .font(.scaled(13, weight: .medium))
+                                .font(.subheadline.weight(.medium))
                                 .foregroundColor(.sForeground)
                             
                             HStack {
                                 TextField("client@example.com", text: $toEmail)
-                                    .font(.scaled(14))
+                                    .font(.body)
                                     .foregroundColor(.sForeground)
                                     .keyboardType(.emailAddress)
                                     .textInputAutocapitalization(.never)
@@ -81,9 +81,9 @@ struct SendEmailSheet: View {
                                     Image(systemName: emailValid
                                           ? "checkmark.circle.fill"
                                           : "xmark.circle.fill")
-                                    .font(.scaled(15))
+                                    .font(.body)
                                     .foregroundColor(emailValid
-                                                     ? Color(red: 0.086, green: 0.639, blue: 0.341)
+                                                     ? .sSuccess
                                                      : .sDestructive)
                                 }
                             }
@@ -97,7 +97,7 @@ struct SendEmailSheet: View {
                             .cornerRadius(8)
                         }
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, AppSpacing.page)
                     .padding(.top, 20)
                     .padding(.bottom, 32)
                 }
@@ -127,14 +127,14 @@ struct SendEmailSheet: View {
                                         .tint(.sAccentFG)
                                         .scaleEffect(0.8)
                                     Text("Sending...")
-                                        .font(.scaled(14, weight: .medium))
+                                        .font(.subheadline.weight(.medium))
                                         .foregroundColor(.sAccentFG)
                                 } else {
                                     Image(systemName: "paperplane")
-                                        .font(.scaled(13))
+                                        .font(.subheadline)
                                         .foregroundColor(.sAccentFG)
                                     Text(isReminder ? "Send reminder" : "Send invoice")
-                                        .font(.scaled(14, weight: .medium))
+                                        .font(.subheadline.weight(.medium))
                                         .foregroundColor(.sAccentFG)
                                 }
                             }
@@ -147,7 +147,7 @@ struct SendEmailSheet: View {
                         }
                         .disabled(!isValid || vm.isSendingEmail)
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, AppSpacing.page)
                     .padding(.vertical, 16)
                 }
             }

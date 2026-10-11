@@ -25,7 +25,7 @@ struct CreateEstimateView: View {
                     // MARK: - Customer
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Customer")
-                            .font(.scaled(13, weight: .medium))
+                            .font(.subheadline.weight(.medium))
                             .foregroundColor(.sMutedFG)
 
                         Button { showClientPicker = true } label: {
@@ -34,25 +34,25 @@ struct CreateEstimateView: View {
                                     MinimalAvatarView(name: client.name)
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(client.name)
-                                            .font(.scaled(14, weight: .medium))
+                                            .font(.subheadline.weight(.medium))
                                             .foregroundColor(.sForeground)
                                         if !client.email.isEmpty {
                                             Text(client.email)
-                                                .font(.scaled(12))
+                                                .font(.footnote)
                                                 .foregroundColor(.sMutedFG)
                                         }
                                     }
                                 } else {
                                     Image(systemName: "person.crop.circle.badge.plus")
-                                        .font(.scaled(18))
+                                        .font(.title3)
                                         .foregroundColor(.sAccent)
                                     Text("Select client")
-                                        .font(.scaled(14, weight: .medium))
+                                        .font(.subheadline.weight(.medium))
                                         .foregroundColor(.sForeground)
                                 }
                                 Spacer()
                                 Image(systemName: "chevron.right")
-                                    .font(.scaled(12, weight: .semibold))
+                                    .font(.footnote.weight(.semibold))
                                     .foregroundColor(.sMutedFG)
                             }
                             .padding(14)
@@ -61,18 +61,18 @@ struct CreateEstimateView: View {
                         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
                         .cornerRadius(12)
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, AppSpacing.page)
 
                     // MARK: - Dates
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Details")
-                            .font(.scaled(13, weight: .medium))
+                            .font(.subheadline.weight(.medium))
                             .foregroundColor(.sMutedFG)
 
                         VStack(spacing: 0) {
                             HStack {
                                 Text("Document type")
-                                    .font(.scaled(14))
+                                    .font(.body)
                                     .foregroundColor(.sForeground)
                                 Spacer()
                                 Picker("", selection: $vm.docType) {
@@ -88,11 +88,11 @@ struct CreateEstimateView: View {
 
                             HStack {
                                 Text("Estimate number")
-                                    .font(.scaled(14))
+                                    .font(.body)
                                     .foregroundColor(.sForeground)
                                 Spacer()
                                 Text(vm.estimateNumber)
-                                    .font(.scaled(14))
+                                    .font(.body)
                                     .foregroundColor(.sMutedFG)
                             }
                             .padding(14)
@@ -102,13 +102,13 @@ struct CreateEstimateView: View {
                             DatePicker(selection: $vm.estimateDate, displayedComponents: .date) {
                                 datePickerLabel("Estimate date")
                             }
-                                .font(.scaled(14))
+                                .font(.body)
                                 .padding(14)
 
                             Rectangle().fill(Color.sBorder).frame(height: 0.5)
 
                             Toggle("Set expiry date", isOn: $vm.hasExpiryDate)
-                                .font(.scaled(14))
+                                .font(.body)
                                 .tint(.sAccent)
                                 .padding(14)
 
@@ -117,7 +117,7 @@ struct CreateEstimateView: View {
                                 DatePicker(selection: $vm.expiryDate, in: vm.estimateDate..., displayedComponents: .date) {
                                     datePickerLabel("Valid until")
                                 }
-                                    .font(.scaled(14))
+                                    .font(.body)
                                     .padding(14)
                             }
                         }
@@ -125,7 +125,7 @@ struct CreateEstimateView: View {
                         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
                         .cornerRadius(12)
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, AppSpacing.page)
 
                     ItemsSection(
                         invoiceItems: $vm.items,
@@ -152,10 +152,10 @@ struct CreateEstimateView: View {
                 HStack(spacing: 14) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Total")
-                            .font(.scaled(11))
+                            .font(.caption)
                             .foregroundColor(.sMutedFG)
                         Text(Money.text(vm.total)).moneyLine()
-                            .font(.scaled(17, weight: .semibold))
+                            .font(.subheadline.weight(.semibold))
                             .foregroundColor(.sForeground)
                     }
                     Spacer()
@@ -169,7 +169,7 @@ struct CreateEstimateView: View {
                                 ProgressView().tint(.sAccentFG).scaleEffect(0.85)
                             } else {
                                 Text("Create estimate")
-                                    .font(.scaled(15, weight: .semibold))
+                                    .font(.subheadline.weight(.semibold))
                             }
                         }
                         .foregroundColor(.sAccentFG)
@@ -180,7 +180,7 @@ struct CreateEstimateView: View {
                     }
                     .disabled(vm.isLoading || !vm.isValid)
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, AppSpacing.page)
                 .padding(.vertical, 12)
                 .background(Color.sBackground)
             }

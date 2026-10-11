@@ -76,6 +76,7 @@ struct DebugInvoice100View: View {
             days_overdue: 0,
             tds_rate: nil,
             tds_amount: nil,
+            doc_type: nil,
             client: ClientSummary(id: 1, name: "Demo Client Pvt. Ltd.", phone: nil),
             items: items
         )

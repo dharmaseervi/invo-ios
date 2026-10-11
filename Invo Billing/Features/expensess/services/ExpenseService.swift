@@ -41,15 +41,27 @@ final class ExpenseService {
     }
     
     // MARK: - Get All Expenses
-    /// One page of expenses. limit 0 asks for every expense the company has ever
-    /// recorded, which is what this screen used to do on every visit.
-    func getExpenses(companyId: Int, limit: Int = 0, offset: Int = 0) async throws -> [Expense] {
-
-        var path = "\(baseURL)/companies/\(companyId)/expenses"
-        if limit > 0 { path += "?limit=\(limit)&offset=\(offset)" }
-        guard let url = URL(string: path) else {
-            throw URLError(.badURL)
+    func getExpenses(
+        companyId: Int,
+        limit: Int = 0,
+        offset: Int = 0,
+        search: String? = nil,
+        from: String? = nil,
+        to: String? = nil,
+        category: String? = nil
+    ) async throws -> [Expense] {
+        var components = URLComponents(string: "\(baseURL)/companies/\(companyId)/expenses")
+        var items: [URLQueryItem] = []
+        if limit > 0 {
+            items.append(URLQueryItem(name: "limit", value: String(limit)))
+            items.append(URLQueryItem(name: "offset", value: String(offset)))
         }
+        if let search, !search.isEmpty { items.append(URLQueryItem(name: "search", value: search)) }
+        if let from, !from.isEmpty     { items.append(URLQueryItem(name: "from", value: from)) }
+        if let to, !to.isEmpty         { items.append(URLQueryItem(name: "to", value: to)) }
+        if let category, !category.isEmpty { items.append(URLQueryItem(name: "category", value: category)) }
+        if !items.isEmpty { components?.queryItems = items }
+        guard let url = components?.url else { throw URLError(.badURL) }
         
         var request = URLRequest(url: url)
         request.httpMethod = "GET"

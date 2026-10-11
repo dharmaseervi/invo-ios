@@ -13,29 +13,38 @@ struct StaffView: View {
     @State private var removing: StaffMember?
 
     var body: some View {
-        ZStack {
-            Color.sBackground.ignoresSafeArea()
-
+        Group {
             if vm.isLoading && vm.members.isEmpty {
-                ProgressView().tint(.sAccent)
+                ProgressView()
+                    .tint(.sAccent)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                ScrollView {
-                    // A plain stack: this list is a handful of people, and a lazy one
-                    // here built its rows without ever laying them out.
-                    VStack(alignment: .leading, spacing: 10) {
-                        if vm.staffCount == 0 {
-                            emptyState
-                        }
-
-                        ForEach(vm.members) { member in
-                            memberCard(member)
-                        }
-
-                        Spacer(minLength: 40)
+                List {
+                    if vm.staffCount == 0 {
+                        emptyState
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)
+
+                    Section {
+                        ForEach(vm.members) { member in
+                            memberRow(member)
+                                .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 12))
+                                .listRowSeparator(.hidden, edges: member.id == vm.members.first?.id ? .top : [])
+                        }
+                    } footer: {
+                        VStack(alignment: .leading, spacing: 6) {
+                            ForEach([MemberRole.manager, MemberRole.staff]) { role in
+                                Text("**\(role.label):** \(role.explanation)")
+                            }
+                        }
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .padding(.top, 8)
+                    }
                 }
+                .listStyle(.plain)
+                .contentMargins(.bottom, 16, for: .scrollContent)
                 .refreshable { await vm.load() }
             }
         }
@@ -81,64 +90,71 @@ struct StaffView: View {
         }
     }
 
-    private func memberCard(_ member: StaffMember) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(member.displayName)
-                        .font(.scaled(14, weight: .medium))
-                        .foregroundColor(.sForeground)
-                    // Only when it adds something. An owner backfilled from an
-                    // existing account has no name on their row, and printing the
-                    // login twice reads like a mistake.
-                    if member.displayName != member.email {
-                        Text(member.email)
-                            .font(.scaled(12))
-                            .foregroundColor(.sMutedFG)
-                    }
+    private func memberRow(_ member: StaffMember) -> some View {
+        HStack(spacing: 12) {
+            MinimalAvatarView(name: member.displayName)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(member.displayName)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                // Only when it adds something. An owner backfilled from an existing
+                // account has no name on their row, and printing the login twice
+                // reads like a mistake.
+                if member.displayName != member.email {
+                    Text(member.email)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
-                Spacer()
-                rolePill(member)
             }
+            .alignmentGuide(.listRowSeparatorLeading) { d in d[.leading] }
 
-            Text(member.memberRole.explanation)
-                .font(.scaled(12))
-                .foregroundColor(.sMutedFG)
-                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 8)
 
-            if !member.isOwner {
-                HStack(spacing: 16) {
-                    // The role that isn't theirs, offered as the thing to do — a
-                    // picker for two options is a menu nobody needs.
-                    let other: MemberRole = member.memberRole == .manager ? .staff : .manager
-                    Button("Make \(other.label.lowercased())") {
+            rolePill(member)
+
+            if member.isOwner {
+                Color.clear.frame(width: 32, height: 32)
+            } else {
+                // The role that isn't theirs, offered as the thing to do — a picker
+                // for two options is a menu nobody needs.
+                let other: MemberRole = member.memberRole == .manager ? .staff : .manager
+                Menu {
+                    Button {
                         Task { await vm.changeRole(member, to: other) }
+                    } label: {
+                        Label("Make \(other.label.lowercased())", systemImage: "person.badge.key")
                     }
-                    .font(.scaled(13, weight: .medium))
-                    .foregroundColor(.sAccent)
-
-                    Button("Remove") { removing = member }
-                        .font(.scaled(13, weight: .medium))
-                        .foregroundColor(.sDestructive)
-
-                    Spacer()
+                    Button(role: .destructive) { removing = member } label: {
+                        Label("Remove", systemImage: "person.badge.minus")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 32, height: 32)
+                        .contentShape(Rectangle())
                 }
+                .buttonStyle(.borderless)
                 .disabled(vm.isWorking)
+                .accessibilityLabel("Actions for \(member.displayName)")
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(Color.sCard)
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.sBorder, lineWidth: 0.5))
-        .cornerRadius(14)
+        .swipeActions(edge: .trailing) {
+            if !member.isOwner {
+                Button("Remove", role: .destructive) { removing = member }
+            }
+        }
     }
 
     private func rolePill(_ member: StaffMember) -> some View {
         let colour: Color = member.isOwner
-            ? Color(red: 0.086, green: 0.639, blue: 0.341)
+            ? .sSuccess
             : (member.memberRole == .manager ? .sAccent : .sMutedFG)
         return Text(member.memberRole.label)
-            .font(.scaled(11, weight: .medium))
+            .font(.caption.weight(.medium))
             .foregroundColor(colour)
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
@@ -147,25 +163,16 @@ struct StaffView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 10) {
-            Image(systemName: "person.2")
-                .font(.scaled(28))
-                .foregroundColor(.sMutedFG)
-            Text("Only you, so far")
-                .font(.scaled(15, weight: .medium))
-                .foregroundColor(.sForeground)
+        ContentUnavailableView {
+            Label("Only you, so far", systemImage: "person.2")
+        } description: {
             Text("Give the people at your counter their own login. They bill customers and take payments without seeing what stock costs or what the shop earned.")
-                .font(.scaled(12))
-                .foregroundColor(.sMutedFG)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 16)
+        } actions: {
             Button("Add someone") { showAdd = true }
-                .font(.scaled(14, weight: .medium))
-                .foregroundColor(.sAccent)
-                .padding(.top, 4)
+                .buttonStyle(.borderedProminent)
+                .tint(.sAccent)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 36)
+        .padding(.vertical, 16)
     }
 }
 
@@ -227,7 +234,7 @@ struct AddStaffSheet: View {
                 .pickerStyle(.segmented)
 
                 Text(role.explanation)
-                    .font(.scaled(12))
+                    .font(.footnote)
                     .foregroundColor(.sMutedFG)
             } header: {
                 Text("What they can do")

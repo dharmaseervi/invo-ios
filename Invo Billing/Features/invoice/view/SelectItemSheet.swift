@@ -26,14 +26,14 @@ struct SelectItemSheet: View {
                     // MARK: - Search Bar
                     HStack(spacing: 10) {
                         Image(systemName: "magnifyingglass")
-                            .font(.scaled(14))
+                            .font(.body)
                             .foregroundColor(.sMutedFG)
 
                         TextField("Search name or SKU", text: $searchText)
                             .onChange(of: searchText) { _, query in
                                 vm.search(query)
                             }
-                            .font(.scaled(14))
+                            .font(.body)
                             .foregroundColor(.sForeground)
                             .tint(.sAccent)
                             .autocorrectionDisabled()
@@ -43,7 +43,7 @@ struct SelectItemSheet: View {
                                 searchText = ""
                             } label: {
                                 Image(systemName: "xmark.circle.fill")
-                                    .font(.scaled(14))
+                                    .font(.body)
                                     .foregroundColor(.sMutedFG)
                             }
                         }
@@ -56,7 +56,7 @@ struct SelectItemSheet: View {
                             .stroke(Color.sInput, lineWidth: 0.5)
                     )
                     .cornerRadius(8)
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, AppSpacing.page)
                     .padding(.vertical, 14)
 
                     // MARK: - Add New Item Row
@@ -71,27 +71,27 @@ struct SelectItemSheet: View {
                                     .frame(width: 40, height: 40)
 
                                 Image(systemName: "plus")
-                                    .font(.scaled(16))
+                                    .font(.body)
                                     .foregroundColor(.sMutedFG)
                             }
 
                             VStack(alignment: .leading, spacing: 3) {
                                 Text("Add new item")
-                                    .font(.scaled(13, weight: .medium))
+                                    .font(.subheadline.weight(.medium))
                                     .foregroundColor(.sForeground)
 
                                 Text("Create a new product or service")
-                                    .font(.scaled(11))
+                                    .font(.caption)
                                     .foregroundColor(.sMutedFG)
                             }
 
                             Spacer()
 
                             Image(systemName: "chevron.right")
-                                .font(.scaled(12, weight: .semibold))
+                                .font(.footnote.weight(.semibold))
                                 .foregroundColor(.sMutedFG)
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.page)
                         .padding(.vertical, 12)
                     }
 
@@ -103,7 +103,7 @@ struct SelectItemSheet: View {
                             ProgressView()
                                 .tint(.sAccent)
                             Text("Loading items...")
-                                .font(.scaled(13))
+                                .font(.subheadline)
                                 .foregroundColor(.sMutedFG)
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -115,20 +115,20 @@ struct SelectItemSheet: View {
 
                             VStack(spacing: 4) {
                                 Text(searchText.isEmpty ? "No items yet" : "No items found")
-                                    .font(.scaled(14, weight: .semibold))
+                                    .font(.subheadline.weight(.semibold))
                                     .foregroundColor(.sForeground)
 
                                 Text(searchText.isEmpty ? "Add your first item to get started" : "Try a different search")
-                                    .font(.scaled(12))
+                                    .font(.footnote)
                                     .foregroundColor(.sMutedFG)
                             }
 
                             if searchText.isEmpty {
                                 Button(action: { showAddItem = true }) {
                                     Text("Add item")
-                                        .font(.scaled(13, weight: .semibold))
+                                        .font(.subheadline.weight(.semibold))
                                         .foregroundColor(.sAccentFG)
-                                        .padding(.horizontal, 20)
+                                        .padding(.horizontal, AppSpacing.page)
                                         .padding(.vertical, 10)
                                         .background(Color.sPrimary)
                                         .cornerRadius(8)
@@ -140,16 +140,16 @@ struct SelectItemSheet: View {
                     } else {
                         HStack {
                             Text("Available items")
-                                .font(.scaled(11, weight: .medium))
+                                .font(.caption.weight(.medium))
                                 .foregroundColor(.sMutedFG)
 
                             Spacer()
 
                             Text("\(filteredItems.count)")
-                                .font(.scaled(11, weight: .medium))
+                                .font(.caption.weight(.medium))
                                 .foregroundColor(.sMutedFG)
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.page)
                         .padding(.top, 14)
                         .padding(.bottom, 8)
 
@@ -190,16 +190,16 @@ struct SelectItemSheet: View {
                                     // not be reached while adding a line.
                                     VStack(spacing: 6) {
                                         Text("Couldn't load more items.")
-                                            .font(.scaled(13))
+                                            .font(.subheadline)
                                             .foregroundColor(.sMutedFG)
                                         Button("Try again") { Task { await vm.retryLoadMore() } }
-                                            .font(.scaled(13, weight: .medium))
+                                            .font(.subheadline.weight(.medium))
                                             .foregroundColor(.sAccent)
                                     }
                                     .padding(.vertical, 12)
                                 }
                             }
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, AppSpacing.page)
                             .padding(.bottom, 20)
                         }
                     }
@@ -278,7 +278,7 @@ struct SelectItemRow: View {
         Button(action: onSelect) {
             HStack(spacing: 14) {
                 Text(String(item.name.prefix(1)).uppercased())
-                    .font(.scaled(12, weight: .semibold))
+                    .font(.footnote.weight(.semibold))
                     .foregroundColor(.sAccentFG)
                     .frame(width: 40, height: 40)
                     .background(Color.sAccent)
@@ -286,20 +286,20 @@ struct SelectItemRow: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(item.name)
-                        .font(.scaled(13, weight: .medium))
+                        .font(.subheadline.weight(.medium))
                         .foregroundColor(.sForeground)
                         .lineLimit(1)
 
                     if let desc = item.description, !desc.isEmpty {
                         Text(desc)
-                            .font(.scaled(11))
+                            .font(.caption)
                             .foregroundColor(.sMutedFG)
                             .lineLimit(1)
                     }
 
                     if let unit = item.unit, !unit.isEmpty {
                         Text("Unit: \(unit)")
-                            .font(.scaled(10))
+                            .font(.caption)
                             .foregroundColor(.sMutedFG)
                     }
                 }
@@ -308,27 +308,28 @@ struct SelectItemRow: View {
 
                 VStack(alignment: .trailing, spacing: 4) {
                     Text(Money.text(item.price)).moneyLine()
-                        .font(.scaled(13, weight: .semibold))
+                        .font(.subheadline.weight(.semibold))
                         .foregroundColor(.sForeground)
 
                     if let taxRate = item.tax_rate, taxRate > 0 {
                         Text("GST \(String(format: "%.0f", taxRate))%")
-                            .font(.scaled(10))
+                            .font(.caption)
                             .foregroundColor(.sMutedFG)
                     }
 
                     if isSelected {
                         Image(systemName: "checkmark.circle.fill")
-                            .font(.scaled(14, weight: .semibold))
+                            .font(.subheadline.weight(.semibold))
                             .foregroundColor(.sAccent)
                     } else {
                         Image(systemName: "circle")
-                            .font(.scaled(14))
+                            .font(.body)
                             .foregroundColor(.sBorder)
                     }
                 }
             }
-            .padding(14)
+            .padding(.vertical, 10)
+            .padding(.horizontal, 14)
             .background(Color.sCard)
             .overlay(
                 RoundedRectangle(cornerRadius: 10)

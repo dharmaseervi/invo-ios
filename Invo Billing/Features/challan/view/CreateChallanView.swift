@@ -13,149 +13,170 @@ struct CreateChallanView: View {
                 Color.sBackground.ignoresSafeArea()
 
                 ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: 16) {
+                    VStack(spacing: 20) {
 
                         // MARK: - Client
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Client")
-                                .font(.scaled(13, weight: .medium))
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Customer")
+                                .font(.subheadline.weight(.medium))
                                 .foregroundColor(.sMutedFG)
-                                .padding(.horizontal, 20)
 
-                            Button(action: { showClientPicker = true }) {
-                                HStack {
+                            Button { showClientPicker = true } label: {
+                                HStack(spacing: 12) {
                                     if let client = vm.selectedClient {
-                                        Text(client.name)
-                                            .font(.scaled(14))
-                                            .foregroundColor(.sForeground)
+                                        MinimalAvatarView(name: client.name)
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(client.name)
+                                                .font(.subheadline.weight(.medium))
+                                                .foregroundColor(.sForeground)
+                                        }
                                     } else {
+                                        Image(systemName: "person.crop.circle.badge.plus")
+                                            .font(.title3)
+                                            .foregroundColor(.sAccent)
                                         Text("Select client")
-                                            .font(.scaled(14))
-                                            .foregroundColor(.sMutedFG)
+                                            .font(.subheadline.weight(.medium))
+                                            .foregroundColor(.sForeground)
                                     }
                                     Spacer()
                                     Image(systemName: "chevron.right")
-                                        .font(.scaled(12))
+                                        .font(.footnote.weight(.semibold))
                                         .foregroundColor(.sMutedFG)
                                 }
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 12)
-                                .background(Color.sCard)
-                                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.sInput, lineWidth: 0.5))
-                                .cornerRadius(8)
+                                .padding(14)
                             }
-                            .padding(.horizontal, 20)
+                            .background(Color.sCard)
+                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
+                            .cornerRadius(12)
                         }
+                        .padding(.horizontal, AppSpacing.page)
 
-                        // MARK: - Date
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Challan date")
-                                .font(.scaled(13, weight: .medium))
+                        // MARK: - Details
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Details")
+                                .font(.subheadline.weight(.medium))
                                 .foregroundColor(.sMutedFG)
-                                .padding(.horizontal, 20)
 
-                            DatePicker("", selection: $vm.challanDate, displayedComponents: .date)
-                                .datePickerStyle(.compact)
-                                .labelsHidden()
-                                .padding(.horizontal, 20)
+                            VStack(spacing: 0) {
+                                DatePicker(selection: $vm.challanDate, displayedComponents: .date) {
+                                    Text("Challan date")
+                                        .font(.body)
+                                        .foregroundColor(.sForeground)
+                                }
+                                .font(.body)
+                                .tint(.sAccent)
+                                .padding(14)
+
+                                Rectangle().fill(Color.sBorder).frame(height: 0.5)
+
+                                HStack(alignment: .top, spacing: 0) {
+                                    Text("Notes")
+                                        .font(.body)
+                                        .foregroundColor(.sForeground)
+                                        .padding(.top, 2)
+                                    Spacer()
+                                    TextField("Optional", text: $vm.notes, axis: .vertical)
+                                        .font(.body)
+                                        .foregroundColor(.sForeground)
+                                        .tint(.sAccent)
+                                        .multilineTextAlignment(.trailing)
+                                        .lineLimit(1...4)
+                                        .frame(maxWidth: 220)
+                                }
+                                .padding(14)
+                            }
+                            .background(Color.sCard)
+                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
+                            .cornerRadius(12)
                         }
+                        .padding(.horizontal, AppSpacing.page)
 
                         // MARK: - Items
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack {
-                                Text("Items")
-                                    .font(.scaled(13, weight: .medium))
-                                    .foregroundColor(.sMutedFG)
-                                Spacer()
-                                Button(action: { showItemPicker = true }) {
-                                    Label("Add item", systemImage: "plus")
-                                        .font(.scaled(12, weight: .medium))
-                                        .foregroundColor(.sAccent)
-                                }
-                            }
-                            .padding(.horizontal, 20)
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Items")
+                                .font(.subheadline.weight(.medium))
+                                .foregroundColor(.sMutedFG)
 
-                            if vm.items.isEmpty {
-                                HStack {
-                                    Spacer()
-                                    Text("No items added")
-                                        .font(.scaled(13))
-                                        .foregroundColor(.sMutedFG)
-                                    Spacer()
-                                }
-                                .padding(.vertical, 20)
-                                .background(Color.sCard)
-                                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.sInput, lineWidth: 0.5))
-                                .cornerRadius(8)
-                                .padding(.horizontal, 20)
-                            } else {
-                                VStack(spacing: 0) {
-                                    ForEach($vm.items) { $line in
-                                        HStack(spacing: 12) {
-                                            VStack(alignment: .leading, spacing: 3) {
-                                                Text(line.name)
-                                                    .font(.scaled(13, weight: .medium))
-                                                    .foregroundColor(.sForeground)
-                                                TextField("Description (optional)", text: $line.description)
-                                                    .font(.scaled(11))
+                            VStack(spacing: 0) {
+                                if vm.items.isEmpty {
+                                    Button(action: { showItemPicker = true }) {
+                                        HStack(spacing: 14) {
+                                            ZStack {
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .stroke(Color.sBorder, style: StrokeStyle(lineWidth: 1, dash: [4]))
+                                                    .frame(width: 38, height: 38)
+                                                Image(systemName: "plus")
+                                                    .font(.body)
                                                     .foregroundColor(.sMutedFG)
                                             }
+                                            Text("Add items to dispatch")
+                                                .font(.body)
+                                                .foregroundColor(.sMutedFG)
                                             Spacer()
-                                            HStack(spacing: 8) {
+                                        }
+                                        .padding(14)
+                                    }
+                                } else {
+                                    ForEach($vm.items) { $line in
+                                        HStack(spacing: 12) {
+                                            VStack(alignment: .leading, spacing: 4) {
+                                                Text(line.name)
+                                                    .font(.subheadline.weight(.medium))
+                                                    .foregroundColor(.sForeground)
+                                                TextField("Description (optional)", text: $line.description)
+                                                    .font(.footnote)
+                                                    .foregroundColor(.sMutedFG)
+                                                    .tint(.sAccent)
+                                            }
+                                            Spacer()
+                                            HStack(spacing: 10) {
                                                 Button(action: {
                                                     if line.qty > 1 { line.qty -= 1 }
                                                 }) {
-                                                    Image(systemName: "minus.circle")
+                                                    Image(systemName: "minus.circle.fill")
+                                                        .font(.title3)
                                                         .foregroundColor(.sMutedFG)
                                                 }
                                                 Text("\(line.qty)")
-                                                    .font(.scaled(14, weight: .semibold))
+                                                    .font(.subheadline.weight(.semibold))
                                                     .foregroundColor(.sForeground)
-                                                    .frame(minWidth: 24)
+                                                    .frame(minWidth: 28)
+                                                    .monospacedDigit()
                                                 Button(action: { line.qty += 1 }) {
-                                                    Image(systemName: "plus.circle")
+                                                    Image(systemName: "plus.circle.fill")
+                                                        .font(.title3)
                                                         .foregroundColor(.sAccent)
                                                 }
-                                            }
-                                            Button(action: { vm.removeItem(line) }) {
-                                                Image(systemName: "trash")
-                                                    .font(.scaled(13))
-                                                    .foregroundColor(Color(red: 0.863, green: 0.149, blue: 0.149))
                                             }
                                         }
                                         .padding(.horizontal, 14)
                                         .padding(.vertical, 12)
+
                                         Rectangle().fill(Color.sBorder).frame(height: 0.5).padding(.horizontal, 14)
                                     }
+
+                                    Button(action: { showItemPicker = true }) {
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "plus.circle")
+                                                .font(.body)
+                                            Text("Add another item")
+                                                .font(.body)
+                                        }
+                                        .foregroundColor(.sAccent)
+                                        .padding(14)
+                                    }
                                 }
-                                .background(Color.sCard)
-                                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.sInput, lineWidth: 0.5))
-                                .cornerRadius(8)
-                                .padding(.horizontal, 20)
                             }
+                            .background(Color.sCard)
+                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
+                            .cornerRadius(12)
                         }
+                        .padding(.horizontal, AppSpacing.page)
 
-                        // MARK: - Notes
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Notes")
-                                .font(.scaled(13, weight: .medium))
-                                .foregroundColor(.sMutedFG)
-                                .padding(.horizontal, 20)
-
-                            TextEditor(text: $vm.notes)
-                                .font(.scaled(14))
-                                .scrollContentBackground(.hidden)
-                                .frame(height: 80)
-                                .padding(8)
-                                .background(Color.sCard)
-                                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.sInput, lineWidth: 0.5))
-                                .cornerRadius(8)
-                                .padding(.horizontal, 20)
-                        }
-
-                        Spacer(minLength: 24)
+                        Spacer(minLength: 32)
                     }
-                    .padding(.top, 16)
+                    .padding(.top, 20)
+                    .padding(.bottom, 40)
                 }
             }
             .navigationTitle("New Delivery Challan")
@@ -168,13 +189,18 @@ struct CreateChallanView: View {
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        Task {
-                            let ok = await vm.createChallan()
-                            if ok { dismiss() }
+                    if vm.isLoading {
+                        ProgressView().tint(.sAccent)
+                    } else {
+                        Button("Save") {
+                            Task {
+                                let ok = await vm.createChallan()
+                                if ok { dismiss() }
+                            }
                         }
+                        .disabled(vm.selectedClient == nil || vm.items.isEmpty)
+                        .fontWeight(.semibold)
                     }
-                    .disabled(vm.selectedClient == nil || vm.items.isEmpty || vm.isLoading)
                 }
             }
             .alert("Error", isPresented: $vm.showAlert) {

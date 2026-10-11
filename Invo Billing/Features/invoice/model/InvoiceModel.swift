@@ -58,6 +58,7 @@ struct InvoiceRequestDTO: Codable {
     let due_date: String       // yyyy-MM-dd
     let discount: Double
     let tds_rate: Double
+    let doc_type: String       // "" = TAX INVOICE, "CREDIT INVOICE" etc.
     let items: [InvoiceItemRequest]
 }
 
@@ -109,22 +110,23 @@ struct InvoiceResponse: Codable, Identifiable {
     let company_id: Int
     let client_id: Int
     let client_name: String?
+    let client_phone: String?
 
     let invoice_number: String
     let invoice_date: String
     let due_date: String
-    
+
     let subtotal: Double
     let tax: Double
     let total: Double
-    
+
     let status: InvoiceStatus
     let paid_amount: Double
     let remaining_amount: Double
-    
+
     let is_overdue: Bool
     let days_overdue: Int
-    
+
     let created_at: String
 }
 
@@ -152,6 +154,7 @@ struct InvoiceDetailResponse: Codable {
 
     let tds_rate: Double?
     let tds_amount: Double?
+    let doc_type: String?
 
     let client: ClientSummary
     let items: [InvoiceItemDetail]

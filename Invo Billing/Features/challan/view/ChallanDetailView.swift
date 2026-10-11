@@ -14,7 +14,7 @@ struct ChallanDetailView: View {
                     VStack(spacing: 12) {
                         ProgressView().tint(.sAccent)
                         Text("Loading...")
-                            .font(.scaled(13))
+                            .font(.subheadline)
                             .foregroundColor(.sMutedFG)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -27,7 +27,7 @@ struct ChallanDetailView: View {
                                 dispatchButton(id: detail.id)
                             }
                         }
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, AppSpacing.page)
                         .padding(.vertical, 12)
                     }
                 }
@@ -54,21 +54,21 @@ struct ChallanDetailView: View {
     @ViewBuilder
     private func headerCard(detail: ChallanDetailResponse) -> some View {
         let isDispatched = detail.status == .dispatched
-        let statusColor: Color = isDispatched ? Color(red: 0.086, green: 0.639, blue: 0.341) : Color(UIColor.systemGray)
+        let statusColor: Color = isDispatched ? .sSuccess : .sNeutral
 
         VStack(alignment: .leading, spacing: 14) {
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(detail.challan_number)
-                        .font(.scaled(17, weight: .bold))
+                        .font(.subheadline.weight(.bold))
                         .foregroundColor(.sForeground)
-                    Text(detail.client_name ?? "Client #\(detail.client_id)")
-                        .font(.scaled(13))
+                    Text(detail.client.name)
+                        .font(.subheadline)
                         .foregroundColor(.sMutedFG)
                 }
                 Spacer()
                 Text(detail.status.rawValue.capitalized)
-                    .font(.scaled(11, weight: .medium))
+                    .font(.caption.weight(.medium))
                     .foregroundColor(statusColor)
                     .padding(.horizontal, 9)
                     .padding(.vertical, 4)
@@ -95,9 +95,9 @@ struct ChallanDetailView: View {
     private func itemsCard(detail: ChallanDetailResponse) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Items")
-                .font(.scaled(13, weight: .medium))
+                .font(.subheadline.weight(.medium))
                 .foregroundColor(.sMutedFG)
-                .padding(.horizontal, 16)
+                .padding(.horizontal, AppSpacing.page)
                 .padding(.vertical, 12)
 
             Rectangle().fill(Color.sBorder).frame(height: 0.5)
@@ -106,22 +106,22 @@ struct ChallanDetailView: View {
                 HStack(spacing: 14) {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(item.item_name ?? "Item #\(item.item_id)")
-                            .font(.scaled(13, weight: .medium))
+                            .font(.subheadline.weight(.medium))
                             .foregroundColor(.sForeground)
                         if let desc = item.description, !desc.isEmpty {
                             Text(desc)
-                                .font(.scaled(11))
+                                .font(.caption)
                                 .foregroundColor(.sMutedFG)
                         }
                     }
                     Spacer()
                     Text("Qty: \(item.qty)")
-                        .font(.scaled(13, weight: .semibold))
+                        .font(.subheadline.weight(.semibold))
                         .foregroundColor(.sForeground)
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, AppSpacing.page)
                 .padding(.vertical, 12)
-                Rectangle().fill(Color.sBorder).frame(height: 0.5).padding(.horizontal, 16)
+                Rectangle().fill(Color.sBorder).frame(height: 0.5).padding(.horizontal, AppSpacing.page)
             }
         }
         .background(Color.sCard)
@@ -138,7 +138,7 @@ struct ChallanDetailView: View {
                     ProgressView().tint(.sAccentFG)
                 } else {
                     Label("Mark as Dispatched", systemImage: "shippingbox.fill")
-                        .font(.scaled(14, weight: .semibold))
+                        .font(.subheadline.weight(.semibold))
                         .foregroundColor(.sAccentFG)
                 }
                 Spacer()
@@ -153,11 +153,11 @@ struct ChallanDetailView: View {
     private func rowItem(label: String, value: String) -> some View {
         HStack(alignment: .firstTextBaseline) {
             Text(label)
-                .font(.scaled(12))
+                .font(.footnote)
                 .foregroundColor(.sMutedFG)
                 .frame(width: 70, alignment: .leading)
             Text(value)
-                .font(.scaled(13))
+                .font(.subheadline)
                 .foregroundColor(.sForeground)
         }
     }

@@ -38,7 +38,7 @@ struct CreateCreditNoteView: View {
                             // Credit Type
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Credit type")
-                                    .font(.scaled(13, weight: .medium))
+                                    .font(.subheadline.weight(.medium))
                                     .foregroundColor(.sMutedFG)
 
                                 Picker("", selection: $vm.creditType) {
@@ -50,15 +50,15 @@ struct CreateCreditNoteView: View {
                                 .pickerStyle(.segmented)
                             }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.page)
                         .padding(.top, 16)
 
                         VStack(alignment: .leading) {
                             if let number = vm.linkedInvoiceNumber {
                                 Text("Against \(number) — its balance goes down by this credit.")
-                                    .font(.scaled(13))
+                                    .font(.subheadline)
                                     .foregroundColor(.sMutedFG)
-                                    .padding(.horizontal, 20)
+                                    .padding(.horizontal, AppSpacing.page)
                                     .padding(.top, 16)
                             }
                             InvoiceCustomerSection(
@@ -71,7 +71,7 @@ struct CreateCreditNoteView: View {
                                 onEditBilling: { showBillingSheet = true },
                                 onEditShipping: { showShippingSheet = true }
                             )
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, AppSpacing.page)
                             .padding(.top, 20)
                             .onChange(of: vm.selectedClient) { client in
                                 guard client != nil else { return }
@@ -81,7 +81,7 @@ struct CreateCreditNoteView: View {
                             // Credit Date
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Credit date")
-                                    .font(.scaled(13, weight: .medium))
+                                    .font(.subheadline.weight(.medium))
                                     .foregroundColor(.sMutedFG)
 
                                 DatePicker(
@@ -93,7 +93,7 @@ struct CreateCreditNoteView: View {
                                 .tint(.sAccent)
                                 .labelsHidden()
                             }
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, AppSpacing.page)
                             .padding(.top, 12)
                             .padding(.bottom, 16)
 
@@ -111,12 +111,12 @@ struct CreateCreditNoteView: View {
                                 // VALUE ADJUSTMENT UI
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text("Credit amount")
-                                        .font(.scaled(13, weight: .medium))
+                                        .font(.subheadline.weight(.medium))
                                         .foregroundColor(.sMutedFG)
 
                                     TextField("₹0.00", text: $vm.amount)
                                         .keyboardType(.decimalPad)
-                                        .font(.scaled(18, weight: .semibold))
+                                        .font(.title3.weight(.semibold))
                                         .foregroundColor(.sForeground)
                                         .tint(.sAccent)
                                         .multilineTextAlignment(.leading)
@@ -130,7 +130,7 @@ struct CreateCreditNoteView: View {
                                         .cornerRadius(8)
 
                                 }
-                                .padding(.horizontal, 20)
+                                .padding(.horizontal, AppSpacing.page)
                                 .padding(.bottom, 16)
                             }
 
@@ -154,7 +154,7 @@ struct CreateCreditNoteView: View {
                                 .scaleEffect(0.85)
                         } else {
                             Text("Save credit note")
-                                .font(.scaled(15, weight: .semibold))
+                                .font(.body.weight(.semibold))
                         }
                     }
                     .frame(maxWidth: .infinity)
@@ -164,7 +164,7 @@ struct CreateCreditNoteView: View {
                     .cornerRadius(10)
                 }
                 .disabled(!vm.isValid || vm.isLoading)
-                .padding(20)
+                .padding(AppSpacing.card)
                 .padding(.bottom, 30)
             }
         }

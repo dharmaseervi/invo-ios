@@ -4,105 +4,77 @@ struct CompanyView: View {
     @StateObject var vm = CompanyFormViewModel()
     @EnvironmentObject var session: SessionManager
     @Environment(\.dismiss) var dismiss
+    @State private var editingCompanyID: Int?
+    @State private var bankCompanyID: Int?
 
     var body: some View {
         Group {
-            ZStack {
-                Color.sBackground.ignoresSafeArea()
-
-                VStack(spacing: 0) {
-
-                    // MARK: - Content
-                    Group {
-                        if vm.isLoading {
-                            VStack(spacing: 12) {
-                                ProgressView()
-                                    .tint(.sAccent)
-                                Text("Loading companies...")
-                                    .font(.scaled(13))
-                                    .foregroundColor(.sMutedFG)
-                            }
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        }
-                        else if let error = vm.errorMessage {
-                            VStack(spacing: 10) {
-                                Image(systemName: "exclamationmark.triangle")
-                                    .font(.scaled(28))
-                                    .foregroundColor(.sDestructive)
-
-                                Text(error)
-                                    .font(.scaled(13))
-                                    .foregroundColor(.sMutedFG)
-                                    .multilineTextAlignment(.center)
-                            }
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .padding(24)
-                        }
-                        else if !vm.companies.isEmpty {
-                            ScrollView(.vertical, showsIndicators: false) {
-                                VStack(spacing: 10) {
-                                    ForEach(vm.companies) { company in
-                                        CompanyRowZara(
-                                            company: company,
-                                            isSelected: session.selectedCompanyId == company.id,
-                                            onSelect: {
-                                                withAnimation(.spring()) {
-                                                    session.selectedCompanyId = company.id
-                                                    SessionManager.saveSelectedCompanyId(company.id)
-                                                }
-                                            }
-                                        )
-                                    }
+            if vm.isLoading {
+                ProgressView()
+                    .tint(.sAccent)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            else if let error = vm.errorMessage {
+                ContentUnavailableView(
+                    "Couldn't load companies",
+                    systemImage: "exclamationmark.triangle",
+                    description: Text(error)
+                )
+            }
+            else if !vm.companies.isEmpty {
+                List {
+                    ForEach(vm.companies) { company in
+                        CompanyRowZara(
+                            company: company,
+                            isSelected: session.selectedCompanyId == company.id,
+                            onSelect: {
+                                withAnimation(.spring()) {
+                                    session.selectedCompanyId = company.id
+                                    SessionManager.saveSelectedCompanyId(company.id)
                                 }
-                                .padding(20)
-                            }
-                        }
-                        else {
-                            VStack(spacing: 16) {
-                                Image(systemName: "building.2")
-                                    .font(.scaled(40))
-                                    .foregroundColor(.sMutedFG)
-
-                                VStack(spacing: 4) {
-                                    Text("No companies")
-                                        .font(.scaled(15, weight: .semibold))
-                                        .foregroundColor(.sForeground)
-
-                                    Text("Add your first company to get started")
-                                        .font(.scaled(13))
-                                        .foregroundColor(.sMutedFG)
-                                        .multilineTextAlignment(.center)
-                                }
-
-                                NavigationLink(destination: companyForm()) {
-                                    Text("Add company")
-                                        .font(.scaled(13, weight: .semibold))
-                                        .foregroundColor(.sAccentFG)
-                                        .padding(.horizontal, 20)
-                                        .padding(.vertical, 10)
-                                        .background(Color.sPrimary)
-                                        .cornerRadius(8)
-                                }
-                                .padding(.top, 4)
-                            }
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .padding(24)
-                        }
+                            },
+                            onEdit: { editingCompanyID = company.id },
+                            onManageBanks: { bankCompanyID = company.id }
+                        )
+                        .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 12))
+                        .listRowSeparator(.hidden, edges: company.id == vm.companies.first?.id ? .top : [])
                     }
                 }
+                .listStyle(.plain)
             }
-            .navigationTitle("Companies")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    NavigationLink(destination: companyForm()) {
-                        Image(systemName: "plus")
-                    }
+            else {
+                ContentUnavailableView {
+                    Label("No companies", systemImage: "building.2")
+                } description: {
+                    Text("Add your first company to get started")
+                } actions: {
+                    NavigationLink("Add company", destination: companyForm())
+                        .buttonStyle(.borderedProminent)
+                        .tint(.sAccent)
                 }
             }
-            .task {
-                await vm.loadCompanies()
+        }
+        .navigationTitle("Companies")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink(destination: companyForm()) {
+                    Image(systemName: "plus")
+                }
             }
+        }
+        // Attached here rather than on each row: inside a List the rows are lazy, and a
+        // destination declared on one of them is ignored.
+        .navigationDestination(item: $editingCompanyID) { id in
+            if let company = vm.companies.first(where: { $0.id == id }) {
+                CompanyEditView(company: company)
+            }
+        }
+        .navigationDestination(item: $bankCompanyID) { id in
+            CompanyBankListView(companyId: id)
+        }
+        .task {
+            await vm.loadCompanies()
         }
     }
 }
@@ -112,51 +84,51 @@ struct CompanyRowZara: View {
     let company: CompanyResponse
     let isSelected: Bool
     let onSelect: () -> Void
-    @State private var showEdit = false
+    let onEdit: () -> Void
+    let onManageBanks: () -> Void
 
     var body: some View {
         HStack(spacing: 12) {
-
             Button(action: onSelect) {
-                HStack(spacing: 14) {
+                HStack(spacing: 12) {
                     Text(String(company.name.prefix(1)).uppercased())
-                        .font(.scaled(14, weight: .semibold))
+                        .font(.subheadline.weight(.semibold))
                         .foregroundColor(.sAccentFG)
-                        .frame(width: 44, height: 44)
-                        .background(Color.sAccent)
-                        .cornerRadius(10)
+                        .frame(width: 40, height: 40)
+                        .background(Color.sAccent, in: RoundedRectangle(cornerRadius: 10))
 
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: 3) {
                         Text(company.name)
-                            .font(.scaled(13, weight: .medium))
-                            .foregroundColor(.sForeground)
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
 
                         Text("\(company.city), \(company.state)")
-                            .font(.scaled(11))
-                            .foregroundColor(.sMutedFG)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
                     }
+                    .alignmentGuide(.listRowSeparatorLeading) { d in d[.leading] }
 
-                    Spacer()
+                    Spacer(minLength: 8)
 
                     if isSelected {
                         Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(.sAccent)
+                            .foregroundStyle(Color.sAccent)
+                            .accessibilityLabel("Selected")
                     }
                 }
+                .contentShape(Rectangle())
             }
-            .buttonStyle(PlainButtonStyle())
+            .buttonStyle(.borderless)
 
             Menu {
-                Button {
-                    showEdit = true
-                } label: {
+                Button(action: onEdit) {
                     Label("Edit details", systemImage: "pencil")
                 }
 
-                NavigationLink {
-                    CompanyBankListView(companyId: company.id)
-                } label: {
-                    Label("Manage Banks", systemImage: "building.columns")
+                Button(action: onManageBanks) {
+                    Label("Manage banks", systemImage: "building.columns")
                 }
 
                 Button(role: .destructive) {
@@ -164,22 +136,15 @@ struct CompanyRowZara: View {
                 } label: {
                     Label("Delete Company", systemImage: "trash")
                 }
-
             } label: {
                 Image(systemName: "ellipsis")
-                    .foregroundColor(.sMutedFG)
-                    .padding(.leading, 4)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 32, height: 32)
+                    .contentShape(Rectangle())
             }
-            .navigationDestination(isPresented: $showEdit) {
-                CompanyEditView(company: company)
-            }
+            .buttonStyle(.borderless)
+            .accessibilityLabel("Actions for \(company.name)")
         }
-        .padding(14)
-        .background(Color.sCard)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(isSelected ? Color.sAccent.opacity(0.4) : Color.sBorder, lineWidth: 0.5)
-        )
-        .cornerRadius(12)
     }
 }

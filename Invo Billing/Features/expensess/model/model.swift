@@ -19,9 +19,10 @@ struct Expense: Codable, Identifiable {
     let description: String?
     let date: String
     let paymentMethod: String?
+    let category: String?
     let createdAt: String?
     let updatedAt: String?
-    
+
     enum CodingKeys: String, CodingKey {
         case id
         case userId = "user_id"
@@ -31,6 +32,7 @@ struct Expense: Codable, Identifiable {
         case description
         case date
         case paymentMethod = "payment_method"
+        case category
         case createdAt = "created_at"
         case updatedAt = "updated_at"
     }
@@ -44,7 +46,8 @@ struct ExpenseCreatePayload: Codable {
     let description: String?
     let date: String
     let paymentMethod: String?
-    
+    let category: String?
+
     enum CodingKeys: String, CodingKey {
         case companyId = "company_id"
         case name
@@ -52,15 +55,17 @@ struct ExpenseCreatePayload: Codable {
         case description
         case date
         case paymentMethod = "payment_method"
+        case category
     }
-    
+
     init(
         companyId: Int,
         name: String,
         amount: Double,
         description: String? = nil,
         date: String,
-        paymentMethod: String? = nil
+        paymentMethod: String? = nil,
+        category: String? = nil
     ) {
         self.companyId = companyId
         self.name = name
@@ -68,6 +73,7 @@ struct ExpenseCreatePayload: Codable {
         self.description = description
         self.date = date
         self.paymentMethod = paymentMethod
+        self.category = category
     }
 }
 
@@ -78,24 +84,27 @@ struct ExpenseUpdatePayload: Codable {
     let description: String?
     let date: String?
     let paymentMethod: String?
+    let category: String?
 
     enum CodingKeys: String, CodingKey {
-        case name, amount, description, date
+        case name, amount, description, date, category
         case paymentMethod = "payment_method"
     }
-    
+
     init(
         name: String? = nil,
         amount: Double? = nil,
         description: String? = nil,
         date: String? = nil,
-        paymentMethod: String? = nil
+        paymentMethod: String? = nil,
+        category: String? = nil
     ) {
         self.name = name
         self.amount = amount
         self.description = description
         self.date = date
         self.paymentMethod = paymentMethod
+        self.category = category
     }
 }
 

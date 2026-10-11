@@ -2,6 +2,7 @@ import SwiftUI
 import Combine
 
 struct InvoiceView: View {
+    @Environment(\.dynamicTypeSize) private var textSize
     var clientID: Int? = nil
     var clientName: String? = nil
     @State private var showCreateInvoice = false
@@ -9,8 +10,7 @@ struct InvoiceView: View {
     @State private var searchText = ""
     @State private var selectedFilter: InvoiceFilter = .all
     @State private var appearAnimation = false
-    
-    
+
     enum InvoiceFilter: String, CaseIterable {
         case all = "All"
         case paid = "Paid"
@@ -19,16 +19,9 @@ struct InvoiceView: View {
         case partial = "Partial"
         case issued = "Issued"
     }
-    
-    /// The rows as the server returned them: the search box and the filter are query
-    /// parameters now, so there is nothing left to filter here.
-    ///
-    /// Filtering the loaded rows meant searching only what had been scrolled past, and
-    /// the counts beside the filters described that handful of rows while looking like
-    /// the state of the whole business.
+
     var filteredInvoices: [InvoiceResponse] { vm.invoices }
 
-    /// What the server's status filter is called for each tab.
     private var serverStatus: String? {
         switch selectedFilter {
         case .all: return nil
@@ -41,25 +34,13 @@ struct InvoiceView: View {
     }
 
     var totalAmount: Double { vm.summary.invoiced }
-    /// What customers owe across every matching invoice: issued and part-paid only.
     var outstandingAmount: Double { vm.summary.outstanding }
     var overdueCount: Int { vm.summary.overdue }
     var paidCount: Int { vm.summary.paid }
     var draftCount: Int { vm.summary.draft }
     var partialCount: Int { vm.summary.partial }
     var issuedCount: Int { vm.summary.issued }
-    
-    /// Overdue means the due date has *passed*, not that it has arrived.
-    ///
-    /// This compared `Date() > due`, and `due` parses to midnight, so every invoice
-    /// became overdue at 00:00 on the day it was due — a full day early. It drove the
-    /// red badge, the "6 overdue" count and the Overdue filter, so customers were being
-    /// chased a day before they were late, and the row could read "Due today" beside an
-    /// Overdue badge.
-    ///
-    /// And only an invoice that is actually owed can be late. "Not paid" also caught
-    /// drafts, which nobody has been sent, and cancelled invoices — a draft read "7 days
-    /// overdue" and swelled the overdue count.
+
     private func isOverdue(_ invoice: InvoiceResponse) -> Bool {
         guard Self.isOwed(invoice.status),
               let due = AppDate.date(fromWire: invoice.due_date) else { return false }
@@ -67,14 +48,13 @@ struct InvoiceView: View {
         return calendar.startOfDay(for: due) < calendar.startOfDay(for: Date())
     }
 
-    /// Issued to the customer and not yet settled — the same rule the server uses.
     static func isOwed(_ status: InvoiceStatus) -> Bool {
         switch status {
         case .issued, .partial, .sent, .pending, .overdue: return true
         case .draft, .paid, .cancelled: return false
         }
     }
-    
+
     private func countFor(_ filter: InvoiceFilter) -> Int {
         switch filter {
         case .all: return vm.summary.total
@@ -85,13 +65,7 @@ struct InvoiceView: View {
         case .issued: return issuedCount
         }
     }
-    
-    /// The very first load, where there is nothing on screen yet to keep. Later loads
-    /// leave the controls in place.
-    ///
-    /// Tracked rather than guessed from an empty list: a search that matched nothing
-    /// leaves the list empty, so clearing that search made this true again and the
-    /// search box disappeared under the placeholder exactly when it was being used.
+
     @State private var hasLoadedOnce = false
     @State private var isSelecting = false
     @State private var selectedIDs: Set<Int> = []
@@ -99,8 +73,6 @@ struct InvoiceView: View {
 
     private var isFirstLoad: Bool { vm.isFetchingList && !hasLoadedOnce }
 
-    /// Fetches the list and its figures for whatever is in the search box and selected
-    /// on the filter bar.
     private func reload() async {
         await vm.fetchInvoices(
             clientID: clientID,
@@ -118,478 +90,382 @@ struct InvoiceView: View {
         }
     }
 
+    // MARK: - Main screen
+
+    private var screen: some View {
+        contentArea
+        .safeAreaInset(edge: .bottom) {
+            if isSelecting { bulkActionBar }
+        }
+        .searchable(text: $searchText, prompt: "Search invoices")
+        .navigationTitle(clientName.map { "\($0) invoices" } ?? "Invoices")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbarBackground(.visible, for: .tabBar)
+        .toolbar { toolbarContent }
+        .onAppear {
+            Task { await reload() }
+            withAnimation(.easeOut(duration: 0.3)) { appearAnimation = true }
+        }
+        .onChange(of: selectedFilter) { _, _ in Task { await reload() } }
+        .task(id: searchText) {
+            guard hasLoadedOnce else { return }
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            guard !Task.isCancelled else { return }
+            await reload()
+        }
+        .fullScreenCover(isPresented: $showCreateInvoice) {
+            NavigationStack { CreateInvoiceView() }
+        }
+        #if DEBUG
+        .onAppear {
+            if UserDefaults.standard.string(forKey: "startScreen") == "newinvoice" {
+                showCreateInvoice = true
+            }
+        }
+        #endif
+        .sheet(isPresented: $vm.showPDF) {
+            if let url = vm.pdfURL { PDFLookView(pdfURL: url) }
+        }
+        .sheet(isPresented: $vm.showEmailSheet) {
+            if let id = vm.selectedEmailInvoiceID,
+               let invoice = vm.invoices.first(where: { $0.id == id }) {
+                SendEmailSheet(
+                    invoiceID: id,
+                    invoiceNumber: invoice.invoice_number,
+                    vm: vm,
+                    onDismiss: { vm.showEmailSheet = false },
+                    isReminder: vm.emailIsReminder
+                )
+                .presentationDetents([.medium])
+            }
+        }
+        .alert("Error", isPresented: $vm.showAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(vm.errorMessage ?? "Unknown error")
+        }
+        .confirmationDialog("Select copy", isPresented: $vm.showCopyPicker, titleVisibility: .visible) {
+            Button("Original")  { Task { if let id = vm.selectedInvoiceID { await vm.generateInvoicePDFFromServer(invoiceID: id, copy: "original") } } }
+            Button("Duplicate") { Task { if let id = vm.selectedInvoiceID { await vm.generateInvoicePDFFromServer(invoiceID: id, copy: "duplicate") } } }
+            Button("Buyer copy") { Task { if let id = vm.selectedInvoiceID { await vm.generateInvoicePDFFromServer(invoiceID: id, copy: "buyer") } } }
+            Button("Cancel", role: .cancel) {}
+        }
+        .presentationCompactAdaptation(.sheet)
+    }
+
+    @ViewBuilder
+    private var contentArea: some View {
+        if isFirstLoad {
+            loadingView
+        } else {
+            List {
+                // Summary card scrolls with the list
+                if SessionManager.shared.companyRole.canSeeReports
+                   && (!filteredInvoices.isEmpty || !searchText.isEmpty) {
+                    summaryCard
+                        .padding(.horizontal, AppSpacing.page)
+                        .padding(.top, 8)
+                        .padding(.bottom, 4)
+                        .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
+
+                // Filter chips scroll with the list
+                filterRow
+                    .padding(.top, 4)
+                    .padding(.bottom, 8)
+                    .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+
+                // Invoice rows
+                if vm.isFetchingList && vm.invoices.isEmpty {
+                    HStack { Spacer(); ProgressView().tint(.sAccent); Spacer() }
+                        .padding(.vertical, 40)
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                } else if filteredInvoices.isEmpty {
+                    emptyStateRow
+                } else {
+                    ForEach(filteredInvoices) { invoice in
+                        invoiceListRow(invoice)
+                            .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+                            .listRowSeparator(.hidden, edges: invoice.id == filteredInvoices.first?.id ? .top : [])
+                    }
+
+                    if vm.isLoadingMoreInvoices {
+                        HStack { Spacer(); ProgressView().tint(.sAccent); Spacer() }
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                    } else if vm.loadMoreFailed {
+                        VStack(spacing: 4) {
+                            Text("Couldn't load more invoices.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                            Button("Try again") { Task { await vm.retryLoadMore() } }
+                                .font(.footnote.weight(.medium))
+                                .tint(Color.sAccent)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                    }
+                }
+            }
+            .listStyle(.plain)
+            .contentMargins(.bottom, AppSpacing.section, for: .scrollContent)
+            .refreshable { await reload() }
+            .opacity(appearAnimation ? 1 : 0)
+            .overlay(alignment: .top) {
+                if vm.isFetchingList {
+                    ProgressView()
+                        .padding(8)
+                        .background(.ultraThinMaterial, in: Capsule())
+                        .transition(.opacity)
+                }
+            }
+        }
+    }
+
+    // MARK: - List row builder
+
+    @ViewBuilder
+    private func invoiceListRow(_ invoice: InvoiceResponse) -> some View {
+        Group {
+            if isSelecting {
+                Button {
+                    if selectedIDs.contains(invoice.id) { selectedIDs.remove(invoice.id) }
+                    else { selectedIDs.insert(invoice.id) }
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: selectedIDs.contains(invoice.id) ? "checkmark.circle.fill" : "circle")
+                            .font(.title3)
+                            .foregroundStyle(selectedIDs.contains(invoice.id) ? Color.sAccent : Color(UIColor.tertiaryLabel))
+                            .frame(width: 28)
+                        InvoiceRow(invoice: invoice, isOverdue: isOverdue(invoice))
+                    }
+                }
+                .buttonStyle(.plain)
+            } else {
+                NavigationLink(destination: InvoiceDetailView(invoiceID: invoice.id, vm: vm)) {
+                    InvoiceRow(invoice: invoice, isOverdue: isOverdue(invoice))
+                }
+                .task { await vm.loadMoreInvoices(currentItem: invoice) }
+                .contextMenu {
+                    Button {
+                        vm.selectedInvoiceID = invoice.id
+                        vm.showCopyPicker = true
+                    } label: { Label("Download PDF", systemImage: "arrow.down.doc") }
+                    Button {
+                        vm.selectedEmailInvoiceID = invoice.id
+                        vm.showEmailSheet = true
+                        vm.emailIsReminder = false
+                    } label: { Label("Send by email", systemImage: "paperplane") }
+                }
+            }
+        }
+    }
+
+    // MARK: - Toolbar
+
+    @ToolbarContentBuilder
+    private var toolbarContent: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
+            HStack(spacing: 16) {
+                if isSelecting {
+                    Button("Done") {
+                        isSelecting = false
+                        selectedIDs.removeAll()
+                    }
+                    .fontWeight(.medium)
+                } else {
+                    Button("Select") { isSelecting = true }
+                        .font(.subheadline.weight(.medium))
+                    Button { showCreateInvoice = true } label: {
+                        Image(systemName: "plus")
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Filter row
+
+    private var filterRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: AppSpacing.inline) {
+                ForEach(InvoiceFilter.allCases, id: \.self) { filter in
+                    AppFilterChip(title: filterLabel(filter), isSelected: selectedFilter == filter) {
+                        selectedFilter = filter
+                    }
+                }
+            }
+            .padding(.horizontal, AppSpacing.page)
+        }
+    }
+
+    private func filterLabel(_ filter: InvoiceFilter) -> String {
+        let count = countFor(filter)
+        switch filter {
+        case .all:     return "All \(count)"
+        case .paid:    return "Paid \(count)"
+        case .draft:   return "Drafts \(count)"
+        case .overdue: return "Overdue \(count)"
+        case .partial: return "Partial \(count)"
+        case .issued:  return "Issued \(count)"
+        }
+    }
+
+    // MARK: - Summary card
+
+    private var summaryCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            AdaptiveFormRow {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Outstanding")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Text(vm.summaryFailed ? "—" : Money.text(outstandingAmount))
+                        .font(.title.bold())
+                        .monospacedDigit()
+                        .foregroundStyle(.primary)
+                    if vm.summaryFailed {
+                        Button("Retry") { Task { await reload() } }
+                            .font(.footnote)
+                            .tint(Color.sAccent)
+                    }
+                }
+                if !textSize.isAccessibilitySize { Spacer() }
+                if overdueCount > 0 {
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(Color.sDestructive)
+                            .frame(width: 5, height: 5)
+                        Text("\(overdueCount) overdue")
+                            .font(.caption.weight(.medium))
+                    }
+                    .foregroundStyle(Color.sDestructive)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .background(Color.sDestructive.opacity(0.10), in: Capsule())
+                }
+            }
+
+            Divider()
+
+            AdaptiveStatRow(stats: [
+                .init(label: "Total", value: vm.summaryFailed ? "—" : "\(vm.summary.total)"),
+                .init(label: "Paid", value: vm.summaryFailed ? "—" : "\(paidCount)"),
+                .init(label: "Drafts", value: vm.summaryFailed ? "—" : "\(draftCount)")
+            ])
+        }
+        .padding(12)
+        .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    // MARK: - Empty state (as a list row so it scrolls with the page)
+
+    private var emptyStateRow: some View {
+        ContentUnavailableView(
+            searchText.isEmpty && selectedFilter == .all ? "No Invoices" : "No Results",
+            systemImage: searchText.isEmpty && selectedFilter == .all ? "doc.text" : "magnifyingglass",
+            description: Text(
+                searchText.isEmpty && selectedFilter == .all
+                ? "Create your first invoice to get started."
+                : "Try adjusting your search or filter."
+            )
+        )
+        .listRowSeparator(.hidden)
+        .listRowBackground(Color.clear)
+        .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
+    }
+
+    // MARK: - Loading skeletons
+
+    private var loadingView: some View {
+        List {
+            ForEach(0..<8, id: \.self) { _ in
+                HStack(spacing: 12) {
+                    Circle()
+                        .fill(Color(UIColor.secondarySystemFill))
+                        .frame(width: 36, height: 36)
+                    VStack(alignment: .leading, spacing: 6) {
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color(UIColor.secondarySystemFill))
+                            .frame(width: 140, height: 14)
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color(UIColor.tertiarySystemFill))
+                            .frame(width: 100, height: 11)
+                    }
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 6) {
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color(UIColor.secondarySystemFill))
+                            .frame(width: 60, height: 14)
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color(UIColor.tertiarySystemFill))
+                            .frame(width: 44, height: 11)
+                    }
+                }
+                .padding(.vertical, 4)
+                .listRowSeparatorTint(Color(UIColor.separator))
+                .shimmer()
+            }
+        }
+        .listStyle(.plain)
+        .allowsHitTesting(false)
+    }
+
+    // MARK: - Bulk action bar
+
     private var bulkActionBar: some View {
         VStack(spacing: 0) {
             Spacer()
-            if isSelecting {
-                HStack(spacing: 16) {
-                    Text("\(selectedIDs.count) selected")
-                        .font(.scaled(14, weight: .medium))
-                        .foregroundColor(.sForeground)
-                    Spacer()
-                    let payable = filteredInvoices.filter { selectedIDs.contains($0.id) && $0.remaining_amount > 0 }
-                    if !payable.isEmpty {
-                        Button {
-                            Task {
-                                isBulkWorking = true
-                                await vm.markPaidBulk(invoices: payable)
-                                isBulkWorking = false
-                                isSelecting = false
-                                selectedIDs.removeAll()
-                                await reload()
-                            }
-                        } label: {
-                            if isBulkWorking {
-                                ProgressView().tint(.sAccentFG)
-                            } else {
-                                Text("Mark paid (\(payable.count))")
-                                    .font(.scaled(13, weight: .semibold))
-                                    .foregroundColor(.sAccentFG)
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 8)
-                                    .background(Color.sAccent)
-                                    .cornerRadius(8)
-                            }
-                        }
-                        .disabled(isBulkWorking)
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 14)
-                .background(.ultraThinMaterial)
-                .overlay(Rectangle().frame(height: 0.5).foregroundColor(Color.sBorder), alignment: .top)
-            }
-        }
-        .ignoresSafeArea(edges: .bottom)
-    }
-
-    private var screen: some View {
-            ZStack {
-                Color.sBackground.ignoresSafeArea()
-                bulkActionBar
-                VStack(spacing: 0) {
-                    // The search field and the filters stay mounted while a search
-                    // runs. They used to be inside the branch that the loading
-                    // placeholder replaced, so every keystroke tore the field off the
-                    // screen, the keyboard went with it, and the next character had
-                    // nowhere to go. Only the results area waits.
-                    if isFirstLoad {
-                        loadingView
-                    } else {
-                        ScrollView(showsIndicators: false) {
-                            VStack(spacing: 0) {
-                                if vm.invoices.isEmpty == false || !searchText.isEmpty {
-                                    // What the shop is owed overall is the money view
-                                    // of the business, which a counter role is not
-                                    // shown. Left in, the card sits there asking them
-                                    // to retry something that will never work for them.
-                                    if SessionManager.shared.companyRole.canSeeReports {
-                                        summaryCard.padding(.top, 16)
-                                    }
-                                }
-                                searchBar.padding(.top, 16)
-                                filterRow.padding(.top, 12)
-                                // The spinner replaces the list only when there is no
-                                // list yet. Typing in the search box reloads from the
-                                // server, and this used to blank every row and the
-                                // scroll position with it on each search. A reload with
-                                // invoices already on screen keeps them and shows a
-                                // small indicator over them instead.
-                                if vm.isFetchingList && vm.invoices.isEmpty {
-                                    ProgressView()
-                                        .tint(.sAccent)
-                                        .frame(minHeight: 360)
-                                } else if filteredInvoices.isEmpty {
-                                    emptyState.frame(minHeight: 360)
-                                } else {
-                                    invoiceList
-                                        .padding(.top, 18)
-                                        .overlay(alignment: .top) {
-                                            if vm.isFetchingList {
-                                                ProgressView()
-                                                    .tint(.sAccent)
-                                                    .scaleEffect(0.8)
-                                                    .padding(8)
-                                                    .background(.ultraThinMaterial, in: Capsule())
-                                                    .transition(.opacity)
-                                            }
-                                        }
-                                }
-                                Spacer(minLength: 100)
-                            }
-                            .opacity(appearAnimation ? 1 : 0)
-                            .offset(y: appearAnimation ? 0 : 10)
-                        }
-                        .refreshable { await reload() }
-                    }
-                }
-            }
-            .navigationTitle(clientName.map { "\($0) invoices" } ?? "Invoices")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    HStack(spacing: 16) {
-                        if isSelecting {
-                            Button("Done") {
-                                isSelecting = false
-                                selectedIDs.removeAll()
-                            }
-                            .font(.body.weight(.medium))
-                        } else {
-                            Button {
-                                isSelecting = true
-                            } label: {
-                                Image(systemName: "checkmark.circle")
-                            }
-                            Button { showCreateInvoice = true } label: {
-                                Image(systemName: "plus")
-                            }
-                        }
-                    }
-                }
-            }
-            .onAppear {
-                Task { await reload() }
-                withAnimation(.easeOut(duration: 0.3)) { appearAnimation = true }
-            }
-            // The filter is a query parameter, so changing tab asks the server.
-            .onChange(of: selectedFilter) { _, _ in
-                Task { await reload() }
-            }
-            // Typing is debounced: a request per keystroke would be a request per
-            // keystroke, and the one that answers last is not necessarily the one for
-            // what is now in the box.
-            .task(id: searchText) {
-                // Only skip the run before the first load, which onAppear performs.
-                // Testing for an empty box and an empty list also skipped the state
-                // after clearing a search that matched nothing, so the full list never
-                // came back.
-                guard hasLoadedOnce else { return }
-                try? await Task.sleep(nanoseconds: 300_000_000)
-                guard !Task.isCancelled else { return }
-                await reload()
-            }
-            // Creating an invoice is a multistep task, and Apple's guidance is that
-            // those belong in a full-screen modal rather than pushed inside a tab
-            // (sheets.md › "For complex or prolonged user flows"). Pushed, the sticky
-            // action bar and the tab bar stacked up and ate a quarter of the screen at
-            // a large text size — and the tab bar let someone wander off mid-invoice.
-            .fullScreenCover(isPresented: $showCreateInvoice) {
-                NavigationStack { CreateInvoiceView() }
-            }
-            // Debug builds accept -startScreen newinvoice so the creation form can be
-            // opened directly for a screenshot pass. Compiled out of release.
-            #if DEBUG
-            .onAppear {
-                if UserDefaults.standard.string(forKey: "startScreen") == "newinvoice" {
-                    showCreateInvoice = true
-                }
-            }
-            #endif
-            .sheet(isPresented: $vm.showPDF) {
-                if let url = vm.pdfURL { PDFLookView(pdfURL: url) }
-            }
-            .sheet(isPresented: $vm.showEmailSheet) {
-                if let id = vm.selectedEmailInvoiceID,
-                   let invoice = vm.invoices.first(where: { $0.id == id }) {
-                    SendEmailSheet(
-                        invoiceID: id,
-                        invoiceNumber: invoice.invoice_number,
-                        vm: vm,
-                        onDismiss: {
-                            vm.showEmailSheet = false
-                        },  // ← correct label
-                        isReminder: vm.emailIsReminder
-                    )
-                    .presentationDetents([.medium])
-                }
-            }
-            .alert("Error", isPresented: $vm.showAlert) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text(vm.errorMessage ?? "Unknown error")
-            }
-            .confirmationDialog("Select copy", isPresented: $vm.showCopyPicker, titleVisibility: .visible) {
-                Button("Original") { Task { if let id = vm.selectedInvoiceID { await vm.generateInvoicePDFFromServer(invoiceID: id, copy: "original") } } }
-                Button("Duplicate") { Task { if let id = vm.selectedInvoiceID { await vm.generateInvoicePDFFromServer(invoiceID: id, copy: "duplicate") } } }
-                Button("Buyer copy") { Task { if let id = vm.selectedInvoiceID { await vm.generateInvoicePDFFromServer(invoiceID: id, copy: "buyer") } } }
-                Button("Cancel", role: .cancel) {}
-            }
-            .presentationCompactAdaptation(.sheet)
-    }
-    
-    // MARK: - Search Bar
-    var searchBar: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass")
-                .font(.scaled(14))
-                .foregroundColor(.sMutedFG)
-            TextField("Search invoices...", text: $searchText)
-                .font(.scaled(14))
-                .foregroundColor(.sForeground)
-                .tint(.sAccent)
-                .autocorrectionDisabled()
-            if !searchText.isEmpty {
-                Button { searchText = "" } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.scaled(14))
-                        .foregroundColor(.sMutedFG)
-                }
-            }
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .background(Color.sCard)
-        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.sInput, lineWidth: 0.5))
-        .cornerRadius(8)
-        .padding(.horizontal, 20)
-    }
-    
-    // MARK: - Filter Row
-    var filterRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
-                ForEach(InvoiceFilter.allCases, id: \.self) { filter in
+            HStack(spacing: 16) {
+                Text("\(selectedIDs.count) selected")
+                    .font(.subheadline.weight(.medium))
+                Spacer()
+                let payable = filteredInvoices.filter { selectedIDs.contains($0.id) && $0.remaining_amount > 0 }
+                if !payable.isEmpty {
                     Button {
-                        withAnimation(.easeInOut(duration: 0.15)) {
-                            selectedFilter = filter
+                        Task {
+                            isBulkWorking = true
+                            await vm.markPaidBulk(invoices: payable)
+                            isBulkWorking = false
+                            isSelecting = false
+                            selectedIDs.removeAll()
+                            await reload()
                         }
                     } label: {
-                        HStack(spacing: 5) {
-                            Text(filter.rawValue)
-                                .font(.scaled(13, weight: selectedFilter == filter ? .medium : .regular))
-                                .foregroundColor(selectedFilter == filter ? .sForeground : .sMutedFG)
-                            let count = countFor(filter)
-                            if count > 0 {
-                                Text("\(count)")
-                                    .font(.scaled(11))
-                                    .foregroundColor(.sMutedFG)
-                            }
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 7)
-                        .background(
-                            RoundedRectangle(cornerRadius: 6)
-                                .fill(selectedFilter == filter ? Color.sCard : Color.clear)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 6)
-                                        .stroke(selectedFilter == filter ? Color.sBorder : Color.clear, lineWidth: 0.5)
-                                )
-                        )
-                    }
-                }
-            }
-            .padding(.horizontal, 20)
-            .padding(3)
-            .background(Color.sMuted)
-            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.sBorder, lineWidth: 0.5))
-            .cornerRadius(8)
-            .padding(.horizontal, 20)
-        }
-    }
-    
-    // MARK: - Summary Card
-    var summaryCard: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Outstanding")
-                        .font(.scaled(13))
-                        .foregroundColor(.sMutedFG)
-                    // A dash, not ₹0, when the figures could not be fetched: zero reads
-                    // as "nothing is owed", which is the opposite of "we don't know".
-                    Text(vm.summaryFailed ? "—" : Money.compact(outstandingAmount)).moneyLine()
-                        .font(.scaled(28, weight: .bold))
-                        .foregroundColor(.sForeground)
-                    if vm.summaryFailed {
-                        Button("Totals unavailable — retry") { Task { await reload() } }
-                            .font(.scaled(12))
-                            .foregroundColor(.sAccent)
-                    }
-                }
-                Spacer()
-                if overdueCount > 0 {
-                    HStack(spacing: 5) {
-                        Circle()
-                            .fill(Color(red: 0.863, green: 0.149, blue: 0.149))
-                            .frame(width: 6, height: 6)
-                        Text("\(overdueCount) overdue")
-                            .font(.scaled(12, weight: .medium))
-                    }
-                    .foregroundColor(Color(red: 0.863, green: 0.149, blue: 0.149))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(
-                        Capsule().fill(Color(red: 0.863, green: 0.149, blue: 0.149).opacity(0.1))
-                    )
-                }
-            }
-
-            Rectangle().fill(Color.sBorder).frame(height: 0.5)
-
-            HStack(spacing: 0) {
-                summaryStat(label: "Invoiced", value: Money.compact(totalAmount))
-                Rectangle().fill(Color.sBorder).frame(width: 0.5, height: 30)
-                summaryStat(label: "Paid", value: "\(paidCount)")
-                Rectangle().fill(Color.sBorder).frame(width: 0.5, height: 30)
-                summaryStat(label: "Drafts", value: "\(draftCount)")
-            }
-        }
-        .padding(18)
-        .background(Color.sCard)
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.sBorder, lineWidth: 0.5))
-        .cornerRadius(16)
-        .padding(.horizontal, 20)
-    }
-
-    private func summaryStat(label: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(value)
-                .font(.scaled(15, weight: .semibold))
-                .foregroundColor(.sForeground)
-            Text(label)
-                .font(.scaled(11))
-                .foregroundColor(.sMutedFG)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.leading, 4)
-    }
-    
-    // MARK: - Invoice List
-    var invoiceList: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Text(selectedFilter == .all ? "All invoices" : selectedFilter.rawValue)
-                    .font(.scaled(13, weight: .medium))
-                    .foregroundColor(.sMutedFG)
-                Spacer()
-                Text("\(filteredInvoices.count) items")
-                    .font(.scaled(13))
-                    .foregroundColor(.sMutedFG)
-            }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 10)
-
-            // Lazy: a plain VStack builds every row as soon as the list is drawn, and
-            // each row's .task fires with it — so opening the screen asked for the next
-            // page immediately, however little had been scrolled, and a long list paid
-            // for rows nobody had looked at.
-            LazyVStack(spacing: 10) {
-                ForEach(filteredInvoices) { invoice in
-                    if isSelecting {
-                        Button {
-                            if selectedIDs.contains(invoice.id) {
-                                selectedIDs.remove(invoice.id)
-                            } else {
-                                selectedIDs.insert(invoice.id)
-                            }
-                        } label: {
-                            HStack(spacing: 10) {
-                                Image(systemName: selectedIDs.contains(invoice.id) ? "checkmark.circle.fill" : "circle")
-                                    .font(.scaled(20))
-                                    .foregroundColor(selectedIDs.contains(invoice.id) ? .sAccent : .sMutedFG)
-                                InvoiceRowCard(invoice: invoice, vm: vm, isOverdue: isOverdue(invoice))
-                            }
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                    } else {
-                        NavigationLink(destination: InvoiceDetailView(invoiceID: invoice.id, vm: vm)) {
-                            InvoiceRowCard(invoice: invoice, vm: vm, isOverdue: isOverdue(invoice))
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        .task {
-                            await vm.loadMoreInvoices(currentItem: invoice)
+                        if isBulkWorking {
+                            ProgressView().tint(Color.sAccentFG)
+                        } else {
+                            Text("Mark paid (\(payable.count))")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(Color.sAccentFG)
+                                .padding(.horizontal, AppSpacing.page)
+                                .padding(.vertical, 8)
+                                .background(Color.sAccent, in: Capsule())
                         }
                     }
-                }
-
-                if vm.isLoadingMoreInvoices {
-                    ProgressView()
-                        .tint(.sAccent)
-                        .padding(.vertical, 12)
-                } else if vm.loadMoreFailed {
-                    // A failed page used to end the list silently: the older invoices
-                    // were simply unreachable until the screen was reopened, with
-                    // nothing on screen to say anything had gone wrong.
-                    VStack(spacing: 6) {
-                        Text("Couldn't load more invoices.")
-                            .font(.scaled(13))
-                            .foregroundColor(.sMutedFG)
-                        Button("Try again") { Task { await vm.retryLoadMore() } }
-                            .font(.scaled(13, weight: .medium))
-                            .foregroundColor(.sAccent)
-                    }
-                    .padding(.vertical, 12)
+                    .disabled(isBulkWorking)
                 }
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, AppSpacing.page)
+            .padding(.vertical, 14)
+            .background(.ultraThinMaterial)
+            .overlay(Divider(), alignment: .top)
         }
-    }
-    
-    // MARK: - Empty State
-    var emptyState: some View {
-        VStack(spacing: 12) {
-            Spacer()
-            ZStack {
-                Circle()
-                    .fill(Color.sMuted)
-                    .overlay(Circle().stroke(Color.sBorder, lineWidth: 0.5))
-                    .frame(width: 60, height: 60)
-                Image(systemName: "doc.text")
-                    .font(.scaled(22))
-                    .foregroundColor(.sMutedFG)
-            }
-            Text(searchText.isEmpty && selectedFilter == .all ? "No invoices yet" : "No results")
-                .font(.scaled(15, weight: .medium))
-                .foregroundColor(.sForeground)
-            Text(searchText.isEmpty && selectedFilter == .all
-                 ? "Create your first invoice to get started"
-                 : "Try adjusting your search or filters")
-            .font(.scaled(13))
-            .foregroundColor(.sMutedFG)
-            .multilineTextAlignment(.center)
-            if searchText.isEmpty && selectedFilter == .all {
-                Button { showCreateInvoice = true } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "plus")
-                            .font(.scaled(13, weight: .medium))
-                        Text("Create invoice")
-                            .font(.scaled(14, weight: .medium))
-                    }
-                    .foregroundColor(.sAccentFG)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 10)
-                    .background(Color.sAccent)
-                    .cornerRadius(8)
-                }
-                .padding(.top, 4)
-            }
-            Spacer()
-        }
-        .padding(24)
-    }
-    
-    // MARK: - Loading
-    var loadingView: some View {
-        VStack(spacing: 10) {
-            ForEach(0..<5, id: \.self) { _ in
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(Color.sMuted)
-                    .frame(height: 72)
-                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5))
-                    .shimmer()
-            }
-        }
-        .padding(.horizontal, 20)
-        .padding(.top, 20)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .ignoresSafeArea(edges: .bottom)
     }
 }
 
 // MARK: - Invoice Row
-struct InvoiceRowCard: View {
+
+struct InvoiceRow: View {
+    @Environment(\.dynamicTypeSize) private var textSize
     let invoice: InvoiceResponse
-    let vm: InvoiceViewModel
     let isOverdue: Bool
 
     var displayName: String {
@@ -606,53 +482,40 @@ struct InvoiceRowCard: View {
     }
 
     var statusConfig: (label: String, color: Color) {
-        if isOverdue { return ("Overdue", Color(red: 0.863, green: 0.149, blue: 0.149)) }
-        switch invoice.status {
-        case .paid:      return ("Paid",      Color(red: 0.086, green: 0.639, blue: 0.341))
-        case .pending:   return ("Pending",   Color(red: 0.722, green: 0.494, blue: 0.051))
-        case .partial:   return ("Partial",   Color(red: 0.722, green: 0.494, blue: 0.051))
-        case .draft:     return ("Draft",     Color(UIColor.systemGray))
-        case .issued:    return ("Issued",    Color.sAccent)
-        case .cancelled: return ("Cancelled", Color(UIColor.systemGray))
-        case .sent:      return ("Sent",      Color(UIColor.systemGray))
-        case .overdue:   return ("Overdue",   Color(red: 0.863, green: 0.149, blue: 0.149))
+        if isOverdue {
+            if let due = AppDate.date(fromWire: invoice.due_date) {
+                let days = abs(Calendar.current.dateComponents(
+                    [.day],
+                    from: Calendar.current.startOfDay(for: due),
+                    to: Calendar.current.startOfDay(for: Date())
+                ).day ?? 0)
+                return (days <= 1 ? "1d overdue" : "\(days)d overdue", .sDestructive)
+            }
+            return ("Overdue", .sDestructive)
         }
-    }
-
-    private var invoiceNumberText: some View {
-        Text(invoice.invoice_number)
-            .font(.scaled(12))
-            .foregroundColor(.sMutedFG)
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
-    }
-
-    private var dueText: some View {
-        Text(daysInfo)
-            .font(.scaled(12))
-            .foregroundColor(isOverdue ? .sDestructive : .sMutedFG)
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
+        switch invoice.status {
+        case .paid:      return ("Paid",      .sSuccess)
+        case .pending:   return ("Pending",   .sWarning)
+        case .partial:   return ("Partial",   .sWarning)
+        case .draft:     return ("Draft",     .sNeutral)
+        case .issued:    return ("Issued",    Color.sAccent)
+        case .cancelled: return ("Cancelled", .sNeutral)
+        case .sent:      return ("Sent",      .sNeutral)
+        case .overdue:   return ("Overdue",   .sDestructive)
+        }
     }
 
     var daysInfo: String {
         guard let due = AppDate.date(fromWire: invoice.due_date) else { return "" }
         if invoice.status == .paid { return "Paid" }
-
         let days = Calendar.current.dateComponents(
             [.day],
             from: Calendar.current.startOfDay(for: Date()),
             to: Calendar.current.startOfDay(for: due)
         ).day ?? 0
-
-        // Counted in whole days from midnight, and "due today" is checked before
-        // "overdue": the overdue branch used to win for an invoice due today, so five
-        // rows on one screen read "0d overdue", which is not a thing.
         if days == 0 { return "Due today" }
         if days == 1 { return "Due tomorrow" }
         if days < 0 {
-            // Past the date but not owed (a draft, a cancelled invoice): it isn't late,
-            // so it says nothing rather than "7 days overdue" beside a Draft badge.
             guard isOverdue else { return "" }
             let late = abs(days)
             return late == 1 ? "1 day overdue" : "\(late) days overdue"
@@ -661,83 +524,68 @@ struct InvoiceRowCard: View {
     }
 
     var body: some View {
-        HStack(spacing: 0) {
-            RoundedRectangle(cornerRadius: 2)
-                .fill(statusConfig.color)
-                .frame(width: 3)
-                .padding(.vertical, 10)
-
-            HStack(spacing: 12) {
-                ZStack {
-                    Circle()
-                        .fill(Color.sAccentMuted)
-                        .frame(width: 40, height: 40)
-                    Text(initials)
-                        .font(.scaled(13, weight: .semibold))
-                        .foregroundColor(.sAccent)
+        HStack(alignment: .top, spacing: AppSpacing.row) {
+            if !textSize.isAccessibilitySize {
+                Text(initials)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.sAccent)
+                    .frame(width: 40, height: 40)
+                    .background(Color.sAccentMuted, in: Circle())
+                    .accessibilityHidden(true)
+            }
+            if textSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: AppSpacing.inline) {
+                    identity
+                    amountAndStatus
                 }
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(displayName)
-                        .font(.scaled(14, weight: .medium))
-                        .foregroundColor(.sForeground)
-                        .lineLimit(1)
-                    // Side by side at normal sizes; stacked once the text is large,
-                    // because the two together no longer fit a row and the number was
-                    // breaking mid-token into "INV/ FY26- 27/00 08".
-                    let meta = ViewThatFits(in: .horizontal) {
-                        HStack(spacing: 6) {
-                            invoiceNumberText
-                            if !daysInfo.isEmpty {
-                                Text("·").font(.scaled(12)).foregroundColor(.sMutedFG)
-                                dueText
-                            }
-                        }
-                        VStack(alignment: .leading, spacing: 2) {
-                            invoiceNumberText
-                            if !daysInfo.isEmpty { dueText }
-                        }
-                    }
-                    meta
-                }
-
-                Spacer()
-
-                VStack(alignment: .trailing, spacing: 5) {
-                    Text(Money.text(invoice.total)).moneyLine()
-                        .font(.scaled(14, weight: .semibold))
-                        .foregroundColor(.sForeground)
-                    Text(statusConfig.label)
-                        .font(.scaled(10, weight: .medium))
-                        .foregroundColor(statusConfig.color)
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 2)
-                        .background(
-                            Capsule()
-                                .fill(statusConfig.color.opacity(0.1))
-                        )
+            } else {
+                HStack(alignment: .top, spacing: AppSpacing.row) {
+                    identity
+                    Spacer(minLength: AppSpacing.inline)
+                    amountAndStatus
                 }
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
         }
-        .background(Color.sCard)
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.sBorder, lineWidth: 0.5))
-        .cornerRadius(14)
-        .contentShape(Rectangle())
-        .contextMenu {
-            Button {
-                vm.selectedInvoiceID = invoice.id
-                vm.showCopyPicker = true
-            } label: {
-                Label("Download PDF", systemImage: "arrow.down.doc")
-            }
-            Button {
-                vm.selectedEmailInvoiceID = invoice.id
-                vm.showEmailSheet = true
-            } label: {
-                Label("Send by email", systemImage: "paperplane")
+        .alignmentGuide(.listRowSeparatorLeading) { _ in textSize.isAccessibilitySize ? 0 : 52 }
+        .accessibilityElement(children: .combine)
+    }
+
+    private var identity: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.compact) {
+            Text(displayName)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.primary)
+                .lineLimit(textSize.isAccessibilitySize ? nil : 2)
+            Text(invoice.invoice_number)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            if !daysInfo.isEmpty && !isOverdue && invoice.status != .paid {
+                Text(daysInfo)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
         }
     }
+
+    private var amountAndStatus: some View {
+        VStack(alignment: textSize.isAccessibilitySize ? .leading : .trailing, spacing: AppSpacing.compact) {
+            Text(Money.text(invoice.total))
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.primary)
+                .monospacedDigit()
+                .fixedSize(horizontal: false, vertical: true)
+                .layoutPriority(1)
+            Text(statusConfig.label)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(statusConfig.color)
+                .padding(.horizontal, AppSpacing.inline)
+                .padding(.vertical, AppSpacing.compact)
+                .background(statusConfig.color.opacity(0.1), in: Capsule())
+        }
+        .frame(minWidth: 88, alignment: .trailing)
+    }
 }
+
+// Keep the old name as a typealias so any code that still references it compiles.
+typealias InvoiceRowCard = InvoiceRow

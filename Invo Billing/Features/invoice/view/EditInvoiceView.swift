@@ -37,7 +37,7 @@ struct EditInvoiceView: View {
                     ProgressView()
                         .tint(.sAccent)
                     Text("Loading invoice...")
-                        .font(.scaled(13))
+                        .font(.subheadline)
                         .foregroundColor(.sMutedFG)
                 }
             } else if !vm.canEdit && !vm.invoiceStatus.isEmpty {
@@ -49,18 +49,18 @@ struct EditInvoiceView: View {
 
                     VStack(spacing: 6) {
                         Text("Invoice cannot be edited")
-                            .font(.scaled(16, weight: .semibold))
+                            .font(.subheadline.weight(.semibold))
                             .foregroundColor(.sForeground)
 
                         Text("Only draft invoices can be edited.\nThis invoice status is: \(vm.invoiceStatus.uppercased())")
-                            .font(.scaled(13))
+                            .font(.subheadline)
                             .foregroundColor(.sMutedFG)
                             .multilineTextAlignment(.center)
                     }
 
                     Button(action: { dismiss() }) {
                         Text("Go back")
-                            .font(.scaled(14, weight: .semibold))
+                            .font(.subheadline.weight(.semibold))
                             .foregroundColor(.sAccentFG)
                             .padding(.horizontal, 28)
                             .padding(.vertical, 12)
@@ -69,7 +69,7 @@ struct EditInvoiceView: View {
                     }
                     .padding(.top, 6)
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, AppSpacing.page)
             } else {
                 VStack(spacing: 0) {
 
@@ -77,7 +77,7 @@ struct EditInvoiceView: View {
                     // Invoice Number Badge (Read-only)
                     HStack {
                         Text("Invoice: \(vm.invoiceNumber)")
-                            .font(.scaled(12, weight: .medium))
+                            .font(.footnote.weight(.medium))
                             .foregroundColor(.sAccentFG)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
@@ -87,17 +87,17 @@ struct EditInvoiceView: View {
                         Spacer()
 
                         Text("DRAFT")
-                            .font(.scaled(10, weight: .semibold))
+                            .font(.caption.weight(.semibold))
                             .tracking(0.5)
-                            .foregroundColor(.orange)
+                            .foregroundColor(.sWarning)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 4)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 6)
-                                    .stroke(Color.orange, lineWidth: 1)
+                                    .stroke(Color.sWarning, lineWidth: 1)
                             )
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, AppSpacing.page)
                     .padding(.vertical, 12)
                     .background(Color.sCard)
                     
@@ -113,7 +113,7 @@ struct EditInvoiceView: View {
                                 onEditBilling: { showBillingSheet = true },
                                 onEditShipping: { showShippingSheet = true }
                             )
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, AppSpacing.page)
                             .padding(.top, 16)
                             .onChange(of: vm.selectedClient) { client in
                                 guard client != nil else { return }
@@ -124,7 +124,7 @@ struct EditInvoiceView: View {
                                 invoiceDate: $vm.invoiceDate,
                                 dueDate: $vm.dueDate
                             )
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, AppSpacing.page)
 
                             ItemsSection(
                                 invoiceItems: $vm.items,
@@ -158,9 +158,9 @@ struct EditInvoiceView: View {
                                                 .scaleEffect(0.85)
                                         } else {
                                             Image(systemName: "checkmark.circle.fill")
-                                                .font(.scaled(13, weight: .semibold))
+                                                .font(.subheadline.weight(.semibold))
                                             Text("Save changes")
-                                                .font(.scaled(15, weight: .semibold))
+                                                .font(.subheadline.weight(.semibold))
                                         }
                                     }
                                     .foregroundColor(.sAccentFG)
@@ -173,7 +173,7 @@ struct EditInvoiceView: View {
 
                                 Button(action: { dismiss() }) {
                                     Text("Cancel")
-                                        .font(.scaled(14, weight: .medium))
+                                        .font(.subheadline.weight(.medium))
                                         .frame(maxWidth: .infinity)
                                         .padding(.vertical, 14)
                                         .foregroundColor(.sForeground)
@@ -186,7 +186,7 @@ struct EditInvoiceView: View {
                                 }
                                 .disabled(vm.isLoading)
                             }
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, AppSpacing.page)
                             .padding(.vertical, 28)
                             
                         }

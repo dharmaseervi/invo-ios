@@ -20,7 +20,7 @@ struct companyForm: View {
                         // MARK: - Company Information Section
                         VStack(alignment: .leading, spacing: 14) {
                             Text("Company information")
-                                .font(.scaled(13, weight: .medium))
+                                .font(.subheadline.weight(.medium))
                                 .foregroundColor(.sMutedFG)
 
                             VStack(spacing: 12) {
@@ -55,7 +55,7 @@ struct companyForm: View {
                         // MARK: - Address Section
                         VStack(alignment: .leading, spacing: 14) {
                             Text("Address")
-                                .font(.scaled(13, weight: .medium))
+                                .font(.subheadline.weight(.medium))
                                 .foregroundColor(.sMutedFG)
 
                             VStack(spacing: 12) {
@@ -67,7 +67,7 @@ struct companyForm: View {
                                 )
                                 .focused($focusedField, equals: .address)
 
-                                HStack(spacing: 10) {
+                                AdaptiveFormRow {
                                     CompanyFormFieldHalf(
                                         title: "City",
                                         placeholder: "City",
@@ -104,9 +104,9 @@ struct companyForm: View {
                                             .scaleEffect(0.85)
                                     } else {
                                         Image(systemName: "checkmark.circle.fill")
-                                            .font(.scaled(13, weight: .semibold))
+                                            .font(.subheadline.weight(.semibold))
                                         Text("Save company")
-                                            .font(.scaled(15, weight: .semibold))
+                                            .font(.subheadline.weight(.semibold))
                                     }
                                 }
                                 .foregroundColor(.sAccentFG)
@@ -121,7 +121,7 @@ struct companyForm: View {
                                 dismiss()
                             }) {
                                 Text("Cancel")
-                                    .font(.scaled(14, weight: .medium))
+                                    .font(.subheadline.weight(.medium))
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 14)
                                     .foregroundColor(.sForeground)
@@ -137,7 +137,7 @@ struct companyForm: View {
 
                         Color.clear.frame(height: 40)
                     }
-                    .padding(20)
+                    .padding(AppSpacing.card)
                 }
             }
 
@@ -160,18 +160,18 @@ struct CompanyFormField: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text(title)
-                    .font(.scaled(13, weight: .medium))
+                    .font(.subheadline.weight(.medium))
                     .foregroundColor(.sForeground)
                 if error != nil {
                     Image(systemName: "exclamationmark.circle")
-                        .font(.scaled(12))
+                        .font(.footnote)
                         .foregroundColor(.sDestructive)
                 }
             }
 
             TextField(placeholder, text: $text)
                 .keyboardType(keyboardType)
-                .font(.scaled(14))
+                .font(.body)
                 .foregroundColor(.sForeground)
                 .tint(.sAccent)
                 .autocorrectionDisabled()
@@ -186,7 +186,7 @@ struct CompanyFormField: View {
 
             if let error = error {
                 Text(error)
-                    .font(.scaled(11))
+                    .font(.caption)
                     .foregroundColor(.sDestructive)
             }
         }
@@ -203,11 +203,11 @@ struct CompanyFormFieldMultiline: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
-                .font(.scaled(13, weight: .medium))
+                .font(.subheadline.weight(.medium))
                 .foregroundColor(.sForeground)
 
             TextEditor(text: $text)
-                .font(.scaled(14))
+                .font(.body)
                 .foregroundColor(.sForeground)
                 .scrollContentBackground(.hidden)
                 .frame(height: 80)
@@ -233,12 +233,12 @@ struct CompanyFormFieldHalf: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
-                .font(.scaled(13, weight: .medium))
+                .font(.subheadline.weight(.medium))
                 .foregroundColor(.sForeground)
 
             TextField(placeholder, text: $text)
                 .keyboardType(keyboardType)
-                .font(.scaled(14))
+                .font(.body)
                 .foregroundColor(.sForeground)
                 .tint(.sAccent)
                 .autocorrectionDisabled()

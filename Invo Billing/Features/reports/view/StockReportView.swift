@@ -5,39 +5,49 @@ struct StockReportView: View {
     @State private var shareURL: URL?
     @State private var showBreakdown = true
 
-    private let lowStockColor = Color(red: 0.851, green: 0.588, blue: 0.082)
-    private let profitColor = Color(red: 0.086, green: 0.639, blue: 0.341)
+    private let lowStockColor: Color = .sWarning
+    private let profitColor: Color = .sSuccess
 
     var body: some View {
-        ZStack {
-            Color.sBackground.ignoresSafeArea()
-
+        Group {
             if vm.isLoading && vm.report == nil {
-                ProgressView().tint(.sAccent)
+                ProgressView()
+                    .tint(.sAccent)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let report = vm.report, report.total_items == 0 {
                 emptyState
             } else if vm.report != nil {
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 20) {
+                List {
+                    VStack(spacing: 12) {
                         if let failure = vm.refreshFailure {
                             refreshFailureBar(failure)
                         }
                         summaryCard
-                        searchBar
-                        filterBar
-
-                        if !vm.categories.isEmpty {
-                            categoryBreakdown
-                        }
-
-                        itemsSection
                     }
-                    .padding(.top, 16)
-                    .padding(.bottom, 40)
+                    .padding(.horizontal, AppSpacing.page)
+                    .padding(.top, 8)
+                    .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+
+                    filterBar
+                        .padding(.vertical, 8)
+                        .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+
+                    if !vm.categories.isEmpty {
+                        categoryBreakdown
+                    }
+
+                    itemsSection
                 }
+                .listStyle(.plain)
+                .contentMargins(.bottom, 16, for: .scrollContent)
                 .refreshable { await vm.load() }
             }
         }
+        .searchable(text: $vm.searchText, prompt: "Search name, SKU or category")
         .navigationTitle("Stock Report")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -70,24 +80,21 @@ struct StockReportView: View {
     private func refreshFailureBar(_ message: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 10) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .font(.scaled(12))
+                .font(.footnote)
                 .foregroundColor(lowStockColor)
             VStack(alignment: .leading, spacing: 2) {
                 Text(message)
-                    .font(.scaled(13, weight: .medium))
+                    .font(.subheadline.weight(.medium))
                     .foregroundColor(.sForeground)
                 Text("Showing the last figures that loaded. Pull down to try again.")
-                    .font(.scaled(12))
+                    .font(.footnote)
                     .foregroundColor(.sMutedFG)
             }
             Spacer(minLength: 0)
         }
         .fixedSize(horizontal: false, vertical: true)
         .padding(12)
-        .background(lowStockColor.opacity(0.12))
-        .overlay(RoundedRectangle(cornerRadius: 10).stroke(lowStockColor.opacity(0.35), lineWidth: 0.5))
-        .cornerRadius(10)
-        .padding(.horizontal, 20)
+        .background(lowStockColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
     }
 
     // MARK: - Summary
@@ -95,15 +102,15 @@ struct StockReportView: View {
     private var summaryCard: some View {
         let totals = vm.visibleTotals
 
-        return VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 4) {
+        return VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 1) {
                 HStack(spacing: 8) {
                     Text("Stock value (at cost)")
-                        .font(.scaled(13))
+                        .font(.subheadline)
                         .foregroundColor(.sMutedFG)
                     if vm.isFiltered {
                         Text("FILTERED")
-                            .font(.scaled(9, weight: .bold))
+                            .font(.caption.weight(.bold))
                             .foregroundColor(.sAccentFG)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
@@ -112,16 +119,16 @@ struct StockReportView: View {
                     }
                 }
 
-                Text(currency(totals.costValue))
-                    .font(.scaled(26, weight: .bold))
+                Text(currency(totals.costValue)).moneyLine()
+                    .font(.title.bold())
                     .foregroundColor(.sForeground)
 
                 Text("\(totals.itemCount) items · \(totals.units) units · as of \(AppDate.text(fromWire: vm.report?.as_of ?? ""))")
-                    .font(.scaled(12))
+                    .font(.footnote)
                     .foregroundColor(.sMutedFG)
             }
 
-            Rectangle().fill(Color.sBorder).frame(height: 0.5)
+            Divider()
 
             AdaptiveStatRow(stats: [
                 .init(label: "Retail value", value: currency(totals.retailValue)),
@@ -133,44 +140,11 @@ struct StockReportView: View {
                 ),
             ])
         }
-        .padding(18)
-        .background(Color.sCard)
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.sBorder, lineWidth: 0.5))
-        .cornerRadius(16)
-        .padding(.horizontal, 20)
+        .padding(12)
+        .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
     }
 
-    // MARK: - Search & filters
-
-    private var searchBar: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass")
-                .font(.scaled(14))
-                .foregroundColor(.sMutedFG)
-
-            TextField("Search name, SKU or category", text: $vm.searchText)
-                .font(.scaled(14))
-                .foregroundColor(.sForeground)
-                .tint(.sAccent)
-                .autocorrectionDisabled()
-
-            if !vm.searchText.isEmpty {
-                Button {
-                    vm.searchText = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.scaled(14))
-                        .foregroundColor(.sMutedFG)
-                }
-            }
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .background(Color.sCard)
-        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.sInput, lineWidth: 0.5))
-        .cornerRadius(8)
-        .padding(.horizontal, 20)
-    }
+    // MARK: - Filters
 
     private var filterBar: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -190,7 +164,7 @@ struct StockReportView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, AppSpacing.page)
             }
 
             // Scrolls rather than squeezing: at a large text size the fixed row crushed
@@ -215,18 +189,16 @@ struct StockReportView: View {
                         Image(systemName: "arrow.up.arrow.down")
                         Text("Sort")
                     }
-                    .font(.scaled(12, weight: .medium))
+                    .font(.footnote.weight(.medium))
                     .foregroundColor(.sForeground)
                     .lineLimit(1)
                     .fixedSize()
                     .padding(.horizontal, 12)
-                    .padding(.vertical, 7)
-                    .background(Color.sCard)
-                    .overlay(Capsule().stroke(Color.sBorder, lineWidth: 0.5))
-                    .clipShape(Capsule())
+                    .frame(minHeight: AppSpacing.minimumTarget)
+                    .background(Color(UIColor.secondarySystemFill), in: Capsule())
                 }
               }
-              .padding(.horizontal, 20)
+              .padding(.horizontal, AppSpacing.page)
             }
 
             if vm.isFiltered {
@@ -237,134 +209,96 @@ struct StockReportView: View {
                         Image(systemName: "xmark.circle")
                         Text("Clear filters")
                     }
-                    .font(.scaled(12, weight: .medium))
+                    .font(.footnote.weight(.medium))
                     .foregroundColor(.sAccent)
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, AppSpacing.page)
             }
         }
     }
 
     private func chip(title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(.scaled(12, weight: .medium))
-                .foregroundColor(isSelected ? .sAccentFG : .sForeground)
-                .lineLimit(1)
-                // The chip sizes to its label instead of being squeezed by the row —
-                // "In stock" was rendering as "In…".
-                .fixedSize()
-                .padding(.horizontal, 12)
-                .padding(.vertical, 7)
-                .background(isSelected ? Color.sAccent : Color.sCard)
-                .overlay(Capsule().stroke(isSelected ? Color.clear : Color.sBorder, lineWidth: 0.5))
-                .clipShape(Capsule())
-        }
+        AppFilterChip(title: title, isSelected: isSelected, action: action)
     }
 
     // MARK: - Category breakdown
 
     private var categoryBreakdown: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        Section {
+            if showBreakdown {
+                ForEach(vm.categories) { category in
+                    Button {
+                        vm.selectedCategory = vm.selectedCategory == category.category_name
+                            ? nil
+                            : category.category_name
+                    } label: {
+                        CategoryBreakdownRow(
+                            category: category,
+                            isSelected: vm.selectedCategory == category.category_name,
+                            profitColor: profitColor,
+                            lowStockColor: lowStockColor
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .listRowInsets(rowInsets)
+                }
+            }
+        } header: {
             Button {
                 withAnimation(.easeInOut(duration: 0.2)) { showBreakdown.toggle() }
             } label: {
                 HStack {
-                    Text("By category")
-                        .font(.scaled(13, weight: .medium))
-                        .foregroundColor(.sMutedFG)
+                    Text("By category · \(vm.categories.count)")
                     Spacer()
-                    Text("\(vm.categories.count)")
-                        .font(.scaled(11, weight: .medium))
-                        .foregroundColor(.sMutedFG)
                     Image(systemName: showBreakdown ? "chevron.up" : "chevron.down")
-                        .font(.scaled(11, weight: .semibold))
-                        .foregroundColor(.sMutedFG)
+                        .font(.caption.weight(.semibold))
                 }
-                .padding(.horizontal, 20)
             }
-
-            if showBreakdown {
-                VStack(spacing: 10) {
-                    ForEach(vm.categories) { category in
-                        Button {
-                            vm.selectedCategory = vm.selectedCategory == category.category_name
-                                ? nil
-                                : category.category_name
-                        } label: {
-                            CategoryBreakdownRow(
-                                category: category,
-                                isSelected: vm.selectedCategory == category.category_name,
-                                profitColor: profitColor,
-                                lowStockColor: lowStockColor
-                            )
-                        }
-                    }
-                }
-                .padding(.horizontal, 20)
-            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(showBreakdown ? "Hide categories" : "Show categories")
         }
     }
 
     // MARK: - Items
 
+    private var rowInsets: EdgeInsets { EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20) }
+
     private var itemsSection: some View {
         let items = vm.filteredItems
 
-        return VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text(vm.selectedCategory ?? "All items")
-                    .font(.scaled(13, weight: .medium))
-                    .foregroundColor(.sMutedFG)
-                Spacer()
-                Text("\(items.count)")
-                    .font(.scaled(11, weight: .medium))
-                    .foregroundColor(.sMutedFG)
-            }
-            .padding(.horizontal, 20)
-
+        return Section {
             if items.isEmpty {
                 VStack(spacing: 6) {
                     Text("No items match these filters")
-                        .font(.scaled(14, weight: .medium))
-                        .foregroundColor(.sForeground)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.primary)
                     Button("Clear filters") { vm.clearFilters() }
-                        .font(.scaled(13, weight: .medium))
-                        .foregroundColor(.sAccent)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(Color.sAccent)
+                        .buttonStyle(.borderless)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 32)
-                .background(Color.sCard)
-                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
-                .cornerRadius(12)
-                .padding(.horizontal, 20)
+                .listRowSeparator(.hidden)
             } else {
-                LazyVStack(spacing: 10) {
-                    ForEach(items) { item in
-                        StockReportRow(item: item, lowStockColor: lowStockColor)
-                    }
+                ForEach(items) { item in
+                    StockReportRow(item: item, lowStockColor: lowStockColor)
+                        .listRowInsets(rowInsets)
                 }
-                .padding(.horizontal, 20)
             }
+        } header: {
+            Text("\(vm.selectedCategory ?? "All items") · \(items.count)")
         }
     }
 
     // MARK: - Empty state
 
     private var emptyState: some View {
-        VStack(spacing: 10) {
-            Image(systemName: "shippingbox")
-                .font(.scaled(32))
-                .foregroundColor(.sMutedFG)
-            Text("No items yet")
-                .font(.scaled(15, weight: .semibold))
-                .foregroundColor(.sForeground)
-            Text("Add items with a cost price to see what your stock is worth")
-                .font(.scaled(13))
-                .foregroundColor(.sMutedFG)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
-        }
+        ContentUnavailableView(
+            "No items yet",
+            systemImage: "shippingbox",
+            description: Text("Add items with a cost price to see what your stock is worth")
+        )
     }
 
     private func currency(_ value: Double) -> String {
@@ -381,23 +315,29 @@ private struct CategoryBreakdownRow: View {
     let lowStockColor: Color
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 6) {
                 Text(category.category_name)
-                    .font(.scaled(14, weight: .semibold))
-                    .foregroundColor(.sForeground)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.primary)
                     .lineLimit(1)
-                Spacer()
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.footnote)
+                        .foregroundStyle(Color.sAccent)
+                        .accessibilityLabel("Selected")
+                }
+                Spacer(minLength: 8)
                 Text(Money.text(category.cost_value)).moneyLine()
-                    .font(.scaled(13, weight: .semibold))
-                    .foregroundColor(.sForeground)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
             }
 
             // Share of the company's total stock value — makes it obvious at a glance
             // which category is holding the money.
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    Capsule().fill(Color.sMuted)
+                    Capsule().fill(Color(UIColor.secondarySystemFill))
                     Capsule()
                         .fill(Color.sAccent)
                         .frame(width: max(2, geo.size.width * min(1, category.share_of_value / 100)))
@@ -405,42 +345,27 @@ private struct CategoryBreakdownRow: View {
             }
             .frame(height: 4)
 
-            HStack(spacing: 10) {
-                Text("\(category.item_count) items · \(category.total_units) units")
-                Text("·")
-                Text("\(String(format: "%.0f", category.share_of_value))% of value")
+            HStack(spacing: 8) {
+                Text("\(category.item_count) items · \(String(format: "%.0f", category.share_of_value))% of value · ")
+                    .foregroundStyle(.secondary)
+                + Text("profit \(Money.text(category.potential_profit))")
+                    .foregroundStyle(profitColor)
 
-                Spacer()
+                Spacer(minLength: 4)
 
                 if category.out_of_stock_count > 0 {
                     Label("\(category.out_of_stock_count)", systemImage: "exclamationmark.circle.fill")
-                        .foregroundColor(.sDestructive)
+                        .foregroundStyle(Color.sDestructive)
                 }
                 if category.low_stock_count > 0 {
                     Label("\(category.low_stock_count)", systemImage: "exclamationmark.triangle.fill")
-                        .foregroundColor(lowStockColor)
+                        .foregroundStyle(lowStockColor)
                 }
             }
-            .font(.scaled(10))
-            .foregroundColor(.sMutedFG)
+            .font(.caption)
             .lineLimit(1)
-
-            HStack {
-                Text("Retail \(Money.text(category.retail_value))")
-                    .foregroundColor(.sMutedFG)
-                Spacer()
-                Text("Profit \(Money.text(category.potential_profit))")
-                    .foregroundColor(profitColor)
-            }
-            .font(.scaled(11, weight: .medium))
         }
-        .padding(14)
-        .background(Color.sCard)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(isSelected ? Color.sAccent : Color.sBorder, lineWidth: isSelected ? 1.5 : 0.5)
-        )
-        .cornerRadius(12)
+        .contentShape(Rectangle())
     }
 }
 
@@ -463,35 +388,34 @@ private struct StockReportRow: View {
             RoundedRectangle(cornerRadius: 2)
                 .fill(statusColor)
                 .frame(width: 3, height: 34)
+                .accessibilityHidden(true)
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(item.name)
-                    .font(.scaled(14, weight: .medium))
+                    .font(.subheadline.weight(.medium))
                     .foregroundColor(.sForeground)
                     .lineLimit(1)
 
                 Text(subtitle)
-                    .font(.scaled(11))
+                    .font(.footnote)
                     .foregroundColor(.sMutedFG)
                     .lineLimit(1)
             }
+            .alignmentGuide(.listRowSeparatorLeading) { d in d[.leading] }
 
-            Spacer()
+            Spacer(minLength: 8)
 
-            VStack(alignment: .trailing, spacing: 4) {
+            VStack(alignment: .trailing, spacing: 3) {
                 Text(Money.text(item.stock_value)).moneyLine()
-                    .font(.scaled(13, weight: .semibold))
+                    .font(.subheadline.weight(.semibold))
                     .foregroundColor(.sForeground)
                 Text("\(item.quantity)\(item.unit.map { $0.isEmpty ? "" : " \($0)" } ?? "") in stock")
-                    .font(.scaled(10))
+                    .font(.caption)
                     .foregroundColor(statusColor)
                     .lineLimit(1)
             }
+            .frame(minWidth: 88, alignment: .trailing)
         }
-        .padding(14)
-        .background(Color.sCard)
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
-        .cornerRadius(12)
     }
 
     private var subtitle: String {

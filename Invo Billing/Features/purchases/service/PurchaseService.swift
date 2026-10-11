@@ -111,6 +111,24 @@ struct PurchasesService {
         _ = try await post("/purchase-returns", companyID: companyID, body: request) as EmptyReply
     }
 
+    func debitNotePDF(companyID: Int, returnID: Int) async throws -> URL {
+        var components = URLComponents(string: "\(baseURL)/purchase-returns/\(returnID)/pdf")
+        components?.queryItems = [URLQueryItem(name: "company_id", value: String(companyID))]
+        guard let url = components?.url else { throw URLError(.badURL) }
+        var request = URLRequest(url: url)
+        if let token = KeychainManager.shared.loadToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
+        let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("DebitNote_\(returnID).pdf")
+        try data.write(to: tmp)
+        return tmp
+    }
+
     /// What a bill contained, for choosing what to send back from it.
     func billDetail(companyID: Int, billID: Int) async throws -> PurchaseBillDetail {
         try await bill(companyID: companyID, billID: billID)

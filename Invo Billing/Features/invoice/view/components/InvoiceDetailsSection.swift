@@ -1,10 +1,11 @@
 import SwiftUI
 
-/// Compact "Details" card: invoice number (read-only), invoice date, due date.
+/// Compact "Details" card: invoice number (read-only), invoice date, due date, doc type.
 struct InvoiceDetailsSection: View {
     var invoiceNumber: String? = nil
     @Binding var invoiceDate: Date
     @Binding var dueDate: Date
+    var docType: Binding<String>? = nil
 
     var daysUntilDue: Int {
         Calendar.current.dateComponents([.day], from: invoiceDate, to: dueDate).day ?? 0
@@ -13,15 +14,27 @@ struct InvoiceDetailsSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Details")
-                .font(.scaled(13, weight: .medium))
+                .font(.subheadline.weight(.medium))
                 .foregroundColor(.sMutedFG)
 
             VStack(spacing: 0) {
                 if let invoiceNumber {
                     row(label: "Invoice number") {
                         Text(invoiceNumber)
-                            .font(.scaled(14, weight: .medium))
+                            .font(.subheadline.weight(.medium))
                             .foregroundColor(.sForeground)
+                    }
+                    divider
+                }
+
+                if let docType {
+                    row(label: "Invoice type") {
+                        Picker("", selection: docType) {
+                            Text("Tax Invoice").tag("")
+                            Text("Credit Invoice").tag("CREDIT INVOICE")
+                        }
+                        .pickerStyle(.menu)
+                        .tint(.sAccent)
                     }
                     divider
                 }
@@ -43,9 +56,9 @@ struct InvoiceDetailsSection: View {
                     divider
                     HStack(spacing: 8) {
                         Image(systemName: "hourglass")
-                            .font(.scaled(11))
+                            .font(.caption)
                         Text("Payment due in \(daysUntilDue) day\(daysUntilDue == 1 ? "" : "s")")
-                            .font(.scaled(12))
+                            .font(.footnote)
                         Spacer()
                     }
                     .foregroundColor(.sMutedFG)
@@ -55,9 +68,9 @@ struct InvoiceDetailsSection: View {
                     divider
                     HStack(spacing: 8) {
                         Image(systemName: "exclamationmark.triangle")
-                            .font(.scaled(11))
+                            .font(.caption)
                         Text("Due date is before the invoice date")
-                            .font(.scaled(12))
+                            .font(.footnote)
                         Spacer()
                     }
                     .foregroundColor(.sDestructive)
@@ -78,7 +91,7 @@ struct InvoiceDetailsSection: View {
     private func row<Content: View>(label: String, @ViewBuilder content: () -> Content) -> some View {
         HStack {
             Text(label)
-                .font(.scaled(14))
+                .font(.body)
                 .foregroundColor(.sForeground)
             Spacer()
             content()
