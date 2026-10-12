@@ -125,7 +125,7 @@ struct EstimateListView: View {
                         } label: {
                             EstimateRowCard(estimate: estimate)
                         }
-                        .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+                        .standardListRow()
                         .listRowSeparator(.hidden, edges: estimate.id == vm.estimates.first?.id ? .top : [])
                         .task { await vm.loadMoreIfNeeded(currentEstimate: estimate) }
                     }

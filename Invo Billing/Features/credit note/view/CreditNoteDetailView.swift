@@ -244,10 +244,10 @@ private extension CreditNoteDetailView {
     func statusBadge(_ status: String) -> some View {
         Text(status.capitalized)
             .font(.caption.weight(.medium))
-            .foregroundColor(.cnSuccess)
+            .foregroundColor(.sSuccess)
             .padding(.horizontal, 10)
             .padding(.vertical, 4)
-            .background(Color.cnSuccess.opacity(0.1))
+            .background(Color.sSuccess.opacity(0.1))
             .cornerRadius(6)
     }
 

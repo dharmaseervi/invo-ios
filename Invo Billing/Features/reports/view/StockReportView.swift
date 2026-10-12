@@ -102,35 +102,10 @@ struct StockReportView: View {
     private var summaryCard: some View {
         let totals = vm.visibleTotals
 
-        return VStack(alignment: .leading, spacing: 10) {
-            VStack(alignment: .leading, spacing: 1) {
-                HStack(spacing: 8) {
-                    Text("Stock value (at cost)")
-                        .font(.subheadline)
-                        .foregroundColor(.sMutedFG)
-                    if vm.isFiltered {
-                        Text("FILTERED")
-                            .font(.caption.weight(.bold))
-                            .foregroundColor(.sAccentFG)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.sAccent)
-                            .cornerRadius(4)
-                    }
-                }
-
-                Text(currency(totals.costValue)).moneyLine()
-                    .font(.title.bold())
-                    .foregroundColor(.sForeground)
-
-                Text("\(totals.itemCount) items · \(totals.units) units · as of \(AppDate.text(fromWire: vm.report?.as_of ?? ""))")
-                    .font(.footnote)
-                    .foregroundColor(.sMutedFG)
-            }
-
-            Divider()
-
-            AdaptiveStatRow(stats: [
+        return SummaryCard(
+            title: "Stock value (at cost)",
+            value: currency(totals.costValue),
+            stats: [
                 .init(label: "Retail value", value: currency(totals.retailValue)),
                 .init(label: "Potential profit", value: currency(totals.potentialProfit), color: profitColor),
                 .init(
@@ -138,10 +113,22 @@ struct StockReportView: View {
                     value: "\(totals.lowCount + totals.outCount)",
                     color: totals.outCount > 0 ? .sDestructive : .sForeground
                 ),
-            ])
+            ]
+        ) {
+            HStack(spacing: 8) {
+                Text("\(totals.itemCount) items · \(totals.units) units · as of \(AppDate.text(fromWire: vm.report?.as_of ?? ""))")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                if vm.isFiltered {
+                    Text("Filtered")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.sAccent)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.sAccent.opacity(0.12), in: Capsule())
+                }
+            }
         }
-        .padding(12)
-        .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
     }
 
     // MARK: - Filters
@@ -240,7 +227,7 @@ struct StockReportView: View {
                         )
                     }
                     .buttonStyle(.plain)
-                    .listRowInsets(rowInsets)
+                    .standardListRow()
                 }
             }
         } header: {
@@ -260,8 +247,6 @@ struct StockReportView: View {
     }
 
     // MARK: - Items
-
-    private var rowInsets: EdgeInsets { EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20) }
 
     private var itemsSection: some View {
         let items = vm.filteredItems
@@ -283,7 +268,7 @@ struct StockReportView: View {
             } else {
                 ForEach(items) { item in
                     StockReportRow(item: item, lowStockColor: lowStockColor)
-                        .listRowInsets(rowInsets)
+                        .standardListRow()
                 }
             }
         } header: {

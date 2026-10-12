@@ -218,7 +218,7 @@ struct ItemsView: View {
                             isSelectMode: isSelectMode,
                             isSelected: selectedItemIDs.contains(item.id)
                         )
-                        .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+                        .standardListRow()
                         .listRowSeparator(.hidden, edges: item.id == filteredItems.first?.id ? .top : [])
                         .task { await vm.loadMoreIfNeeded(currentItem: item) }
                     }

@@ -48,7 +48,7 @@ struct PurchaseLedgerView: View {
                         } label: {
                             supplierRow(supplier)
                         }
-                        .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+                        .standardListRow()
                         .task {
                             if supplier.id == vm.suppliers.suffix(5).first?.id {
                                 await vm.loadMore()

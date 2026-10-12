@@ -27,12 +27,7 @@ struct LedgerView: View {
                 } else {
                     List {
                         summaryCard
-                            .padding(.horizontal, AppSpacing.page)
-                            .padding(.top, 8)
-                            .padding(.bottom, 4)
-                            .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
+                            .listHeaderRow()
 
                         if vm.isLoading {
                             HStack { Spacer(); ProgressView().tint(.sAccent); Spacer() }
@@ -58,7 +53,7 @@ struct LedgerView: View {
                                 } label: {
                                     LedgerRow(client: client)
                                 }
-                                .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+                                .standardListRow()
                                 .listRowSeparator(.hidden, edges: client.id == vm.filteredClients.first?.id ? .top : [])
                                 .task { await vm.loadMoreIfNeeded(currentItem: client) }
                             }
@@ -119,42 +114,35 @@ struct LedgerView: View {
 
     // MARK: - Summary Card
     private var summaryCard: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Total receivable")
-                .font(.subheadline)
-                .foregroundColor(.sMutedFG)
-            // A dash when the figure could not be fetched: ₹0 reads as "nobody owes
-            // anything", which is the opposite of "we could not check".
-            Text(vm.totalsFailed ? "—" : Money.text(vm.totalReceivable)).moneyLine()
-                .font(.title.bold())
-                .foregroundColor(
-                    vm.totalsFailed ? .sMutedFG
-                        : (vm.totalReceivable > 0 ? .sDestructive : .sSuccess)
-                )
+        // A dash when the figure could not be fetched: ₹0 reads as "nobody owes
+        // anything", which is the opposite of "we could not check".
+        SummaryCard(
+            title: "Total receivable",
+            value: vm.totalsFailed ? "—" : Money.text(vm.totalReceivable),
+            valueColor: vm.totalsFailed ? .sMutedFG
+                : (vm.totalReceivable > 0 ? .sDestructive : .sSuccess)
+        ) {
             if vm.totalsFailed {
                 Button("Totals unavailable — retry") {
                     Task { await vm.fetchCompanyLedger() }
                 }
                 .font(.footnote)
-                .foregroundColor(.sAccent)
+                .tint(Color.sAccent)
             } else {
                 // Every customer with history, counted by the server — not the rows
                 // that happen to be loaded.
                 Text("Across \(vm.totals.clients) client\(vm.totals.clients == 1 ? "" : "s")")
                     .font(.footnote)
-                    .foregroundColor(.sMutedFG)
+                    .foregroundStyle(.secondary)
                 if vm.totalPayable > 0 {
                     // Advances and credit balances, which netting into the receivable
                     // would hide.
                     Text("\(Money.text(vm.totalPayable)) in customer credit")
                         .font(.footnote)
-                        .foregroundColor(.sMutedFG)
+                        .foregroundStyle(.secondary)
                 }
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
     }
 
     // MARK: - Empty State

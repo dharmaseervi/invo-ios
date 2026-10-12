@@ -114,12 +114,7 @@ struct ExpenseView: View {
                 // Overview stats (when there are expenses)
                 if !vm.expenses.isEmpty {
                     overviewSection
-                        .padding(.horizontal, AppSpacing.page)
-                        .padding(.top, 8)
-                        .padding(.bottom, 4)
-                        .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
+                        .listHeaderRow()
                 }
 
                 // Empty state
@@ -172,7 +167,7 @@ struct ExpenseView: View {
                                 Label("Delete", systemImage: "trash")
                             }
                         }
-                        .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+                        .standardListRow()
                         .listRowSeparator(.hidden, edges: expense.id == vm.expenses.first?.id ? .top : [])
                         .task { await vm.loadMoreIfNeeded(currentItem: expense) }
                     }
@@ -203,27 +198,15 @@ struct ExpenseView: View {
     }
 
     private var overviewSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            VStack(alignment: .leading, spacing: 1) {
-                Text("Total spent")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Text(vm.summaryFailed ? "—" : Money.text(totalAmount))
-                    .font(.title.bold())
-                    .monospacedDigit()
-                    .foregroundStyle(.primary)
-            }
-
-            Divider()
-
-            AdaptiveStatRow(stats: [
+        SummaryCard(
+            title: "Total spent",
+            value: vm.summaryFailed ? "—" : Money.text(totalAmount),
+            stats: [
                 .init(label: "Expenses", value: vm.summaryFailed ? "—" : "\(vm.summary.count)"),
                 .init(label: "Average", value: vm.summaryFailed ? "—" : Money.text(averageAmount)),
                 .init(label: "Latest", value: vm.expenses.first.map { AppDate.shortText(fromWire: $0.date) } ?? "—")
-            ])
-        }
-        .padding(12)
-        .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
+            ]
+        )
     }
 
     private var filterChipsRow: some View {
@@ -261,9 +244,6 @@ struct ExpenseView: View {
     /// Parses whatever shape the API sends — this field comes back as a full
     /// timestamp, which the old "yyyy-MM-dd"-only parser rejected, leaving
     /// "2026-09-11T00:00:00Z" on screen.
-    private func formatDate(_ raw: String) -> String {
-        AppDate.text(fromWire: raw)
-    }
 
     @ViewBuilder
     private func filterChip(_ label: String, onRemove: @escaping () -> Void) -> some View {

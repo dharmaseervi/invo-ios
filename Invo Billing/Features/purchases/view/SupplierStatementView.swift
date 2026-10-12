@@ -30,12 +30,7 @@ struct SupplierStatementView: View {
             } else {
                 List {
                     balanceCard
-                        .padding(.horizontal, AppSpacing.page)
-                        .padding(.top, 8)
-                        .padding(.bottom, 4)
-                        .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
+                        .listHeaderRow()
 
                     if vm.entries.isEmpty {
                         ContentUnavailableView(
@@ -64,7 +59,7 @@ struct SupplierStatementView: View {
 
                         ForEach(vm.entries, id: \.rowKey) { entry in
                             entryRow(entry)
-                                .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+                                .standardListRow()
                                 .listRowSeparator(.hidden, edges: entry.rowKey == vm.entries.first?.rowKey ? .top : [])
                         }
                     }
@@ -112,46 +107,31 @@ struct SupplierStatementView: View {
     /// signed: "owed to them" and "paid ahead" are read correctly at a glance, where a
     /// minus sign in front of a rupee figure is not.
     private var balanceCard: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(vm.isInCredit ? "Paid ahead" : "Owed to them")
-                .font(.subheadline)
-                .foregroundColor(.sMutedFG)
-
-            if let balance = vm.balance {
-                Text(Money.text(abs(balance))).moneyLine()
-                    .font(.title.bold())
-                    .foregroundColor(
-                        balance > 0.004
-                            ? .sDestructive
-                            : .sSuccess
-                    )
-            } else {
-                // Not known rather than nothing owed.
-                Text("—").moneyLine()
-                    .font(.title.bold())
-                    .foregroundColor(.sMutedFG)
-            }
-
+        // A dash when the balance is not known, rather than ₹0 which reads as nothing owed.
+        SummaryCard(
+            title: vm.isInCredit ? "Paid ahead" : "Owed to them",
+            value: vm.balance.map { Money.text(abs($0)) } ?? "—",
+            valueColor: vm.balance.map { $0 > 0.004 ? Color.sDestructive : Color.sSuccess } ?? .sMutedFG
+        ) {
             if vm.loadFailed {
                 Text(vm.summary == nil ? "Totals unavailable" : "Couldn't refresh — figures may be out of date")
                     .font(.footnote)
-                    .foregroundColor(.sDestructive)
+                    .foregroundStyle(Color.sDestructive)
                 Button("Try again") { Task { await vm.load() } }
+                    .font(.footnote.weight(.medium))
+                    .tint(Color.sAccent)
             }
 
             if let summary = vm.summary {
                 Text("\(Money.text(summary.billed)) billed · \(Money.text(summary.paid)) paid")
                     .font(.footnote)
-                    .foregroundColor(.sMutedFG)
+                    .foregroundStyle(.secondary)
             } else if !vm.isLoading && !vm.loadFailed {
                 Button("Try again") { Task { await vm.load() } }
                     .font(.footnote.weight(.medium))
-                    .foregroundColor(.sAccent)
+                    .tint(Color.sAccent)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
     }
 
     private func entryRow(_ entry: SupplierLedgerEntry) -> some View {

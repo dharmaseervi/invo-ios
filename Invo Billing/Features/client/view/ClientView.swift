@@ -120,7 +120,7 @@ struct ClientView: View {
                         } label: {
                             ClientListRowView(client: client)
                         }
-                        .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+                        .standardListRow()
                         .listRowSeparator(.hidden, edges: client.id == filteredClients.first?.id ? .top : [])
                         .task {
                             if client.id == vm.clients.suffix(5).first?.id {

@@ -18,13 +18,26 @@ struct ClientOverdueGroup: Identifiable {
 
 struct OverdueRemindersView: View {
     @StateObject private var vm = OverdueRemindersViewModel()
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var leftForWhatsApp = false
 
     var body: some View {
         Group {
-            if vm.isLoading {
+            if vm.isLoading && vm.groups.isEmpty {
                 ProgressView()
                     .tint(.sAccent)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if vm.loadFailed && vm.groups.isEmpty {
+                // Not the "all paid" state: a failed fetch says nothing about what is owed.
+                ContentUnavailableView {
+                    Label("Couldn't load overdue invoices", systemImage: "exclamationmark.triangle")
+                } description: {
+                    Text("Check your connection and try again.")
+                } actions: {
+                    Button("Try again") { Task { await vm.load() } }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.sAccent)
+                }
             } else if vm.groups.isEmpty {
                 ContentUnavailableView(
                     "No overdue invoices",
@@ -33,13 +46,7 @@ struct OverdueRemindersView: View {
                 )
             } else {
                 List {
-                    summaryCard
-                        .padding(.horizontal, AppSpacing.page)
-                        .padding(.top, 8)
-                        .padding(.bottom, 4)
-                        .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
+                    summaryCard.listHeaderRow()
 
                     ForEach(vm.groups) { group in
                         Section {
@@ -61,36 +68,57 @@ struct OverdueRemindersView: View {
         .navigationTitle("Overdue reminders")
         .navigationBarTitleDisplayMode(.inline)
         .task { await vm.load() }
+        // iOS opens one app at a time, so "Remind all" sends the next chat each time the
+        // shop comes back from WhatsApp, instead of firing every link at once.
+        .onChange(of: scenePhase) { _, phase in
+            // Only after really leaving: Control Center also passes through inactive.
+            if phase == .background { leftForWhatsApp = true }
+            if phase == .active, leftForWhatsApp {
+                leftForWhatsApp = false
+                vm.sendNextQueued()
+            }
+        }
     }
 
     // MARK: - Summary
 
     private var summaryCard: some View {
-        HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 1) {
-                Text("Total overdue")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Text(Money.text(vm.totalOverdue)).moneyLine()
-                    .font(.title.bold())
-                    .foregroundStyle(Color.sDestructive)
-                Text("\(vm.groups.count) client\(vm.groups.count == 1 ? "" : "s") overdue")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+        SummaryCard(
+            title: "Total overdue",
+            value: Money.text(vm.totalOverdue),
+            valueColor: .sDestructive
+        ) {
+            Text("\(vm.groups.count) client\(vm.groups.count == 1 ? "" : "s") overdue")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+
+            Group {
+                if let progress = vm.queueProgress {
+                    HStack {
+                        Text("Reminder \(progress.sent) of \(progress.total) sent")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Button("Stop") { vm.stopQueue() }
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(Color.sAccent)
+                            .buttonStyle(.borderless)
+                    }
+                } else {
+                    Button {
+                        vm.sendAll()
+                    } label: {
+                        Label("Remind all on WhatsApp", systemImage: "message.fill")
+                            .font(.subheadline.weight(.semibold))
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.sAccent)
+                    .disabled(vm.reachableCount == 0)
+                }
             }
-            Spacer(minLength: 8)
-            Button {
-                vm.sendAll()
-            } label: {
-                Label("Remind all", systemImage: "message.fill")
-                    .font(.subheadline.weight(.semibold))
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(.sAccent)
-            .disabled(vm.groups.filter { !$0.phone.isEmpty }.isEmpty)
+            .padding(.top, 10)
         }
-        .padding(12)
-        .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
     }
 
     // MARK: - Rows
@@ -118,12 +146,19 @@ struct OverdueRemindersView: View {
                     .foregroundStyle(Color.sDestructive)
                 if !group.phone.isEmpty {
                     Button {
-                        sendWhatsApp(to: group.phone, name: group.clientName,
-                                     amount: group.totalOwed, invoices: group.invoices)
+                        vm.send(group)
                     } label: {
-                        Label("WhatsApp", systemImage: "message")
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(Color.sAccent)
+                        HStack(spacing: 4) {
+                            Image(systemName: "message")
+                            Text("WhatsApp")
+                        }
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(Color.sAccent)
+                        .fixedSize()
+                        // Taller hit area without a taller row.
+                        .padding(.vertical, 10)
+                        .contentShape(Rectangle())
+                        .padding(.vertical, -10)
                     }
                     .buttonStyle(.borderless)
                 } else {
@@ -152,30 +187,6 @@ struct OverdueRemindersView: View {
                 .foregroundStyle(.primary)
         }
     }
-
-    // MARK: - WhatsApp
-
-    private func sendWhatsApp(to phone: String, name: String, amount: Double, invoices: [InvoiceResponse]) {
-        let clean = phone.filter { $0.isNumber }
-        let full = clean.hasPrefix("91") ? clean : "91\(clean)"
-        let invoiceList = invoices.map { "• \($0.invoice_number) — \(Money.text($0.remaining_amount))" }.joined(separator: "\n")
-        let message = """
-Hi \(name),
-
-This is a friendly reminder that the following invoice\(invoices.count == 1 ? "" : "s") \(invoices.count == 1 ? "is" : "are") overdue:
-
-\(invoiceList)
-
-Total outstanding: \(Money.text(amount))
-
-Please arrange payment at your earliest convenience. Thank you.
-"""
-        guard let encoded = message.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-              let url = URL(string: "whatsapp://send?phone=\(full)&text=\(encoded)") else { return }
-        if UIApplication.shared.canOpenURL(url) {
-            UIApplication.shared.open(url)
-        }
-    }
 }
 
 // MARK: - ViewModel
@@ -184,10 +195,14 @@ Please arrange payment at your earliest convenience. Thank you.
 final class OverdueRemindersViewModel: ObservableObject {
     @Published private(set) var groups: [ClientOverdueGroup] = []
     @Published private(set) var isLoading = false
+    @Published private(set) var loadFailed = false
+    @Published private(set) var queueProgress: (sent: Int, total: Int)?
 
+    private var queue: [ClientOverdueGroup] = []
     private let service = InvoiceService()
 
     var totalOverdue: Double { groups.reduce(0) { $0 + $1.totalOwed } }
+    var reachableCount: Int { groups.filter { !$0.phone.isEmpty }.count }
 
     func load() async {
         guard let companyID = SessionManager.shared.selectedCompanyId else { return }
@@ -198,38 +213,57 @@ final class OverdueRemindersViewModel: ObservableObject {
                 companyID: companyID, status: "overdue", limit: 200, offset: 0
             )
             groups = buildGroups(result.data)
-        } catch {}
-    }
-
-    func sendAll() {
-        for group in groups where !group.phone.isEmpty {
-            sendWhatsApp(to: group.phone, name: group.clientName,
-                         amount: group.totalOwed, invoices: group.invoices)
+            loadFailed = false
+        } catch {
+            loadFailed = true
         }
     }
 
-    private func sendWhatsApp(to phone: String, name: String, amount: Double, invoices: [InvoiceResponse]) {
-        let clean = phone.filter { $0.isNumber }
-        let full = clean.hasPrefix("91") ? clean : "91\(clean)"
-        let invoiceList = invoices.map { "• \($0.invoice_number) — \(Money.text($0.remaining_amount))" }.joined(separator: "\n")
-        let message = """
-Hi \(name),
+    func send(_ group: ClientOverdueGroup) {
+        WhatsApp.open(phone: group.phone, message: Self.message(for: group))
+    }
+
+    func sendAll() {
+        queue = groups.filter { !$0.phone.isEmpty }
+        guard !queue.isEmpty else { return }
+        queueProgress = (0, queue.count)
+        sendNextQueued()
+    }
+
+    /// Sends the next queued reminder. Called on start and each time the app becomes
+    /// active again after WhatsApp.
+    func sendNextQueued() {
+        guard let progress = queueProgress else { return }
+        guard !queue.isEmpty else {
+            queueProgress = nil
+            return
+        }
+        let next = queue.removeFirst()
+        queueProgress = (progress.sent + 1, progress.total)
+        send(next)
+    }
+
+    func stopQueue() {
+        queue = []
+        queueProgress = nil
+    }
+
+    private static func message(for group: ClientOverdueGroup) -> String {
+        let invoices = group.invoices
+        let invoiceList = invoices
+            .map { "• \($0.invoice_number) — \(Money.text($0.remaining_amount))" }
+            .joined(separator: "\n")
+        return """
+Hi \(group.clientName),
 
 This is a friendly reminder that the following invoice\(invoices.count == 1 ? "" : "s") \(invoices.count == 1 ? "is" : "are") overdue:
 
 \(invoiceList)
 
-Total outstanding: \(Money.text(amount))
+Total outstanding: \(Money.text(group.totalOwed))
 
 Please arrange payment at your earliest convenience. Thank you.
 """
-        guard let encoded = message.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-              let url = URL(string: "whatsapp://send?phone=\(full)&text=\(encoded)") else { return }
-        DispatchQueue.main.async {
-            if UIApplication.shared.canOpenURL(url) {
-                UIApplication.shared.open(url)
-            }
-        }
     }
 
     private func buildGroups(_ invoices: [InvoiceResponse]) -> [ClientOverdueGroup] {

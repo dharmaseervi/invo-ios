@@ -463,19 +463,19 @@ struct MoreViewRow: View {
         HStack(spacing: 14) {
             Image(systemName: icon)
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.secondary)
                 .frame(width: 24)
 
             Text(label)
                 .font(.subheadline)
-                .foregroundStyle(.primary)
+                .foregroundStyle(Color.primary)
 
             Spacer()
 
             if let value {
                 Text(value)
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.secondary)
             }
         }
     }
@@ -488,6 +488,6 @@ struct MoreViewRowBasic: View {
     var body: some View {
         Text(label)
             .font(.subheadline)
-            .foregroundStyle(.primary)
+            .foregroundStyle(Color.primary)
     }
 }

@@ -31,11 +31,13 @@ struct PaymentsView: View {
                 List {
                     ForEach(vm.payments) { payment in
                         paymentRow(payment)
-                            .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 12))
+                            .standardListRow(trailing: 12)
                             .listRowSeparator(.hidden, edges: payment.id == vm.payments.first?.id ? .top : [])
                             .swipeActions(edge: .trailing) {
                                 if !payment.isReversed {
-                                    Button("Reverse", role: .destructive) { reversing = payment }
+                                    // Not role: .destructive — that animates the row away before the reason is asked for.
+                                    Button("Reverse") { reversing = payment }
+                                        .tint(.red)
                                     Button("Move") { moving = payment }
                                         .tint(.sAccent)
                                 }

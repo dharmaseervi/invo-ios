@@ -51,11 +51,11 @@ struct CompanyBankListView: View {
                                 VStack(alignment: .leading, spacing: 3) {
                                     Text(bank.bank_name)
                                         .font(.subheadline.weight(.medium))
-                                        .foregroundStyle(.primary)
+                                        .foregroundStyle(Color.primary)
 
                                     Text("A/C: \(bank.account_number)")
                                         .font(.footnote)
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(Color.secondary)
                                 }
                                 .alignmentGuide(.listRowSeparatorLeading) { d in d[.leading] }
 
@@ -72,7 +72,7 @@ struct CompanyBankListView: View {
                                 }
                             }
                         }
-                        .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+                        .standardListRow()
                     }
                     .onDelete { indexSet in
                         if let index = indexSet.first {

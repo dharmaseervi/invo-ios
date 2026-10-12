@@ -71,7 +71,7 @@ struct ChallanListView: View {
                     } label: {
                         ChallanRow(challan: challan)
                     }
-                    .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+                    .standardListRow()
                     .listRowSeparator(.hidden, edges: challan.id == vm.challans.first?.id ? .top : [])
                 }
             }

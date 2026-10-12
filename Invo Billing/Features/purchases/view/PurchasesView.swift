@@ -26,12 +26,7 @@ struct PurchasesView: View {
             } else {
                 List {
                     dueCard
-                        .padding(.horizontal, AppSpacing.page)
-                        .padding(.top, 8)
-                        .padding(.bottom, 4)
-                        .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
+                        .listHeaderRow()
 
                     if vm.suppliers.isEmpty {
                         emptyState
@@ -41,7 +36,7 @@ struct PurchasesView: View {
                         Section {
                             ForEach(vm.suppliers) { supplier in
                                 supplierRow(supplier)
-                                    .listRowInsets(rowInsets)
+                                    .standardListRow()
                                     .swipeActions(edge: .trailing) {
                                         if supplier.due > 0 {
                                             Button("Pay") { payingSupplier = supplier }
@@ -57,7 +52,7 @@ struct PurchasesView: View {
                             Section {
                                 ForEach(vm.returns) { ret in
                                     returnRow(ret)
-                                        .listRowInsets(rowInsets)
+                                        .standardListRow()
                                         .contextMenu {
                                             Button {
                                                 fetchDebitNote(ret)
@@ -166,50 +161,35 @@ struct PurchasesView: View {
     }
 
     private var dueCard: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Owed to suppliers")
-                .font(.subheadline)
-                .foregroundColor(.sMutedFG)
-
-            if let due = vm.totalDue {
-                Text(Money.text(due)).moneyLine()
-                    .font(.title.bold())
-                    .foregroundColor(due > 0 ? .sDestructive : .sSuccess)
-                if vm.loadFailed {
-                    // The figure is real but it is the one from before the failed
-                    // refresh, and saying so is the difference between a stale number
-                    // and a wrong one.
-                    Text("Couldn't refresh — this may be out of date")
-                        .font(.footnote)
-                        .foregroundColor(.sDestructive)
-                } else {
-                    Text("Across \(vm.suppliers.filter { $0.due > 0 }.count) supplier\(vm.suppliers.filter { $0.due > 0 }.count == 1 ? "" : "s")")
-                        .font(.footnote)
-                        .foregroundColor(.sMutedFG)
-                }
+        // Never loaded: a dash, not ₹0.00 — the shop is not being told it owes nothing,
+        // it is being told we do not know.
+        SummaryCard(
+            title: "Owed to suppliers",
+            value: vm.totalDue.map { Money.text($0) } ?? "—",
+            valueColor: vm.totalDue.map { $0 > 0 ? Color.sDestructive : Color.sSuccess } ?? .sMutedFG
+        ) {
+            if vm.totalDue != nil && vm.loadFailed {
+                // The figure is real but it is the one from before the failed refresh,
+                // and saying so is the difference between a stale number and a wrong one.
+                Text("Couldn't refresh — this may be out of date")
+                    .font(.footnote)
+                    .foregroundStyle(Color.sDestructive)
+            } else if vm.totalDue != nil {
+                let owing = vm.suppliers.filter { $0.due > 0 }.count
+                Text("Across \(owing) supplier\(owing == 1 ? "" : "s")")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            } else if vm.loadFailed {
+                Button("Try again") { Task { await vm.load() } }
+                    .font(.footnote.weight(.medium))
+                    .tint(Color.sAccent)
             } else {
-                // Never loaded. A dash, not ₹0.00 — the shop is not being told it owes
-                // nothing, it is being told we do not know.
-                Text("—").moneyLine()
-                    .font(.title.bold())
-                    .foregroundColor(.sMutedFG)
-                if vm.loadFailed {
-                    Button("Try again") { Task { await vm.load() } }
-                        .font(.footnote.weight(.medium))
-                        .foregroundColor(.sAccent)
-                } else {
-                    Text("Loading…")
-                        .font(.footnote)
-                        .foregroundColor(.sMutedFG)
-                }
+                Text("Loading…")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
     }
-
-    private var rowInsets: EdgeInsets { EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20) }
 
     private func supplierRow(_ supplier: Supplier) -> some View {
         NavigationLink {
@@ -229,19 +209,27 @@ struct PurchasesView: View {
 
                 Spacer(minLength: 8)
 
-                VStack(alignment: .trailing, spacing: 3) {
-                    Text(Money.text(supplier.due)).moneyLine()
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(supplier.due > 0 ? Color.sDestructive : .secondary)
-                    // Borderless so a tap here pays rather than also opening the statement.
-                    if supplier.due > 0 {
-                        Button("Pay") { payingSupplier = supplier }
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(Color.sAccent)
-                            .buttonStyle(.borderless)
+                Text(Money.text(supplier.due)).moneyLine()
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(supplier.due > 0 ? Color.sDestructive : .secondary)
+                    .frame(minWidth: 72, alignment: .trailing)
+
+                // Its own control beside the amount, with a full 44pt target, so a tap
+                // pays rather than opening the statement. Borderless keeps it from also
+                // firing the row's NavigationLink.
+                if supplier.due > 0 {
+                    Button { payingSupplier = supplier } label: {
+                        Text("Pay")
+                            .font(.subheadline.weight(.semibold))
+                            .padding(.horizontal, 14)
+                            .frame(minHeight: AppSpacing.minimumTarget)
+                            .background(Color.sAccent.opacity(0.12), in: Capsule())
+                            .contentShape(Capsule())
                     }
+                    .buttonStyle(.borderless)
+                    .foregroundStyle(Color.sAccent)
+                    .accessibilityLabel("Pay \(supplier.name)")
                 }
-                .frame(minWidth: 88, alignment: .trailing)
             }
         }
     }

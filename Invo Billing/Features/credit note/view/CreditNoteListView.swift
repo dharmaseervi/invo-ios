@@ -99,7 +99,7 @@ struct CreditNoteListView: View {
                             } label: {
                                 CNRowView(cn: cn)
                             }
-                            .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+                            .standardListRow()
                             .listRowSeparator(.hidden, edges: cn.id == filteredNotes.first?.id ? .top : [])
                             // Per row, a few from the end: keyed on the count it fired again on
                             // every change to the list, which is both eager and repetitive.
@@ -201,34 +201,23 @@ struct CreditNoteListView: View {
 
     // MARK: - Summary
     private var cnSummaryCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            VStack(alignment: .leading, spacing: 1) {
-                Text("Total credited")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                // Dashes and a retry, not zeroes: "₹0 credited, 0 returns" above a
-                // page of real credit notes reads as fact, and it is not.
-                Text(vm.summaryFailed ? "—" : Money.text(totalAmount))
-                    .font(.title.bold())
-                    .monospacedDigit()
-                    .foregroundStyle(.primary)
-                if vm.summaryFailed {
-                    Button("Retry") { Task { await reload() } }
-                        .font(.footnote)
-                        .tint(Color.sAccent)
-                }
-            }
-
-            Divider()
-
-            AdaptiveStatRow(stats: [
+        // Dashes and a retry, not zeroes: "₹0 credited, 0 returns" above a page of real
+        // credit notes reads as fact, and it is not.
+        SummaryCard(
+            title: "Total credited",
+            value: vm.summaryFailed ? "—" : Money.text(totalAmount),
+            stats: [
                 .init(label: "Returns", value: vm.summaryFailed ? "—" : "\(returnCount)"),
                 .init(label: "Adjustments", value: vm.summaryFailed ? "—" : "\(adjustmentCount)"),
                 .init(label: "Discounts", value: vm.summaryFailed ? "—" : "\(discountCount)")
-            ])
+            ]
+        ) {
+            if vm.summaryFailed {
+                Button("Retry") { Task { await reload() } }
+                    .font(.footnote)
+                    .tint(Color.sAccent)
+            }
         }
-        .padding(12)
-        .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
     }
 
     // MARK: - Empty View
@@ -307,47 +296,6 @@ struct CNRowView: View {
             }
             .frame(minWidth: 88, alignment: .trailing)
         }
-    }
-}
-
-// MARK: - Colors Extension
-extension Color {
-    static let cnAmber = Color.fromHex("B8860B")
-    static let cnSuccess = Color.fromHex("2D5A27")
-    static let cnRed = Color.fromHex("C41E3A")
-
-    /// Create a SwiftUI Color from a hex string like "#RRGGBB" or "RRGGBB" (optionally with alpha AARRGGBB).
-    static func fromHex(_ hex: String) -> Color {
-        let cleaned = hex.trimmingCharacters(
-            in: CharacterSet.alphanumerics.inverted
-        )
-        var int: UInt64 = 0
-        Scanner(string: cleaned).scanHexInt64(&int)
-        let a: UInt64
-        let r: UInt64
-        let g: UInt64
-        let b: UInt64
-        switch cleaned.count {
-        case 3:  // RGB (12-bit)
-            (a, r, g, b) = (
-                255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17
-            )
-        case 6:  // RRGGBB (24-bit)
-            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
-        case 8:  // AARRGGBB (32-bit)
-            (a, r, g, b) = (
-                int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF
-            )
-        default:
-            (a, r, g, b) = (255, 0, 0, 0)
-        }
-        return Color(
-            .sRGB,
-            red: Double(r) / 255,
-            green: Double(g) / 255,
-            blue: Double(b) / 255,
-            opacity: Double(a) / 255
-        )
     }
 }
 

@@ -29,7 +29,7 @@ struct StaffView: View {
                     Section {
                         ForEach(vm.members) { member in
                             memberRow(member)
-                                .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 12))
+                                .standardListRow(trailing: 12)
                                 .listRowSeparator(.hidden, edges: member.id == vm.members.first?.id ? .top : [])
                         }
                     } footer: {
@@ -144,7 +144,9 @@ struct StaffView: View {
         }
         .swipeActions(edge: .trailing) {
             if !member.isOwner {
-                Button("Remove", role: .destructive) { removing = member }
+                // Not role: .destructive — that animates the row away before it is confirmed.
+                Button("Remove") { removing = member }
+                    .tint(.red)
             }
         }
     }

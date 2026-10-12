@@ -201,14 +201,6 @@ struct AuthCodeField: View {
 
     var body: some View {
         ZStack {
-            TextField("", text: $code)
-                .keyboardType(.numberPad)
-                .textContentType(.oneTimeCode)
-                .focused($focused)
-                .foregroundColor(.clear)
-                .tint(.clear)
-                .accessibilityLabel("Verification code")
-
             HStack(spacing: 8) {
                 ForEach(0..<length, id: \.self) { i in
                     Text(digit(at: i))
@@ -224,9 +216,22 @@ struct AuthCodeField: View {
                         )
                 }
             }
-            .contentShape(Rectangle())
-            .onTapGesture { focused = true }
+            .allowsHitTesting(false)
             .accessibilityHidden(true)
+
+            // The real field sits on top, invisible, so taps focus it and a long-press
+            // offers Paste for a code copied from the email.
+            TextField("", text: $code)
+                .keyboardType(.numberPad)
+                .textContentType(.oneTimeCode)
+                .focused($focused)
+                .foregroundColor(.clear)
+                .tint(.clear)
+                .frame(maxWidth: .infinity)
+                .frame(height: 56)
+                .contentShape(Rectangle())
+                .accessibilityLabel("Verification code")
+                .accessibilityValue(code)
         }
         .onChange(of: code) { newValue in
             let cleaned = String(newValue.filter(\.isNumber).prefix(length))
@@ -255,32 +260,6 @@ struct AuthHint: View {
         Label(text, systemImage: icon)
             .font(.footnote)
             .foregroundColor(AuthTheme.muted)
-    }
-}
-
-// MARK: - Labelled single field (OTP login, forgot password)
-struct AuthField: View {
-    let label: String
-    let placeholder: String
-    @Binding var text: String
-    var keyboard: UIKeyboardType = .default
-    var isSecure: Bool = false
-    var trailing: AnyView? = nil
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(label)
-                .font(.footnote.weight(.medium))
-                .foregroundColor(AuthTheme.muted)
-
-            AuthFieldGroup {
-                AuthInputRow(icon: nil, placeholder: placeholder, text: $text,
-                             keyboard: keyboard, isSecure: isSecure) {
-                    if let trailing { trailing }
-                }
-                .accessibilityLabel(label)
-            }
-        }
     }
 }
 
@@ -347,18 +326,5 @@ struct AuthErrorBanner: View {
         .foregroundColor(AuthTheme.destructive)
         .padding(12)
         .background(AuthTheme.destructive.opacity(0.08), in: RoundedRectangle(cornerRadius: AuthTheme.corner, style: .continuous))
-    }
-}
-
-// MARK: - Legacy field name (still used by OTP login / forgot password)
-struct VioletField: View {
-    let label: String
-    let placeholder: String
-    @Binding var text: String
-    let keyboard: UIKeyboardType
-    let isSecure: Bool
-    var body: some View {
-        AuthField(label: label, placeholder: placeholder, text: $text,
-                  keyboard: keyboard, isSecure: isSecure)
     }
 }

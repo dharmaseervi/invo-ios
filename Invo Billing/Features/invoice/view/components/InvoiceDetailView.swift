@@ -82,13 +82,10 @@ struct InvoiceDetailView: View {
 
                             if let phone = detail.client.phone, !phone.isEmpty {
                                 Button(action: {
-                                    let digits = phone.filter { $0.isNumber }
-                                    let fullPhone = digits.hasPrefix("91") ? digits : "91\(digits)"
-                                    let text = "Invoice \(detail.invoice_number) for ₹\(String(format: "%.0f", detail.total)) is ready. Please review and make the payment at your earliest convenience."
-                                    let encoded = text.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-                                    if let url = URL(string: "whatsapp://send?phone=\(fullPhone)&text=\(encoded)") {
-                                        UIApplication.shared.open(url)
-                                    }
+                                    WhatsApp.open(
+                                        phone: phone,
+                                        message: "Invoice \(detail.invoice_number) for ₹\(String(format: "%.0f", detail.total)) is ready. Please review and make the payment at your earliest convenience."
+                                    )
                                 }) {
                                     Label("Send via WhatsApp", systemImage: "message")
                                 }

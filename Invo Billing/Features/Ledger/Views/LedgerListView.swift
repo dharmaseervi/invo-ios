@@ -14,12 +14,7 @@ struct LedgerListView: View {
     var body: some View {
         List {
             summaryCard
-                .padding(.horizontal, AppSpacing.page)
-                .padding(.top, 8)
-                .padding(.bottom, 4)
-                .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
+                .listHeaderRow()
 
             if vm.isLoading {
                 HStack { Spacer(); ProgressView().tint(.sAccent); Spacer() }
@@ -64,7 +59,7 @@ struct LedgerListView: View {
 
                 ForEach(vm.entries) { entry in
                     LedgerRowView(entry: entry)
-                        .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+                        .standardListRow()
                         .listRowSeparator(.hidden, edges: entry.id == vm.entries.first?.id ? .top : [])
                 }
             }
@@ -104,35 +99,26 @@ struct LedgerListView: View {
     // The figures are the customer's whole history, so when they cannot be fetched the
     // screen says so rather than showing ₹0 totals above a page of real entries.
     private var summaryCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            VStack(alignment: .leading, spacing: 1) {
-                Text("Closing balance")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Text(vm.summaryFailed ? "—" : Money.text(vm.closingBalance)).moneyLine()
-                    .font(.title.bold())
-                    .foregroundStyle(vm.summaryFailed ? .secondary
-                                     : (vm.closingBalance > 0 ? Color.sDestructive : Color.sSuccess))
-                if vm.summaryFailed {
-                    Button("Totals unavailable — retry") { Task { await vm.fetchLedger() } }
-                        .font(.footnote)
-                        .tint(Color.sAccent)
-                }
-            }
-
-            Divider()
-
-            AdaptiveStatRow(stats: [
+        SummaryCard(
+            title: "Closing balance",
+            value: vm.summaryFailed ? "—" : Money.text(vm.closingBalance),
+            valueColor: vm.summaryFailed ? .sMutedFG
+                : (vm.closingBalance > 0 ? .sDestructive : .sSuccess),
+            stats: [
                 .init(label: "Total debit",
                       value: vm.summaryFailed ? "—" : Money.text(vm.totalDebit),
                       color: vm.summaryFailed ? .sForeground : .sDestructive),
                 .init(label: "Total credit",
                       value: vm.summaryFailed ? "—" : Money.text(vm.totalCredit),
                       color: vm.summaryFailed ? .sForeground : .sSuccess)
-            ])
+            ]
+        ) {
+            if vm.summaryFailed {
+                Button("Totals unavailable — retry") { Task { await vm.fetchLedger() } }
+                    .font(.footnote)
+                    .tint(Color.sAccent)
+            }
         }
-        .padding(12)
-        .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
     }
 }
 

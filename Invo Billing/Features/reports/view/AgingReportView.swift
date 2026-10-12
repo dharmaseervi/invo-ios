@@ -4,14 +4,6 @@ struct AgingReportView: View {
     @StateObject private var vm = AgingReportViewModel()
     @State private var shareURL: URL?
 
-    private let bucketColors: [Color] = [
-        .sNeutral,                          // Current
-        .sWarning,        // 1-30
-        Color(red: 0.910, green: 0.451, blue: 0.098),        // 31-60
-        Color(red: 0.863, green: 0.259, blue: 0.149),        // 61-90
-        Color(red: 0.702, green: 0.098, blue: 0.098)         // 90+
-    ]
-    private let bucketLabels = ["Current", "1-30d", "31-60d", "61-90d", "90d+"]
 
     var body: some View {
         Group {
@@ -24,20 +16,15 @@ struct AgingReportView: View {
             } else if let report = vm.report {
                 List {
                     summaryCard(report)
-                        .padding(.horizontal, AppSpacing.page)
-                        .padding(.top, 8)
-                        .padding(.bottom, 4)
-                        .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
+                        .listHeaderRow()
 
                     ForEach(report.clients) { row in
                         NavigationLink {
                             LedgerListView(clientID: row.client_id)
                         } label: {
-                            AgingClientRow(row: row, colors: bucketColors)
+                            AgingClientRow(row: row, colors: AgingBuckets.colors)
                         }
-                        .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+                        .standardListRow()
                         .listRowSeparator(.hidden, edges: row.id == report.clients.first?.id ? .top : [])
                     }
                 }
@@ -74,35 +61,16 @@ struct AgingReportView: View {
 
     // MARK: - Summary
     private func summaryCard(_ report: AgingReportResponse) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            VStack(alignment: .leading, spacing: 1) {
-                Text("Total outstanding")
-                    .font(.subheadline)
-                    .foregroundColor(.sMutedFG)
-                Text(Money.text(report.grand_total)).moneyLine()
-                    .font(.title.bold())
-                    .foregroundColor(.sForeground)
-                Text("Across \(report.clients.count) client\(report.clients.count == 1 ? "" : "s") · as of \(AppDate.text(fromWire: report.as_of))")
-                    .font(.footnote)
-                    .foregroundColor(.sMutedFG)
-            }
-
-            Divider()
-
-            let values = [
-                report.totals.current, report.totals.days_1_30, report.totals.days_31_60,
-                report.totals.days_61_90, report.totals.days_90_plus
-            ]
-            AdaptiveStatRow(stats: (0..<5).map { i in
-                .init(
-                    label: bucketLabels[i],
-                    value: Money.text(values[i]),
-                    color: values[i] > 0 ? bucketColors[i] : .sMutedFG
-                )
-            })
+        let t = report.totals
+        return SummaryCard(
+            title: "Total outstanding",
+            value: Money.text(report.grand_total),
+            stats: AgingBuckets.stats([t.current, t.days_1_30, t.days_31_60, t.days_61_90, t.days_90_plus])
+        ) {
+            Text("Across \(report.clients.count) client\(report.clients.count == 1 ? "" : "s") · as of \(AppDate.text(fromWire: report.as_of))")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
         }
-        .padding(12)
-        .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
     }
 
     // MARK: - Empty State
@@ -115,7 +83,27 @@ struct AgingReportView: View {
     }
 }
 
-// MARK: - Aging row (shared by the client and supplier reports)
+// MARK: - Shared by the client and supplier aging reports
+
+enum AgingBuckets {
+    static let labels = ["Current", "1-30d", "31-60d", "61-90d", "90d+"]
+    static let colors: [Color] = [
+        .sNeutral,                                      // Current
+        .sWarning,                                      // 1-30
+        Color(red: 0.910, green: 0.451, blue: 0.098),   // 31-60
+        Color(red: 0.863, green: 0.259, blue: 0.149),   // 61-90
+        Color(red: 0.702, green: 0.098, blue: 0.098)    // 90+
+    ]
+
+    /// One stat per bucket, coloured by age only when it holds money.
+    static func stats(_ values: [Double]) -> [AdaptiveStatRow.Stat] {
+        zip(labels, zip(values, colors)).map { label, pair in
+            .init(label: label, value: Money.text(pair.0), color: pair.0 > 0 ? pair.1 : .sMutedFG)
+        }
+    }
+}
+
+// MARK: - Aging row
 struct AgingBucketRow: View {
     let name: String
     let total: Double

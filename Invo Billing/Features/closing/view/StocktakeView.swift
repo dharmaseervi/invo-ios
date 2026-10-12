@@ -25,17 +25,12 @@ struct StocktakeView: View {
             } else {
                 List {
                     progressCard
-                        .padding(.horizontal, AppSpacing.page)
-                        .padding(.top, 8)
-                        .padding(.bottom, 4)
-                        .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
+                        .listHeaderRow()
 
                     if vm.hasCounted {
                         ForEach(vm.lines) { line in
                             lineRow(line)
-                                .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+                                .standardListRow()
                                 .listRowSeparator(.hidden, edges: line.id == vm.lines.first?.id ? .top : [])
                         }
                     } else {
@@ -103,24 +98,16 @@ struct StocktakeView: View {
     }
 
     private var progressCard: some View {
-        VStack(alignment: .leading, spacing: 1) {
-            Text("Counted so far")
-                .font(.subheadline)
-                .foregroundColor(.sMutedFG)
-            Text("\(vm.lines.count) item\(vm.lines.count == 1 ? "" : "s")")
-                .font(.title.bold())
-                .foregroundColor(.sForeground)
+        SummaryCard(
+            title: "Counted so far",
+            value: "\(vm.lines.count) item\(vm.lines.count == 1 ? "" : "s")"
+        ) {
             Text(vm.itemsOff == 0
                  ? "All matching the books so far"
                  : "\(vm.itemsOff) not matching the books")
                 .font(.footnote)
-                .foregroundColor(vm.itemsOff == 0
-                                 ? .sSuccess
-                                 : .sDestructive)
+                .foregroundStyle(vm.itemsOff == 0 ? Color.sSuccess : Color.sDestructive)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
     }
 
     private func lineRow(_ line: StocktakeLine) -> some View {

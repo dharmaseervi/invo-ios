@@ -36,7 +36,7 @@ struct CompanyView: View {
                             onEdit: { editingCompanyID = company.id },
                             onManageBanks: { bankCompanyID = company.id }
                         )
-                        .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 12))
+                        .standardListRow(trailing: 12)
                         .listRowSeparator(.hidden, edges: company.id == vm.companies.first?.id ? .top : [])
                     }
                 }

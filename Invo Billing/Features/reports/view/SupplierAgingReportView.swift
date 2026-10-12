@@ -4,14 +4,6 @@ struct SupplierAgingReportView: View {
     @StateObject private var vm = SupplierAgingViewModel()
     @State private var shareItem: SupplierShareWrapper?
 
-    private let bucketColors: [Color] = [
-        .sNeutral,
-        .sWarning,
-        Color(red: 0.910, green: 0.451, blue: 0.098),
-        Color(red: 0.863, green: 0.259, blue: 0.149),
-        Color(red: 0.702, green: 0.098, blue: 0.098)
-    ]
-    private let bucketLabels = ["Current", "1-30d", "31-60d", "61-90d", "90d+"]
 
     var body: some View {
         Group {
@@ -22,12 +14,7 @@ struct SupplierAgingReportView: View {
             } else if let report = vm.report, !report.suppliers.isEmpty {
                 List {
                     summaryCard(report)
-                        .padding(.horizontal, AppSpacing.page)
-                        .padding(.top, 8)
-                        .padding(.bottom, 4)
-                        .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
+                        .listHeaderRow()
 
                     ForEach(report.suppliers) { row in
                         AgingBucketRow(
@@ -35,9 +22,9 @@ struct SupplierAgingReportView: View {
                             total: row.total,
                             buckets: [row.buckets.current, row.buckets.days_1_30, row.buckets.days_31_60,
                                       row.buckets.days_61_90, row.buckets.days_90_plus],
-                            colors: bucketColors
+                            colors: AgingBuckets.colors
                         )
-                        .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+                        .standardListRow()
                         .listRowSeparator(.hidden, edges: row.id == report.suppliers.first?.id ? .top : [])
                     }
                 }
@@ -74,33 +61,16 @@ struct SupplierAgingReportView: View {
     }
 
     private func summaryCard(_ report: SupplierAgingReport) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            VStack(alignment: .leading, spacing: 1) {
-                Text("Total owed to suppliers")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Text(Money.text(report.grand_total)).moneyLine()
-                    .font(.title.bold())
-                    .foregroundStyle(.primary)
-                Text("Across \(report.suppliers.count) supplier\(report.suppliers.count == 1 ? "" : "s") · as of \(AppDate.text(fromWire: report.as_of))")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-
-            Divider()
-
-            let t = report.totals
-            let values = [t.current, t.days_1_30, t.days_31_60, t.days_61_90, t.days_90_plus]
-            AdaptiveStatRow(stats: (0..<5).map { i in
-                .init(
-                    label: bucketLabels[i],
-                    value: Money.text(values[i]),
-                    color: values[i] > 0 ? bucketColors[i] : .sMutedFG
-                )
-            })
+        let t = report.totals
+        return SummaryCard(
+            title: "Total owed to suppliers",
+            value: Money.text(report.grand_total),
+            stats: AgingBuckets.stats([t.current, t.days_1_30, t.days_31_60, t.days_61_90, t.days_90_plus])
+        ) {
+            Text("Across \(report.suppliers.count) supplier\(report.suppliers.count == 1 ? "" : "s") · as of \(AppDate.text(fromWire: report.as_of))")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
         }
-        .padding(12)
-        .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
     }
 }
 

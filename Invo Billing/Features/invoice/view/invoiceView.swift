@@ -163,12 +163,7 @@ struct InvoiceView: View {
                 if SessionManager.shared.companyRole.canSeeReports
                    && (!filteredInvoices.isEmpty || !searchText.isEmpty) {
                     summaryCard
-                        .padding(.horizontal, AppSpacing.page)
-                        .padding(.top, 8)
-                        .padding(.bottom, 4)
-                        .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
+                        .listHeaderRow()
                 }
 
                 // Filter chips scroll with the list
@@ -190,7 +185,7 @@ struct InvoiceView: View {
                 } else {
                     ForEach(filteredInvoices) { invoice in
                         invoiceListRow(invoice)
-                            .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+                            .standardListRow()
                             .listRowSeparator(.hidden, edges: invoice.id == filteredInvoices.first?.id ? .top : [])
                     }
 
