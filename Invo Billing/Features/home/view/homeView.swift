@@ -6,18 +6,19 @@ struct HomeView: View {
     @StateObject private var companyVM = CompanyFormViewModel()
     @State private var selectedPeriod = "Week"
     @State private var appeared = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var selectedCompanyName: String {
         companyVM.companies.first(where: { $0.id == session.selectedCompanyId })?.name ?? "Select company"
     }
 
     private func apiPeriod(_ ui: String) -> String { ui.lowercased() }
-    private func fetch() {
+    private func fetch() async {
         // Not asked for at all when the role cannot have it. Calling it anyway would
         // spend a request to be told 403 and leave an error on screen that is not a
         // fault — the person simply does not do this part of the job.
         guard SessionManager.shared.companyRole.canSeeReports else { return }
-        Task { await viewModel.load(period: apiPeriod(selectedPeriod)) }
+        await viewModel.load(period: apiPeriod(selectedPeriod))
     }
 
     /// Home for somebody who bills at the counter: the work, and none of the money
@@ -50,21 +51,38 @@ struct HomeView: View {
                 VStack(spacing: 20) {
                     if !session.companyRole.canSeeReports {
                         counterHome
-                    } else if viewModel.isLoading {
-                        skeletonView
-                    } else if let errorMessage = viewModel.errorMessage {
-                        errorView(errorMessage)
                     } else {
-                        revenueCard
-                        statsRow
+                        if viewModel.dashboard != nil {
+                            if viewModel.isLoading {
+                                ProgressView("Refreshing figures…").tint(.sAccent)
+                            }
+                            if let error = viewModel.errorMessage {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Couldn't refresh. These figures may be out of date.").font(.subheadline)
+                                    if let updated = viewModel.updatedAt {
+                                        Text("Updated \(updated.formatted(date: .abbreviated, time: .shortened))")
+                                            .font(.footnote).foregroundStyle(.secondary)
+                                    }
+                                    Text(error).font(.footnote).foregroundStyle(.secondary)
+                                    Button("Retry") { Task { await fetch() } }
+                                }.padding(.horizontal, AppSpacing.page)
+                            }
+                            revenueCard
+                            statsRow
+                        } else if viewModel.isLoading {
+                            skeletonView.accessibilityHidden(true)
+                            ProgressView("Loading figures…")
+                        } else if let error = viewModel.errorMessage {
+                            errorView(error)
+                        }
                         quickActionsCard
-                        recentActivityCard
+                        if viewModel.dashboard != nil { recentActivityCard }
                     }
                 }
                 .padding(.top, 20)
                 .padding(.bottom, 24)
             }
-            .refreshable { fetch() }
+            .refreshable { await fetch() }
             .background(Color(UIColor.systemGroupedBackground))
             .navigationTitle(session.companyRole.canSeeReports ? "Dashboard" : "Today")
             .navigationBarTitleDisplayMode(.large)
@@ -117,13 +135,12 @@ struct HomeView: View {
                     }
                 }
             }
-            .onAppear {
-                fetch()
-                withAnimation(.easeOut(duration: 0.3)) { appeared = true }
-                Task { await companyVM.loadCompanies() }
+            .task(id: "\(session.selectedCompanyId ?? 0):\(selectedPeriod)") { await fetch() }
+            .task {
+                if reduceMotion { appeared = true }
+                else { withAnimation(.easeOut(duration: 0.3)) { appeared = true } }
+                await companyVM.loadCompanies()
             }
-            .onChange(of: selectedPeriod) { _ in fetch() }
-            .onChange(of: session.selectedCompanyId) { _ in fetch() }
         }
     }
     
@@ -256,7 +273,7 @@ struct HomeView: View {
     // MARK: - Cash position row (receivable / overdue / payable)
     var statsRow: some View {
         VStack(spacing: 10) {
-            HStack(spacing: 10) {
+            AdaptiveFormRow {
                 cashTile(
                     label: "To collect",
                     value: viewModel.dashboard?.receivables?.total ?? 0,
@@ -290,12 +307,11 @@ struct HomeView: View {
             Text(Money.compact(value)).moneyLine()
                 .font(.subheadline.weight(.semibold))
                 .foregroundColor(color)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
+                .accessibilityLabel(Money.text(value))
             Text(sub)
                 .font(.caption)
                 .foregroundColor(.sMutedFG)
-                .lineLimit(1)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
@@ -416,7 +432,7 @@ struct HomeView: View {
                 .foregroundColor(.sMutedFG)
                 .multilineTextAlignment(.center)
             Button {
-                fetch()
+                Task { await fetch() }
             } label: {
                 Text("Retry")
                     .font(.subheadline.weight(.medium))
@@ -577,25 +593,21 @@ struct HomeActivityRow: View {
 
 // MARK: - Shimmer Effect
 struct ShimmerModifier: ViewModifier {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var phase: CGFloat = 0
-    
+
     func body(content: Content) -> some View {
         content
-            .overlay(
-                LinearGradient(
-                    colors: [
-                        Color.sBorder.opacity(0),
-                        Color.sBorder.opacity(0.5),
-                        Color.sBorder.opacity(0)
-                    ],
-                    startPoint: .init(x: phase - 0.3, y: 0),
-                    endPoint: .init(x: phase + 0.3, y: 0)
-                )
-            )
-            .onAppear {
-                withAnimation(.linear(duration: 1.4).repeatForever(autoreverses: false)) {
-                    phase = 1.3
+            .overlay {
+                if !reduceMotion {
+                    LinearGradient(colors: [Color.sBorder.opacity(0), Color.sBorder.opacity(0.5), Color.sBorder.opacity(0)],
+                        startPoint: .init(x: phase - 0.3, y: 0), endPoint: .init(x: phase + 0.3, y: 0))
                 }
+            }
+            .accessibilityHidden(true)
+            .task(id: reduceMotion) {
+                guard !reduceMotion else { phase = 0; return }
+                withAnimation(.linear(duration: 1.4).repeatForever(autoreverses: false)) { phase = 1.3 }
             }
     }
 }

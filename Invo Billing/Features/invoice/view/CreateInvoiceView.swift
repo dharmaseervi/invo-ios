@@ -191,6 +191,8 @@ struct CreateInvoiceView: View {
         // low-memory phone, with no chance to save anything on the way out.
         .onChange(of: vm.selectedClient) { _ in vm.saveDraft() }
         .onChange(of: vm.items) { _ in vm.saveDraft() }
+        .onChange(of: vm.tdsRate) { _ in vm.saveDraft() }
+        .onChange(of: vm.docType) { _ in vm.saveDraft() }
         .onChange(of: vm.discount) { _ in vm.saveDraft() }
         .onChange(of: vm.invoiceDate) { _ in vm.saveDraft() }
         .onChange(of: vm.dueDate) { _ in vm.saveDraft() }

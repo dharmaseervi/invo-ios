@@ -27,7 +27,10 @@ struct ProfitLossView: View {
                             profitCard(r)
                             breakdownSection(r)
                             countsSection(r)
-                        } else if !vm.isLoading {
+                            Text("Includes tax and all purchases in this period, rather than the cost of inventory sold. Credit notes and purchase returns are not deducted. Use this as a business summary, not an accounting profit statement.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        } else if !vm.isLoading && vm.errorMessage == nil {
                             emptyState
                         }
 
@@ -46,7 +49,15 @@ struct ProfitLossView: View {
                 }
             }
         }
-        .navigationTitle("Profit & Loss")
+        .safeAreaInset(edge: .top) {
+            if let message = vm.errorMessage {
+                ReportStatusView(message: message, hasData: vm.report != nil) { await vm.load() }
+                    .background(Color.sBackground)
+            } else if vm.isLoading && vm.report != nil {
+                ProgressView("Refreshing…").padding(8)
+            }
+        }
+        .navigationTitle("Business summary")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -55,7 +66,7 @@ struct ProfitLossView: View {
                 } label: {
                     Image(systemName: "square.and.arrow.up")
                 }
-                .disabled(vm.report == nil)
+                .disabled(!vm.canExport)
             }
         }
         .sheet(item: Binding(
@@ -64,7 +75,7 @@ struct ProfitLossView: View {
         )) { wrapper in
             PLShareSheet(activityItems: [wrapper.url])
         }
-        .task { await vm.load() }
+        .task(id: SessionManager.shared.selectedCompanyId) { await vm.load() }
         .onChange(of: vm.selectedPeriod) { _, _ in Task { await vm.load() } }
         .alert("Report", isPresented: $vm.showAlert) {
             Button("OK", role: .cancel) {}
@@ -89,16 +100,16 @@ struct ProfitLossView: View {
     private func profitCard(_ r: ProfitLossResponse) -> some View {
         let isLoss = r.net_profit < -0.004
         return VStack(alignment: .leading, spacing: 8) {
-            Text(isLoss ? "Net loss" : "Net profit")
+            Text("After expenses")
                 .font(.subheadline)
                 .foregroundColor(.sMutedFG)
 
-            Text(Money.text(abs(r.net_profit))).moneyLine()
+            Text(Money.text(r.net_profit)).moneyLine()
                 .font(.largeTitle.weight(.bold))
                 .foregroundColor(isLoss ? .sDestructive : .sSuccess)
 
             if r.revenue > 0 {
-                Text("\(String(format: "%.1f", r.net_margin_pct))% net margin · \(String(format: "%.1f", r.gross_margin_pct))% gross margin")
+                Text("\(String(format: "%.1f", r.net_margin_pct))% after expenses · \(String(format: "%.1f", r.gross_margin_pct))% sales less purchases")
                     .font(.footnote)
                     .foregroundColor(.sMutedFG)
             }
@@ -121,7 +132,7 @@ struct ProfitLossView: View {
             breakdownRow(
                 icon: "arrow.down.circle.fill",
                 iconColor: .sSuccess,
-                label: "Revenue",
+                label: "Invoice sales",
                 detail: "\(r.invoice_count) invoice\(r.invoice_count == 1 ? "" : "s")",
                 amount: r.revenue,
                 amountColor: .sSuccess,
@@ -141,7 +152,7 @@ struct ProfitLossView: View {
 
             // Gross profit line
             HStack {
-                Text("Gross profit")
+                Text("Sales less purchases")
                     .font(.subheadline.weight(.medium))
                     .foregroundColor(.sForeground)
                 Spacer()

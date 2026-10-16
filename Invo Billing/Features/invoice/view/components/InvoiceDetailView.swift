@@ -14,9 +14,11 @@ struct InvoiceDetailView: View {
     @State private var isDuplicating = false
     @State private var shareLink: String?
     @State private var showShareSheet = false
+    private var loadedDetail: InvoiceDetailResponse? { vm.matchingDetail(for: invoiceID) }
+    private var canAct: Bool { vm.canAct(on: invoiceID) && !isDeleting && !isCancelling && !isDuplicating }
     // Check if invoice is draft
     private var isDraft: Bool {
-        vm.invoiceDetail?.status.rawValue == "draft"
+        loadedDetail?.status.rawValue == "draft"
     }
 
     private func statusConfig(for detail: InvoiceDetailResponse) -> (label: String, color: Color) {
@@ -65,7 +67,7 @@ struct InvoiceDetailView: View {
                             Label("Download PDF", systemImage: "arrow.down.doc")
                         }
 
-                        if let detail = vm.invoiceDetail {
+                        if let detail = loadedDetail {
                             NavigationLink {
                                 InvoicePrintView(invoiceDetail: detail)
                             } label: {
@@ -104,7 +106,7 @@ struct InvoiceDetailView: View {
 
                         // Goods back or a price corrected, against this invoice so its
                         // balance goes down. Only an issued invoice can be credited.
-                        if let detail = vm.invoiceDetail,
+                        if let detail = loadedDetail,
                            [.issued, .partial, .paid].contains(detail.status) {
                             Button(action: { showCreditNote = true }) {
                                 Label("Credit note", systemImage: "arrow.uturn.backward.circle")
@@ -118,7 +120,7 @@ struct InvoiceDetailView: View {
                         }
                         .disabled(isDuplicating)
 
-                        if let detail = vm.invoiceDetail, detail.status != .draft, detail.status != .cancelled {
+                        if let detail = loadedDetail, detail.status != .draft, detail.status != .cancelled {
                             Button {
                                 Task { await generateShareLink() }
                             } label: {
@@ -128,7 +130,7 @@ struct InvoiceDetailView: View {
 
                         // Cancel voids the invoice and zeroes the ledger entry.
                         // Only available on issued/partial — drafts can simply be deleted.
-                        if let detail = vm.invoiceDetail,
+                        if let detail = loadedDetail,
                            [.issued, .partial].contains(detail.status) {
                             Divider()
                             Button(role: .destructive, action: { showCancelConfirmation = true }) {
@@ -148,10 +150,12 @@ struct InvoiceDetailView: View {
                     } label: {
                         Image(systemName: "ellipsis")
                     }
+                    .accessibilityLabel("Invoice actions")
+                    .disabled(!canAct)
                     }
                 }
 
-                if vm.isFetchingDetail {
+                if vm.isFetchingDetail && loadedDetail == nil {
                     VStack(spacing: 12) {
                         ProgressView()
                             .tint(.sAccent)
@@ -160,10 +164,14 @@ struct InvoiceDetailView: View {
                             .foregroundColor(.sMutedFG)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if let detail = vm.invoiceDetail {
+                } else if let detail = loadedDetail {
                     ScrollView(.vertical, showsIndicators: false) {
                         VStack(spacing: 0) {
-
+                            if let message = vm.detailError {
+                                ReportStatusView(message: message, hasData: true) { await vm.fetchInvoiceDetail(invoiceID: invoiceID) }
+                            } else if vm.isFetchingDetail {
+                                ProgressView("Refreshing…").padding()
+                            }
                             // MARK: - Invoice Header Card
                             VStack(alignment: .leading, spacing: 16) {
                                 HStack(spacing: 14) {
@@ -210,7 +218,7 @@ struct InvoiceDetailView: View {
 
                                 HStack(alignment: .firstTextBaseline) {
                                     VStack(alignment: .leading, spacing: 3) {
-                                        Text("Total amount")
+                                        Text("Invoice total")
                                             .font(.caption)
                                             .foregroundColor(.sMutedFG)
                                         Text(Money.text(detail.total)).moneyLine()
@@ -329,6 +337,7 @@ struct InvoiceDetailView: View {
                                     }
                                 }
                             }
+                            .disabled(!canAct)
                             .padding(.horizontal, AppSpacing.page)
                             .padding(.top, 16)
 
@@ -399,14 +408,17 @@ struct InvoiceDetailView: View {
                                         SummaryRowItemZara(label: "Invoice total", value: detail.total, isTotal: false)
                                         Rectangle().fill(Color.sBorder).frame(height: 0.5).padding(.horizontal, 14)
                                         SummaryRowItemZara(
-                                            label: "TDS @ \(tdsRate.formatted(.number.precision(.fractionLength(0...1))))%",
+                                            label: "Expected TDS @ \(tdsRate.formatted(.number.precision(.fractionLength(0...1))))%",
                                             value: -tdsAmount,
                                             isTotal: false
                                         )
+                                        SummaryRowItemZara(label: "Tax withheld", value: detail.tds_withheld ?? 0, isTotal: false)
+                                        SummaryRowItemZara(label: "Total settled", value: detail.paid_amount, isTotal: false)
+                                        SummaryRowItemZara(label: "Amount due", value: detail.remaining_amount, isTotal: false)
                                         Rectangle().fill(Color.sBorder).frame(height: 0.5).padding(.horizontal, 14)
                                         SummaryRowItemZara(
-                                            label: "Net receivable",
-                                            value: detail.total - tdsAmount,
+                                            label: "Cash due if remaining TDS is withheld",
+                                            value: max(detail.remaining_amount - max(tdsAmount - (detail.tds_withheld ?? 0), 0), 0),
                                             isTotal: true
                                         )
                                     } else {
@@ -421,7 +433,7 @@ struct InvoiceDetailView: View {
                             }
                         }
                     }
-                } else if let error = vm.errorMessage {
+                } else if let error = vm.detailError {
                     VStack(spacing: 12) {
                         Image(systemName: "exclamationmark.triangle")
                             .font(.title)
@@ -431,6 +443,8 @@ struct InvoiceDetailView: View {
                             .font(.subheadline.weight(.semibold))
                             .foregroundColor(.sForeground)
 
+                        Button("Retry") { Task { await vm.fetchInvoiceDetail(invoiceID: invoiceID) } }
+                            .buttonStyle(.bordered)
                         Text(error)
                             .font(.footnote)
                             .foregroundColor(.sMutedFG)
@@ -442,7 +456,7 @@ struct InvoiceDetailView: View {
             }
 
             // Loading Overlay
-            if vm.isFetchingDetail {
+            if vm.isFetchingDetail && loadedDetail == nil {
                 ZStack {
                     Color.black.opacity(0.2)
                         .ignoresSafeArea()
@@ -464,13 +478,9 @@ struct InvoiceDetailView: View {
         }
         .navigationTitle("Invoice details")
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear {
-            Task {
-                await vm.fetchInvoiceDetail(invoiceID: invoiceID)
-            }
-        }
+        .task(id: "\(SessionManager.shared.selectedCompanyId ?? 0):\(invoiceID)") { await vm.fetchInvoiceDetail(invoiceID: invoiceID) }
         .navigationDestination(isPresented: $showRecordPayment) {
-            if let detail = vm.invoiceDetail {
+            if let detail = loadedDetail {
                 RecordPaymentView(
                     vm: RecordPaymentViewModel(
                         companyID: SessionManager.shared.selectedCompanyId ?? 0,
@@ -492,6 +502,7 @@ struct InvoiceDetailView: View {
         ) {
             Button("Delete invoice", role: .destructive) {
                 Task {
+                    guard canAct else { return }
                     isDeleting = true
                     let deleted = await vm.deleteInvoice(invoiceID: invoiceID)
                     isDeleting = false
@@ -558,7 +569,7 @@ struct InvoiceDetailView: View {
             // A credit note changes the balance shown here.
             Task { await vm.fetchInvoiceDetail(invoiceID: invoiceID) }
         }) {
-            if let detail = vm.invoiceDetail {
+            if let detail = loadedDetail {
                 NavigationStack {
                     CreateCreditNoteView(invoice: detail)
                 }
@@ -571,6 +582,7 @@ struct InvoiceDetailView: View {
         ) {
             Button("Cancel invoice", role: .destructive) {
                 Task {
+                    guard canAct else { return }
                     isCancelling = true
                     let cancelled = await vm.cancelInvoice(invoiceID: invoiceID)
                     isCancelling = false
@@ -589,7 +601,7 @@ struct InvoiceDetailView: View {
             }
         }
         .sheet(isPresented: $vm.showEmailSheet) {
-            if let detail = vm.invoiceDetail {
+            if let detail = loadedDetail {
                 SendEmailSheet(
                     invoiceID: invoiceID,
                     invoiceNumber: detail.invoice_number,
@@ -613,13 +625,14 @@ struct InvoiceDetailView: View {
     }
 
     private func duplicateInvoice() async {
+        guard canAct else { return }
         isDuplicating = true
         defer { isDuplicating = false }
         guard let token = SessionManager.shared.token else { return }
         var req = URLRequest(url: URL(string: "\(AppEnvironment.baseURL)/invoices/\(invoiceID)/duplicate")!)
         req.httpMethod = "POST"
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        guard let (data, _) = try? await URLSession.shared.data(for: req),
+        guard let (data, _) = try? await APIClient.shared.data(for: req),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let newID = json["invoice_id"] as? Int else {
             vm.errorMessage = "Failed to duplicate invoice"
@@ -632,11 +645,12 @@ struct InvoiceDetailView: View {
     }
 
     private func generateShareLink() async {
+        guard canAct else { return }
         guard let token = SessionManager.shared.token else { return }
         var req = URLRequest(url: URL(string: "\(AppEnvironment.baseURL)/invoices/\(invoiceID)/share")!)
         req.httpMethod = "POST"
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        guard let (data, _) = try? await URLSession.shared.data(for: req),
+        guard let (data, _) = try? await APIClient.shared.data(for: req),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let shareToken = json["token"] as? String else {
             vm.errorMessage = "Failed to generate share link"

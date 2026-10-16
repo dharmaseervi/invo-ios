@@ -7,7 +7,11 @@ import Combine
 //
 import Foundation
 
+@MainActor
 final class SessionManager: ObservableObject {
+    private(set) var credentialGeneration = 0
+    @Published var recoveryError: String?
+    private var restoring = false
     static let shared = SessionManager()
 
     @Published var isAuthenticated = false
@@ -47,7 +51,7 @@ final class SessionManager: ObservableObject {
         }
         do {
             let companies = try await CompanyService().getMyCompany()
-            guard let mine = companies?.first(where: { $0.id == companyID }) else { return }
+            guard selectedCompanyId == companyID, let mine = companies?.first(where: { $0.id == companyID }) else { return }
             // A server that does not send a role at all is one from before staff
             // existed, where everybody is the owner of what they can see.
             companyRole = mine.role.map { MemberRole($0) } ?? .owner
@@ -114,6 +118,8 @@ final class SessionManager: ObservableObject {
     /// - Parameter freshLogin: true right after the user just typed a password/OTP and succeeded —
     ///   skips the biometric gate since they already proved identity this run.
     func loadTokenFromKeychain(freshLogin: Bool = false) {
+        guard !restoring else { return }
+        recoveryError = nil
         if let saved = KeychainManager.shared.loadToken() {
             token = saved
 
@@ -127,7 +133,7 @@ final class SessionManager: ObservableObject {
                 sessionReady = true
                 loadSelectedCompany()
                 // Proactively refresh when within 24 h of expiry.
-                if tokenExpiresWithin(saved, seconds: 86_400) {
+                if tokenExpiresWithin(saved, seconds: 86_400), KeychainManager.shared.loadRefreshToken() != nil {
                     Task { try? await AuthService.shared.refreshAccessToken() }
                 }
             }
@@ -139,6 +145,9 @@ final class SessionManager: ObservableObject {
 
     @MainActor
     private func tryRefreshOrLogout(freshLogin: Bool) async {
+        guard !restoring else { return }
+        restoring = true
+        defer { restoring = false }
         do {
             let resp = try await AuthService.shared.refreshAccessToken()
             token = resp.token
@@ -146,10 +155,37 @@ final class SessionManager: ObservableObject {
             isUnlocked = freshLogin || !isBiometricLockEnabled
             sessionReady = true
             loadSelectedCompany()
+        } catch is SessionExpiredError {
+            clearLocalSession()
+        } catch is CancellationError {
+            sessionReady = true
         } catch {
-            logout()
+            // An offline launch must not destroy a still-valid refresh credential.
+            recoveryError = "Unable to reconnect. Check your connection and try again."
             sessionReady = true
         }
+    }
+
+    func storeCredentials(token: String, refreshToken: String?, sessionID: String?, replacingSession: Bool) throws {
+        if replacingSession { credentialGeneration += 1; APIClient.shared.cancelRefresh() }
+        let keychain = KeychainManager.shared
+        let saved = keychain.saveToken(token)
+        let refreshSaved = refreshToken.map { keychain.saveRefreshToken($0) } ?? keychain.deleteRefreshToken()
+        let sessionSaved = sessionID.map { keychain.saveSessionID($0) } ?? keychain.deleteSessionID()
+        guard saved && refreshSaved && sessionSaved else {
+            clearLocalSession()
+            throw AuthErrorResponse(error: "Unable to securely save your session. Please sign in again.")
+        }
+        self.token = token
+        recoveryError = nil
+        AuthService.shared.setAuthToken(token)
+    }
+
+    func refreshOnActivation() async {
+        guard isAuthenticated, let token, tokenExpiresWithin(token, seconds: 60) else { return }
+        do { _ = try await APIClient.shared.refreshAccessToken() }
+        catch is SessionExpiredError { clearLocalSession() }
+        catch { /* Keep credentials and current content during a temporary outage. */ }
     }
 
     func logout() {
@@ -158,6 +194,14 @@ final class SessionManager: ObservableObject {
         let authToken = KeychainManager.shared.loadToken()
         Task { try? await userService.shared.logoutRequest(authToken: authToken) }
 
+        clearLocalSession()
+    }
+
+    func clearLocalSession() {
+        credentialGeneration += 1
+        APIClient.shared.cancelRefresh()
+        AuthService.shared.setAuthToken(nil)
+        recoveryError = nil
         _ = KeychainManager.shared.deleteToken()
         _ = KeychainManager.shared.deleteRefreshToken()
         _ = KeychainManager.shared.deleteSessionID()
@@ -181,7 +225,7 @@ final class SessionManager: ObservableObject {
 func tokenExpiresWithin(_ token: String, seconds: TimeInterval) -> Bool {
     let parts = token.split(separator: ".")
     if parts.count != 3 { return true }
-    var padded = String(parts[1])
+    var padded = String(parts[1]).replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
     padded = padded.padding(toLength: ((padded.count + 3) / 4) * 4, withPad: "=", startingAt: 0)
     guard let data = Data(base64Encoded: padded),
           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -195,7 +239,7 @@ func isTokenExpired(_ token: String) -> Bool {
     if parts.count != 3 { return true }
 
     let payloadPart = parts[1]
-    var padded = String(payloadPart)
+    var padded = String(payloadPart).replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
     padded = padded.padding(
         toLength: ((padded.count + 3) / 4) * 4,
         withPad: "=",

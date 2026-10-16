@@ -360,6 +360,7 @@ struct ItemLookupResultSheet: View {
 
 // MARK: - Item List Row View
 struct ItemListRowView: View {
+    @Environment(\.dynamicTypeSize) private var textSize
     let item: ItemResponse
     let onTapRow: () -> Void
     let onTapPrint: () -> Void
@@ -381,14 +382,17 @@ struct ItemListRowView: View {
 
             Button(action: onTapRow) {
                 HStack(spacing: 12) {
+                    if !textSize.isAccessibilitySize {
                     Text(String(item.name.prefix(1)).uppercased())
                         .font(.subheadline.weight(.semibold))
                         .foregroundColor(.sAccentFG)
                         .frame(width: 40, height: 40)
                         .background(Color.sAccent, in: RoundedRectangle(cornerRadius: 10))
+                        .accessibilityHidden(true)
+                    }
 
                     VStack(alignment: .leading, spacing: 4) {
-                        HStack(spacing: 6) {
+                        AdaptiveFormRow {
                             Text(item.name)
                                 .font(.subheadline.weight(.medium))
                                 .foregroundStyle(.primary)
@@ -405,7 +409,7 @@ struct ItemListRowView: View {
                         }
                         .alignmentGuide(.listRowSeparatorLeading) { d in d[.leading] }
 
-                        HStack(spacing: 8) {
+                        AdaptiveFormRow {
                             Text(Money.text(item.price)).moneyLine()
                                 .font(.footnote)
                                 .foregroundStyle(.primary)
@@ -438,8 +442,11 @@ struct ItemListRowView: View {
                     Image(systemName: "qrcode")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.secondary)
+                        .frame(minWidth: AppSpacing.minimumTarget, minHeight: AppSpacing.minimumTarget)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Print labels for \(item.name)")
             }
         }
     }

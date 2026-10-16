@@ -164,12 +164,13 @@ struct ItemsSection: View {
 
 // MARK: - Item Row Component
 struct ItemRowZara: View {
+    @Environment(\.dynamicTypeSize) private var textSize
     let item: InvoiceLineItem
     let onEdit: () -> Void
     let onDelete: () -> Void
 
     var body: some View {
-        HStack(spacing: 12) {
+        AdaptiveFormRow {
             Text(String(item.item.name.prefix(1)).uppercased())
                 .font(.footnote.weight(.semibold))
                 .foregroundColor(.sAccentFG)
@@ -181,9 +182,9 @@ struct ItemRowZara: View {
                 Text(item.item.name)
                     .font(.subheadline.weight(.medium))
                     .foregroundColor(.sForeground)
-                    .lineLimit(1)
+                    .lineLimit(textSize.isAccessibilitySize ? nil : 2)
 
-                HStack(spacing: 6) {
+                AdaptiveFormRow {
                     Text("Qty: \(item.qty)")
                         .font(.caption)
                         .foregroundColor(.sMutedFG)
@@ -216,11 +217,15 @@ struct ItemRowZara: View {
                             .font(.footnote)
                             .foregroundColor(.sMutedFG)
                     }
+                    .frame(minWidth: 44, minHeight: 44)
+                    .accessibilityLabel("Edit \(item.item.name)")
                     Button(action: onDelete) {
                         Image(systemName: "trash")
                             .font(.footnote)
                             .foregroundColor(.sDestructive)
                     }
+                    .frame(minWidth: 44, minHeight: 44)
+                    .accessibilityLabel("Remove \(item.item.name)")
                 }
             }
         }
@@ -316,6 +321,8 @@ struct EditItemSheetZara: View {
                                                 .foregroundColor(.sMutedFG)
                                         }
 
+                                        .frame(minWidth: 44, minHeight: 44)
+                                        .accessibilityLabel("Decrease quantity")
                                         TextField("Qty", value: $qty, format: .number)
                                             .font(.subheadline.weight(.semibold))
                                             .multilineTextAlignment(.center)
@@ -328,6 +335,8 @@ struct EditItemSheetZara: View {
                                                 .font(.title3)
                                                 .foregroundColor(.sMutedFG)
                                         }
+                                        .frame(minWidth: 44, minHeight: 44)
+                                        .accessibilityLabel("Increase quantity")
                                     }
                                     .padding(.horizontal, 14)
                                     .padding(.vertical, 12)

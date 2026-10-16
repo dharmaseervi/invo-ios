@@ -32,7 +32,7 @@ struct SummarySection: View {
 
                 Rectangle().fill(Color.sBorder).frame(height: 0.5).padding(.horizontal, 14)
 
-                HStack(spacing: 0) {
+                AdaptiveFormRow {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Tax")
                             .font(.subheadline)
@@ -53,7 +53,7 @@ struct SummarySection: View {
 
                 Rectangle().fill(Color.sBorder).frame(height: 0.5).padding(.horizontal, 14)
 
-                HStack(spacing: 0) {
+                AdaptiveFormRow {
                     Text("Discount")
                         .font(.subheadline)
                         .foregroundColor(.sForeground)
@@ -70,7 +70,8 @@ struct SummarySection: View {
                             .font(.subheadline)
                             .foregroundColor(.sForeground)
                             .tint(.sAccent)
-                            .frame(width: 80)
+                            .frame(minWidth: 80, idealWidth: 120)
+                            .accessibilityLabel("Invoice discount")
                             .focused($discountFocused)
                             .onChange(of: discountText) { newValue in
                                 discount = min(max(Double(newValue) ?? 0, 0), subtotal + tax)
@@ -91,7 +92,7 @@ struct SummarySection: View {
                 Rectangle().fill(Color.sBorder).frame(height: 0.5).padding(.horizontal, 14)
 
                 // TDS row
-                HStack(spacing: 0) {
+                AdaptiveFormRow {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("TDS deduction")
                             .font(.subheadline)
@@ -116,6 +117,8 @@ struct SummarySection: View {
                                 .font(.caption)
                                 .foregroundColor(.sMutedFG)
                         }
+                        .frame(minHeight: 44)
+                        .accessibilityLabel("TDS rate")
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
                         .background(Color.sMuted)
@@ -127,7 +130,7 @@ struct SummarySection: View {
 
                 if tdsRate > 0 {
                     Rectangle().fill(Color.sBorder).frame(height: 0.5).padding(.horizontal, 14)
-                    HStack {
+                    AdaptiveFormRow {
                         Text("TDS @ \(tdsRate.formatted(.number.precision(.fractionLength(0...1))))%")
                             .font(.subheadline)
                             .foregroundColor(.sMutedFG)
@@ -142,12 +145,12 @@ struct SummarySection: View {
 
                 Rectangle().fill(Color.sBorder).frame(height: 0.5).padding(.horizontal, 14)
 
-                HStack(spacing: 0) {
+                AdaptiveFormRow {
                     VStack(alignment: .leading, spacing: 3) {
-                        Text(tdsRate > 0 ? "Net receivable" : "Total amount")
+                        Text(tdsRate > 0 ? "Expected cash receivable" : "Invoice total")
                             .font(.subheadline.weight(.semibold))
                             .foregroundColor(.sForeground)
-                        Text(tdsRate > 0 ? "After TDS deduction" : "Payable by the due date")
+                        Text(tdsRate > 0 ? "If the buyer withholds the expected TDS" : "Payable by the due date")
                             .font(.caption)
                             .foregroundColor(.sMutedFG)
                     }
@@ -180,7 +183,7 @@ struct SummaryRowZara: View {
     var isTotal: Bool = false
 
     var body: some View {
-        HStack(spacing: 0) {
+        AdaptiveFormRow {
             Text(label)
                 .font(isTotal ? .headline : .subheadline)
                 .foregroundColor(.sForeground)

@@ -13,10 +13,13 @@ struct AddSupplierSheet: View {
     @ObservedObject var vm: PurchasesViewModel
     @Environment(\.dismiss) private var dismiss
 
+    @State private var confirmDiscard = false
     @State private var name = ""
     @State private var phone = ""
     @State private var gstin = ""
     @State private var city = ""
+
+    private var isDirty: Bool { !name.isEmpty || !phone.isEmpty || !gstin.isEmpty || !city.isEmpty }
 
     var body: some View {
         Form {
@@ -35,11 +38,12 @@ struct AddSupplierSheet: View {
                 TextField("City", text: $city)
             }
         }
+        .protectUnsavedChanges(isDirty: isDirty, confirmDiscard: $confirmDiscard) { dismiss() }
         .navigationTitle("Add supplier")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Button("Cancel") { dismiss() }
+                Button("Cancel") { if isDirty { confirmDiscard = true } else { dismiss() } }
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Save") {
@@ -69,6 +73,9 @@ struct RecordPurchaseBillSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var supplierID: Int?
+    @State private var selectedSupplier: Supplier?
+    @State private var showSupplierPicker = false
+    @State private var confirmDiscard = false
     @State private var billNumber = ""
     @State private var billDate = Date()
     @State private var dueDate = Date().addingTimeInterval(30 * 24 * 60 * 60)
@@ -128,6 +135,10 @@ struct RecordPurchaseBillSheet: View {
             && !vm.isWorking
     }
 
+    private var isDirty: Bool {
+        supplierID != nil || !billNumber.isEmpty || !invoiceAmount.isEmpty || !paidNow.isEmpty || !notes.isEmpty || !lines.isEmpty
+    }
+
     var body: some View {
         Form {
             Section {
@@ -144,12 +155,9 @@ struct RecordPurchaseBillSheet: View {
             }
 
             Section("Supplier") {
-                Picker("Supplier", selection: $supplierID) {
-                    Text("Choose").tag(Int?.none)
-                    ForEach(vm.suppliers) { supplier in
-                        Text(supplier.name).tag(Int?.some(supplier.id))
-                    }
-                }
+                Button { showSupplierPicker = true } label: {
+                    LabeledContent("Supplier", value: selectedSupplier?.name ?? "Choose supplier")
+                }.tint(.sAccent)
                 TextField("Supplier invoice number", text: $billNumber)
                     .autocorrectionDisabled()
                 DatePicker("Bill date", selection: $billDate, displayedComponents: .date)
@@ -180,15 +188,17 @@ struct RecordPurchaseBillSheet: View {
                         VStack(alignment: .leading, spacing: 6) {
                             Text(line.item.name)
                                 .font(.subheadline.weight(.medium))
-                            HStack {
+                            AdaptiveFormRow {
                                 Text("Qty").font(.footnote).foregroundColor(.sMutedFG)
                                 TextField("0", text: $line.qty)
                                     .keyboardType(.numberPad)
-                                    .frame(width: 60)
+                                    .accessibilityLabel("Quantity for \(line.item.name)")
+                                    .frame(minWidth: 60)
                                 Text("Rate").font(.footnote).foregroundColor(.sMutedFG)
                                 TextField("0.00", text: $line.rate)
                                     .keyboardType(.decimalPad)
-                                    .frame(width: 90)
+                                    .accessibilityLabel("Rate for \(line.item.name)")
+                                    .frame(minWidth: 90)
                                 Spacer()
                                 Text(Money.text((Double(line.qty) ?? 0) * (PurchaseAmountInput.parse(line.rate) ?? 0)))
                                     .font(.subheadline.weight(.medium))
@@ -258,11 +268,18 @@ struct RecordPurchaseBillSheet: View {
                 }
             }
         }
+        .protectUnsavedChanges(isDirty: isDirty, confirmDiscard: $confirmDiscard) { dismiss() }
+        .sheet(isPresented: $showSupplierPicker) {
+            SupplierPickerSheet(purchasesVM: vm, selectedID: supplierID) { supplier in
+                selectedSupplier = supplier
+                supplierID = supplier.id
+            }
+        }
         .navigationTitle("Record bill")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Button("Cancel") { dismiss() }
+                Button("Cancel") { if isDirty { confirmDiscard = true } else { dismiss() } }
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Save") { save() }.disabled(!canSave)
@@ -316,7 +333,7 @@ struct RecordPurchaseBillSheet: View {
 }
 
 /// Picking an item to put on a bill. The catalogue, searchable, nothing else.
-private struct PurchaseItemPicker: View {
+struct PurchaseItemPicker: View {
     let onPick: (ItemResponse) -> Void
     @Environment(\.dismiss) private var dismiss
     @StateObject private var itemVM = ItemViewModel()
@@ -325,9 +342,12 @@ private struct PurchaseItemPicker: View {
     var body: some View {
         NavigationStack {
             List {
-                ForEach(itemVM.items.filter {
-                    search.isEmpty || $0.name.localizedCaseInsensitiveContains(search)
-                }) { item in
+                if itemVM.isLoading && itemVM.items.isEmpty { ProgressView("Loading items…") }
+                else if let error = itemVM.errorMessage, itemVM.items.isEmpty {
+                    Text(error).foregroundStyle(.secondary)
+                    Button("Retry") { Task { await itemVM.loadItems() } }
+                } else if itemVM.items.isEmpty { ContentUnavailableView.search(text: search) }
+                ForEach(itemVM.items) { item in
                     Button {
                         onPick(item)
                         dismiss()
@@ -339,9 +359,15 @@ private struct PurchaseItemPicker: View {
                                 .foregroundColor(.sMutedFG)
                         }
                     }
+                    .task { await itemVM.loadMoreIfNeeded(currentItem: item) }
+                }
+                if itemVM.isLoadingMore { ProgressView("Loading more items…") }
+                if itemVM.loadMoreFailed {
+                    Button("Retry more items") { Task { await itemVM.retryLoadMore() } }
                 }
             }
             .searchable(text: $search)
+            .onChange(of: search) { _, query in itemVM.search(query) }
             .navigationTitle("Add item")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -389,7 +415,7 @@ struct PaySupplierSheet: View {
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Save") {
-                    guard let value = Double(amount), value > 0 else { return }
+                    guard let value = Money.parse(amount), value > 0 else { return }
                     Task {
                         let request = SupplierPaymentRequestDTO(
                             supplier_id: supplier.id,
@@ -402,7 +428,7 @@ struct PaySupplierSheet: View {
                         if await vm.pay(request) { dismiss() }
                     }
                 }
-                .disabled((Double(amount) ?? 0) <= 0 || vm.isWorking)
+                .disabled((Money.parse(amount) ?? 0) <= 0 || vm.isWorking)
             }
         }
         .onAppear {

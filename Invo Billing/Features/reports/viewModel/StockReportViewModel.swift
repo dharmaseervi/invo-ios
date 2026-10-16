@@ -146,6 +146,11 @@ final class StockReportViewModel: ObservableObject {
         statusFilter = .all
     }
 
+    private var loadID = UUID()
+    private var loadedCompanyID: Int?
+
+    var canExport: Bool { report != nil && !isLoading && errorMessage == nil && loadedCompanyID == SessionManager.shared.selectedCompanyId }
+
     func load() async {
         guard let companyID = SessionManager.shared.selectedCompanyId else {
             errorMessage = "Select a company first"
@@ -153,14 +158,21 @@ final class StockReportViewModel: ObservableObject {
             return
         }
 
+        let request = UUID()
+        loadID = request
+        if loadedCompanyID != companyID { report = nil }
         isLoading = true
         errorMessage = nil
         refreshFailure = nil
-        defer { isLoading = false }
+        defer { if request == loadID { isLoading = false } }
 
         do {
-            report = try await service.fetchStockReport(companyID: companyID)
+            let result = try await service.fetchStockReport(companyID: companyID)
+            guard request == loadID, companyID == SessionManager.shared.selectedCompanyId else { return }
+            report = result
+            loadedCompanyID = companyID
         } catch {
+            guard request == loadID, companyID == SessionManager.shared.selectedCompanyId else { return }
             // A failed refresh used to throw a modal over a screen full of correct
             // figures, which made a recoverable blip look like a broken app and forced
             // a tap to get back to data that had not gone anywhere. Only interrupt when
@@ -196,7 +208,7 @@ final class StockReportViewModel: ObservableObject {
     /// Exports exactly what the filters currently show, plus the category roll-up, so
     /// the downloaded file always matches what was on screen when it was tapped.
     func exportCSV() -> URL? {
-        guard let report else { return nil }
+        guard canExport, let report else { return nil }
 
         let rows = filteredItems
         var csv = "Stock Report\n"
@@ -233,16 +245,10 @@ final class StockReportViewModel: ObservableObject {
         }
 
         let fileName = "Stock_Report_\(report.as_of).csv"
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
-
-        do {
-            // Excel only honours UTF-8 in a CSV when the byte-order mark is present —
-            // without it the ₹ sign and non-ASCII item names open as mojibake.
-            var data = Data([0xEF, 0xBB, 0xBF])
-            data.append(Data(csv.utf8))
-            try data.write(to: url, options: .atomic)
-            return url
-        } catch {
+        do { return try SafeCSV.write(csv, filename: fileName) }
+        catch {
+            errorMessage = "Couldn't save the CSV: \(error.localizedDescription)"
+            showAlert = true
             return nil
         }
     }
@@ -262,10 +268,7 @@ final class StockReportViewModel: ObservableObject {
 
     /// Item names and categories routinely contain commas ("Handle, 160mm") — without
     /// quoting, every such row shifts the remaining columns one to the right.
-    private func csvField(_ value: String) -> String {
-        guard value.contains(",") || value.contains("\"") || value.contains("\n") else { return value }
-        return "\"\(value.replacingOccurrences(of: "\"", with: "\"\""))\""
-    }
+    private func csvField(_ value: String) -> String { SafeCSV.text(value) }
 }
 
 private extension String {

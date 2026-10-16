@@ -196,7 +196,7 @@ struct MoreView: View {
                                     .foregroundStyle(.secondary)
                             }
                             Spacer()
-                            Toggle("", isOn: Binding(
+                            Toggle(biometricKind.label, isOn: Binding(
                                 get: { session.isBiometricLockEnabled },
                                 set: { newValue in toggleBiometric(newValue) }
                             ))
@@ -418,7 +418,7 @@ struct MoreView: View {
                 .font(.subheadline)
                 .foregroundStyle(.primary)
             Spacer()
-            Toggle("", isOn: Binding(
+            Toggle("Overdue reminders", isOn: Binding(
                 get: { notificationsOn },
                 set: { wanted in
                     if wanted {

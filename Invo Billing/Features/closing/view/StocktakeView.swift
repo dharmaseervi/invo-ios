@@ -68,7 +68,8 @@ struct StocktakeView: View {
             NavigationStack {
                 CountItemSheet(item: item, vm: vm)
             }
-            .presentationDetents([.height(300)])
+            .presentationDetents([.medium, .large])
+            .presentationContentInteraction(.scrolls)
         }
         .alert("Finish the count?", isPresented: $showFinishConfirm) {
             Button("Keep counting", role: .cancel) {}

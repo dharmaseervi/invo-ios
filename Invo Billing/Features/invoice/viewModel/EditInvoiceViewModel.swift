@@ -24,6 +24,8 @@ class EditInvoiceViewModel: ObservableObject {
     @Published var invoiceDate: Date = Date()
     @Published var dueDate: Date = Date().addingTimeInterval(86400 * 7)
     @Published var discount: Double = 0
+    @Published var tdsRate: Double = 0
+    @Published var docType: String = ""
 
     // MARK: - Address State
     @Published var billingAddress: AddressFormModel = .empty(type: "billing")
@@ -44,6 +46,18 @@ class EditInvoiceViewModel: ObservableObject {
     @Published var showSuccessAlert = false
     @Published var successMessage = ""
     @Published var showScanner = false
+
+    private var savedFormSignature: String?
+    private var formSignature: String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .sortedKeys
+        let fields = [String(selectedClient?.id ?? 0), invoiceDate.description, dueDate.description,
+                      String(discount), String(tdsRate), docType, String(isShippingSameAsBilling)]
+        let lines = items.map { "\($0.item.id)|\($0.qty)|\($0.rate)|\($0.discount)|\($0.taxRate)" }
+        let addresses = [billingAddress, shippingAddress].map { String(data: (try? encoder.encode($0.toRequest())) ?? Data(), encoding: .utf8) ?? "" }
+        return (fields + lines + addresses).joined(separator: "\n")
+    }
+    var hasUnsavedChanges: Bool { savedFormSignature.map { $0 != formSignature } ?? false }
 
     private let service = InvoiceService()
     private let addressService = AddressService()
@@ -70,7 +84,7 @@ class EditInvoiceViewModel: ObservableObject {
     var total: Double { computed.total }
 
     var isValid: Bool {
-        selectedClient != nil && !items.isEmpty
+        canEdit && selectedClient != nil && !items.isEmpty && !isLoadingInvoice
     }
 
     // MARK: - Line Item Management (same as InvoiceViewModel)
@@ -151,12 +165,15 @@ class EditInvoiceViewModel: ObservableObject {
             }
 
             discount = detail.discount
+            tdsRate = detail.tds_rate ?? 0
+            docType = detail.doc_type ?? ""
 
             // Load items - InvoiceItemDetail doesn't have item_name, need to fetch
             await loadInvoiceItems(detail.items)
 
             // Load addresses
             await loadClientAddresses()
+            savedFormSignature = formSignature
 
         } catch {
             showError("Failed to load invoice: \(error.localizedDescription)")
@@ -331,6 +348,8 @@ class EditInvoiceViewModel: ObservableObject {
             invoice_date: formatter.string(from: invoiceDate),
             due_date: formatter.string(from: dueDate),
             discount: discount,
+            tds_rate: tdsRate,
+            doc_type: docType,
             items: items.map {
                 InvoiceItemRequest(
                     item_id: $0.item.id,
@@ -351,6 +370,7 @@ class EditInvoiceViewModel: ObservableObject {
                 payload: payload
             )
 
+            savedFormSignature = formSignature
             successMessage = "Invoice updated successfully"
             showSuccessAlert = true
             return true
@@ -404,6 +424,8 @@ struct UpdateInvoiceRequestDTO: Codable {
     let invoice_date: String
     let due_date: String
     let discount: Double
+    let tds_rate: Double
+    let doc_type: String
     let items: [InvoiceItemRequest]
 }
 

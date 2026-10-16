@@ -5,12 +5,14 @@ struct ChallanDetailView: View {
     @ObservedObject var vm: ChallanViewModel
     @State private var showDispatchConfirm = false
 
+    private var detail: ChallanDetailResponse? { vm.matchingDetail(id: challanID) }
+
     var body: some View {
         ZStack {
             Color.sBackground.ignoresSafeArea()
 
             Group {
-                if vm.isLoading && vm.challanDetail == nil {
+                if vm.isLoadingDetail && detail == nil {
                     VStack(spacing: 12) {
                         ProgressView().tint(.sAccent)
                         Text("Loading...")
@@ -18,9 +20,12 @@ struct ChallanDetailView: View {
                             .foregroundColor(.sMutedFG)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if let detail = vm.challanDetail {
+                } else if let detail {
                     ScrollView(.vertical, showsIndicators: false) {
                         VStack(spacing: 16) {
+                            if let message = vm.detailError {
+                                ReportStatusView(message: message, hasData: true) { await vm.loadDetail(id: challanID) }
+                            }
                             headerCard(detail: detail)
                             itemsCard(detail: detail)
                             if detail.status == .draft {
@@ -30,6 +35,9 @@ struct ChallanDetailView: View {
                         .padding(.horizontal, AppSpacing.page)
                         .padding(.vertical, 12)
                     }
+                    .refreshable { await vm.loadDetail(id: challanID) }
+                } else if let message = vm.detailError {
+                    ReportStatusView(message: message, hasData: false) { await vm.loadDetail(id: challanID) }
                 }
             }
         }
@@ -147,7 +155,7 @@ struct ChallanDetailView: View {
             .background(Color.sPrimary)
             .cornerRadius(10)
         }
-        .disabled(vm.isLoading)
+        .disabled(!vm.canDispatch(id: id))
     }
 
     private func rowItem(label: String, value: String) -> some View {

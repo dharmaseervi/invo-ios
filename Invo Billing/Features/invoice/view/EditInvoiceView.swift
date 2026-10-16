@@ -21,6 +21,9 @@ struct EditInvoiceView: View {
     @StateObject private var vm = EditInvoiceViewModel()
     @Environment(\.dismiss) var dismiss
     
+    @State private var confirmDiscard = false
+    private func cancel() { if vm.hasUnsavedChanges { confirmDiscard = true } else { dismiss() } }
+
     @State private var showClientPicker = false
     @State private var showItemPicker = false
     @State private var editingItem: InvoiceLineItem?
@@ -58,7 +61,7 @@ struct EditInvoiceView: View {
                             .multilineTextAlignment(.center)
                     }
 
-                    Button(action: { dismiss() }) {
+                    Button(action: { cancel() }) {
                         Text("Go back")
                             .font(.subheadline.weight(.semibold))
                             .foregroundColor(.sAccentFG)
@@ -122,7 +125,8 @@ struct EditInvoiceView: View {
 
                             InvoiceDetailsSection(
                                 invoiceDate: $vm.invoiceDate,
-                                dueDate: $vm.dueDate
+                                dueDate: $vm.dueDate,
+                                docType: $vm.docType
                             )
                             .padding(.horizontal, AppSpacing.page)
 
@@ -138,7 +142,7 @@ struct EditInvoiceView: View {
                                 tax: vm.tax,
                                 discount: $vm.discount,
                                 total: vm.total,
-                                tdsRate: .constant(0)
+                                tdsRate: $vm.tdsRate
                             )
                             
                             // Action Buttons
@@ -171,7 +175,7 @@ struct EditInvoiceView: View {
                                 }
                                 .disabled(vm.isLoading || !vm.isValid)
 
-                                Button(action: { dismiss() }) {
+                                Button(action: { cancel() }) {
                                     Text("Cancel")
                                         .font(.subheadline.weight(.medium))
                                         .frame(maxWidth: .infinity)
@@ -195,11 +199,12 @@ struct EditInvoiceView: View {
                 }
             }
         }
+        .protectUnsavedChanges(isDirty: vm.hasUnsavedChanges, confirmDiscard: $confirmDiscard) { dismiss() }
         .navigationTitle("Edit invoice")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button("Cancel") { dismiss() }
+                Button("Cancel") { cancel() }
             }
         }
         .sheet(isPresented: $showClientPicker) {

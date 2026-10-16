@@ -4,6 +4,7 @@ import SwiftUI
 struct SupplierDetailView: View {
     let supplier: Supplier
 
+    @EnvironmentObject private var session: SessionManager
     @StateObject private var vm = SupplierDetailViewModel()
     @State private var showPay = false
     @State private var showDebitNote = false
@@ -100,7 +101,10 @@ struct SupplierDetailView: View {
         .alert("Error", isPresented: $vm.showError) {
             Button("OK", role: .cancel) {}
         } message: { Text(vm.errorMessage ?? "") }
-        .task { await reload() }
+        .searchable(text: $vm.search, prompt: "Bill number")
+        .task(id: "\(session.selectedCompanyId ?? 0):\(vm.filter ?? "all"):\(vm.search)") {
+            await vm.load(supplier: supplier, refreshRelated: false, debounce: true)
+        }
     }
 
     // MARK: - Supplier info card
@@ -114,6 +118,10 @@ struct SupplierDetailView: View {
                 Text(Money.text(current.due > 0 ? current.due : current.heldInAdvance)).moneyLine()
                     .font(.title.bold())
                     .foregroundStyle(current.due > 0 ? Color.sDestructive : Color.sSuccess)
+                if vm.purchasesVM.totalDue == nil || vm.purchasesVM.loadFailed {
+                    Text("Supplier balance couldn't be refreshed. Pull to retry.")
+                        .font(.footnote).foregroundStyle(Color.sDestructive)
+                }
                 let place = [current.city,
                              current.open_bills > 0 ? "\(current.open_bills) open bill\(current.open_bills == 1 ? "" : "s")" : ""]
                     .filter { !$0.isEmpty }
@@ -160,7 +168,7 @@ struct SupplierDetailView: View {
     // MARK: - Action buttons
 
     private var actionRow: some View {
-        HStack(spacing: 8) {
+        AdaptiveFormRow {
             if current.due > 0 {
                 Button { showPay = true } label: {
                     Label("Pay", systemImage: "indianrupeesign.circle")
@@ -189,18 +197,30 @@ struct SupplierDetailView: View {
 
     @ViewBuilder
     private var billsSection: some View {
-        if vm.isLoading {
+        if vm.isLoading && vm.bills.isEmpty {
             HStack { Spacer(); ProgressView().tint(.sAccent); Spacer() }
                 .padding(.vertical, 20)
                 .listRowSeparator(.hidden)
+        } else if let error = vm.loadError, vm.bills.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Couldn't load bills").font(.headline)
+                Text(error).font(.footnote).foregroundStyle(.secondary)
+                Button("Retry") { Task { await reload() } }
+            }.listRowSeparator(.hidden)
         } else if vm.bills.isEmpty {
-            Text("No bills yet for this supplier.")
+            Text(vm.filter == nil && vm.search.isEmpty ? "No bills yet for this supplier." : "No bills match these filters.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.vertical, 24)
                 .listRowSeparator(.hidden)
         } else {
+            if vm.loadError != nil {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Couldn't refresh bills. These results may be out of date.").font(.footnote)
+                    Button("Retry") { Task { await reload() } }
+                }
+            }
             ForEach(vm.bills) { bill in
                 NavigationLink {
                     PurchaseBillDetailView(bill: bill)
@@ -208,6 +228,9 @@ struct SupplierDetailView: View {
                     billRow(bill)
                 }
                 .standardListRow()
+                .task {
+                    if bill.id == vm.bills.suffix(5).first?.id { await vm.loadMore() }
+                }
                 .listRowSeparator(.hidden, edges: bill.id == vm.bills.first?.id ? .top : [])
                 .contextMenu {
                     if !bill.isAmountOnly && !bill.isCancelled {
@@ -225,6 +248,15 @@ struct SupplierDetailView: View {
                         }
                     }
                 }
+            }
+            if vm.isLoadingMore { ProgressView("Loading more bills…") }
+            else if let error = vm.pageError {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(error).font(.footnote).foregroundStyle(.secondary)
+                    Button("Retry more bills") { Task { await vm.loadMore(retry: true) } }
+                }
+            } else if vm.hasMore {
+                Button("Load more bills") { Task { await vm.loadMore() } }
             }
         }
     }
@@ -244,17 +276,16 @@ struct SupplierDetailView: View {
     private func filterPill(_ label: String, _ value: String?) -> some View {
         AppFilterChip(title: label, isSelected: vm.filter == value) {
             vm.filter = value
-            Task { await vm.load(supplier: supplier) }
         }
     }
 
     private func billRow(_ bill: PurchaseBill) -> some View {
-        HStack(spacing: 12) {
+        AdaptiveFormRow {
             VStack(alignment: .leading, spacing: 3) {
                 Text(bill.bill_number)
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.primary)
-                    .lineLimit(1)
+
                 HStack(spacing: 0) {
                     Text(AppDate.shortText(fromWire: bill.bill_date))
                         .foregroundStyle(.secondary)
@@ -264,10 +295,9 @@ struct SupplierDetailView: View {
                     }
                 }
                 .font(.footnote)
-                .lineLimit(1)
+
             }
-            Spacer(minLength: 8)
-            VStack(alignment: .trailing, spacing: 3) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(Money.text(bill.total)).moneyLine()
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
@@ -295,43 +325,3 @@ struct SupplierDetailView: View {
     }
 }
 
-// MARK: - ViewModel
-
-@MainActor
-final class SupplierDetailViewModel: ObservableObject {
-    @Published private(set) var bills: [PurchaseBill] = []
-    @Published private(set) var isLoading = false
-    @Published var errorMessage: String?
-    @Published var showError = false
-    @Published var filter: String?
-
-    let purchasesVM = PurchasesViewModel()
-    private let service = PurchasesService()
-
-    func load(supplier: Supplier) async {
-        guard let companyID = SessionManager.shared.selectedCompanyId else { return }
-        isLoading = true
-        defer { isLoading = false }
-        // The supplier's owed / advance figures come from the suppliers list, refreshed
-        // alongside the bills so the card and the bills never disagree.
-        async let totals: Void = purchasesVM.load()
-        do {
-            bills = try await service.bills(companyID: companyID, supplierID: supplier.id, status: filter)
-            await totals
-        } catch {
-            await totals
-            errorMessage = error.localizedDescription
-            showError = true
-        }
-    }
-
-    func cancelBill(id: Int) async {
-        guard let companyID = SessionManager.shared.selectedCompanyId else { return }
-        do {
-            try await service.cancelBill(companyID: companyID, billID: id)
-        } catch {
-            errorMessage = error.localizedDescription
-            showError = true
-        }
-    }
-}

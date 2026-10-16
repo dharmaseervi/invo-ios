@@ -7,7 +7,7 @@ struct AgingReportView: View {
 
     var body: some View {
         Group {
-            if vm.isLoading {
+            if vm.isLoading && vm.report == nil {
                 ProgressView()
                     .tint(.sAccent)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -33,6 +33,14 @@ struct AgingReportView: View {
                 .refreshable { await vm.load() }
             }
         }
+        .safeAreaInset(edge: .top) {
+            if let message = vm.errorMessage {
+                ReportStatusView(message: message, hasData: vm.report != nil) { await vm.load() }
+                    .background(Color.sBackground)
+            } else if vm.isLoading && vm.report != nil {
+                ProgressView("Refreshing…").padding(8)
+            }
+        }
         .navigationTitle("Client Aging")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -42,7 +50,7 @@ struct AgingReportView: View {
                 } label: {
                     Image(systemName: "square.and.arrow.up")
                 }
-                .disabled(vm.report == nil)
+                .disabled(!vm.canExport)
             }
         }
         .sheet(item: Binding(
@@ -51,7 +59,7 @@ struct AgingReportView: View {
         )) { wrapper in
             AgingShareSheet(activityItems: [wrapper.url])
         }
-        .task { await vm.load() }
+        .task(id: SessionManager.shared.selectedCompanyId) { await vm.load() }
         .alert("Error", isPresented: $vm.showAlert) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -87,13 +95,7 @@ struct AgingReportView: View {
 
 enum AgingBuckets {
     static let labels = ["Current", "1-30d", "31-60d", "61-90d", "90d+"]
-    static let colors: [Color] = [
-        .sNeutral,                                      // Current
-        .sWarning,                                      // 1-30
-        Color(red: 0.910, green: 0.451, blue: 0.098),   // 31-60
-        Color(red: 0.863, green: 0.259, blue: 0.149),   // 61-90
-        Color(red: 0.702, green: 0.098, blue: 0.098)    // 90+
-    ]
+    static let colors: [Color] = [.secondary, .orange, .orange, .red, .red]
 
     /// One stat per bucket, coloured by age only when it holds money.
     static func stats(_ values: [Double]) -> [AdaptiveStatRow.Stat] {
@@ -105,6 +107,7 @@ enum AgingBuckets {
 
 // MARK: - Aging row
 struct AgingBucketRow: View {
+    @Environment(\.dynamicTypeSize) private var textSize
     let name: String
     let total: Double
     let buckets: [Double]
@@ -125,11 +128,11 @@ struct AgingBucketRow: View {
             MinimalAvatarView(name: name)
 
             VStack(alignment: .leading, spacing: 6) {
-                HStack {
+                AdaptiveFormRow {
                     Text(name)
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.primary)
-                        .lineLimit(1)
+                        .fixedSize(horizontal: false, vertical: true)
                     Spacer(minLength: 8)
                     Text(Money.text(total)).moneyLine()
                         .font(.subheadline.weight(.semibold))
@@ -146,6 +149,11 @@ struct AgingBucketRow: View {
                     }
                 }
                 .frame(height: 5)
+                .accessibilityHidden(true)
+                Text(zip(AgingBuckets.labels, buckets).filter { $0.1 > 0 }.map { "\($0.0): \(Money.text($0.1))" }.joined(separator: " · "))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .alignmentGuide(.listRowSeparatorLeading) { d in d[.leading] }
         }

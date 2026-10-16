@@ -11,9 +11,25 @@ struct GSTReportView: View {
             VStack(spacing: 0) {
                 monthNavigator
 
-                if vm.isLoading {
+                if vm.isLoading && vm.report == nil {
                     Spacer()
                     ProgressView().tint(.sAccent)
+                    Spacer()
+                } else if vm.report == nil, let message = vm.errorMessage {
+                    Spacer()
+                    VStack(spacing: 16) {
+                        Image(systemName: "exclamationmark.triangle")
+                            .font(.largeTitle)
+                            .foregroundColor(.sMutedFG)
+                        Text(message)
+                            .font(.subheadline)
+                            .foregroundColor(.sMutedFG)
+                            .multilineTextAlignment(.center)
+                        Button("Try again") { Task { await vm.load() } }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.sAccent)
+                    }
+                    .padding(.horizontal, AppSpacing.page)
                     Spacer()
                 } else if let report = vm.report, report.summary.invoice_count == 0 {
                     emptyState
@@ -31,6 +47,14 @@ struct GSTReportView: View {
                 }
             }
         }
+        .safeAreaInset(edge: .top) {
+            if let message = vm.errorMessage, vm.report != nil {
+                ReportStatusView(message: message, hasData: true) { await vm.load() }
+                    .background(Color.sBackground)
+            } else if vm.isLoading && vm.report != nil {
+                ProgressView("Refreshing…").padding(8)
+            }
+        }
         .navigationTitle("GST Reports")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -40,10 +64,10 @@ struct GSTReportView: View {
                 } label: {
                     Image(systemName: "square.and.arrow.up")
                 }
-                .disabled(vm.report?.summary.invoice_count == 0 || vm.report == nil)
+                .disabled(!vm.canExport || vm.report?.summary.invoice_count == 0)
             }
         }
-        .task { await vm.load() }
+        .task(id: SessionManager.shared.selectedCompanyId) { await vm.load() }
         .alert("Error", isPresented: $vm.showAlert) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -64,8 +88,9 @@ struct GSTReportView: View {
                 Image(systemName: "chevron.left")
                     .font(.subheadline.weight(.semibold))
                     .foregroundColor(.sForeground)
-                    .frame(width: 32, height: 32)
+                    .frame(width: 44, height: 44)
             }
+            .accessibilityLabel("Previous month")
             Spacer()
             Text(vm.monthLabel)
                 .font(.subheadline.weight(.semibold))
@@ -75,8 +100,9 @@ struct GSTReportView: View {
                 Image(systemName: "chevron.right")
                     .font(.subheadline.weight(.semibold))
                     .foregroundColor(.sForeground)
-                    .frame(width: 32, height: 32)
+                    .frame(width: 44, height: 44)
             }
+            .accessibilityLabel("Next month")
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)

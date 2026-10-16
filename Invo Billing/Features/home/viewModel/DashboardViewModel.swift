@@ -28,6 +28,9 @@ final class DashboardViewModel: ObservableObject {
     /// the first one answering last would still be stale.
     private var requestCounter = 0
     private var currentRequest = 0
+    private var loadedCompanyID: Int?
+    private var loadedPeriod: String?
+    @Published private(set) var updatedAt: Date?
 
     func load(period: String) async {
         guard let companyId = SessionManager.shared.selectedCompanyId else {
@@ -36,6 +39,12 @@ final class DashboardViewModel: ObservableObject {
             return
         }
 
+        if loadedCompanyID != companyId || loadedPeriod != period {
+            dashboard = nil
+            updatedAt = nil
+        }
+        loadedCompanyID = companyId
+        loadedPeriod = period
         requestCounter += 1
         let request = requestCounter
         currentRequest = request
@@ -46,6 +55,7 @@ final class DashboardViewModel: ObservableObject {
             let result = try await service.fetchDashboard(period: period, companyId: companyId)
             guard isCurrent(request) else { return }
             dashboard = result
+            updatedAt = Date()
             isLoading = false
         } catch let authErr as AuthErrorResponse {
             guard isCurrent(request) else { return }

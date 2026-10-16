@@ -3,6 +3,7 @@ import SwiftUI
 /// A separate entry from More for finding a supplier's account. Purchases remains
 /// the place to enter bills, stock and payments.
 struct PurchaseLedgerView: View {
+    var showSupplierDetails = false
     @EnvironmentObject private var session: SessionManager
     @StateObject private var vm = PurchaseLedgerViewModel()
     @State private var search = ""
@@ -19,7 +20,7 @@ struct PurchaseLedgerView: View {
     var body: some View {
         List {
             if vm.isLoading {
-                HStack(spacing: 12) {
+                AdaptiveFormRow {
                     ProgressView().tint(.sAccent)
                     Text("Loading suppliers…").foregroundColor(.sMutedFG)
                 }
@@ -44,7 +45,8 @@ struct PurchaseLedgerView: View {
                 Section {
                     ForEach(vm.suppliers) { supplier in
                         NavigationLink {
-                            SupplierStatementView(supplier: supplier)
+                            if showSupplierDetails { SupplierDetailView(supplier: supplier) }
+                            else { SupplierStatementView(supplier: supplier) }
                         } label: {
                             supplierRow(supplier)
                         }
@@ -76,7 +78,7 @@ struct PurchaseLedgerView: View {
             }
         }
         .listStyle(.plain)
-        .navigationTitle("Purchase ledger")
+        .navigationTitle(showSupplierDetails ? "Suppliers" : "Purchase ledger")
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $search, placement: .navigationBarDrawer(displayMode: .always),
                     prompt: "Supplier name or phone")
@@ -91,22 +93,21 @@ struct PurchaseLedgerView: View {
     }
 
     private func supplierRow(_ supplier: Supplier) -> some View {
-        HStack(spacing: 12) {
+        AdaptiveFormRow {
             VStack(alignment: .leading, spacing: 3) {
                 Text(supplier.name)
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.primary)
-                    .lineLimit(1)
+
                 Text([supplier.phone,
                       "\(supplier.open_bills) unpaid bill\(supplier.open_bills == 1 ? "" : "s")"]
                         .filter { !$0.isEmpty }
                         .joined(separator: " · "))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
-                    .lineLimit(1)
+
             }
-            Spacer(minLength: 8)
-            VStack(alignment: .trailing, spacing: 3) {
+            VStack(alignment: .leading, spacing: 3) {
                 if supplier.due > 0 {
                     Text(Money.text(supplier.due)).moneyLine()
                         .font(.subheadline.weight(.semibold))

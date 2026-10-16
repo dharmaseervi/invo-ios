@@ -11,6 +11,7 @@ struct PaymentHistoryRow: Codable, Identifiable {
     let client_id: Int
     let client_name: String
     let amount: Double
+    let tds_amount: Double?
     let payment_method: String
     let reference: String
     let notes: String
@@ -24,6 +25,9 @@ struct PaymentHistoryRow: Codable, Identifiable {
     let unapplied_amount: Double?
     let allocations: [PaymentAllocationRow]?
 
+    var taxWithheld: Double { tds_amount ?? 0 }
+    var totalSettled: Double { amount + taxWithheld }
+    var canMove: Bool { !isReversed && taxWithheld <= 0 }
     var isReversed: Bool { status == "reversed" }
     var onAccount: Double { unapplied_amount ?? 0 }
     var invoices: [PaymentAllocationRow] { allocations ?? [] }

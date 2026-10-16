@@ -5,6 +5,9 @@ struct CreateChallanView: View {
     @Environment(\.dismiss) var dismiss
     @State private var showClientPicker = false
     @State private var showItemPicker = false
+    @State private var confirmDiscard = false
+    @State private var initialDate = Date()
+    private var isDirty: Bool { vm.selectedClient != nil || !vm.items.isEmpty || !vm.notes.isEmpty || !Calendar.current.isDate(vm.challanDate, inSameDayAs: initialDate) }
     @State private var tempItems: [InvoiceLineItem] = []
 
     var body: some View {
@@ -118,7 +121,7 @@ struct CreateChallanView: View {
                                     }
                                 } else {
                                     ForEach($vm.items) { $line in
-                                        HStack(spacing: 12) {
+                                        AdaptiveFormRow {
                                             VStack(alignment: .leading, spacing: 4) {
                                                 Text(line.name)
                                                     .font(.subheadline.weight(.medium))
@@ -137,6 +140,8 @@ struct CreateChallanView: View {
                                                         .font(.title3)
                                                         .foregroundColor(.sMutedFG)
                                                 }
+                                                .frame(minWidth: 44, minHeight: 44)
+                                                .accessibilityLabel("Decrease quantity for \(line.name)")
                                                 Text("\(line.qty)")
                                                     .font(.subheadline.weight(.semibold))
                                                     .foregroundColor(.sForeground)
@@ -147,7 +152,14 @@ struct CreateChallanView: View {
                                                         .font(.title3)
                                                         .foregroundColor(.sAccent)
                                                 }
+                                                .frame(minWidth: 44, minHeight: 44)
+                                                .accessibilityLabel("Increase quantity for \(line.name)")
                                             }
+                                            Button(role: .destructive) { vm.removeItem(line) } label: {
+                                                Label("Remove", systemImage: "trash")
+                                            }
+                                            .frame(minHeight: 44)
+                                            .accessibilityLabel("Remove \(line.name)")
                                         }
                                         .padding(.horizontal, 14)
                                         .padding(.vertical, 12)
@@ -179,13 +191,18 @@ struct CreateChallanView: View {
                     .padding(.bottom, 40)
                 }
             }
+            .protectUnsavedChanges(isDirty: isDirty, confirmDiscard: $confirmDiscard) {
+                vm.clearForm()
+                dismiss()
+            }
+            .onAppear { initialDate = vm.challanDate }
             .navigationTitle("New Delivery Challan")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
-                        vm.clearForm()
-                        dismiss()
+                        if isDirty { confirmDiscard = true }
+                        else { dismiss() }
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {

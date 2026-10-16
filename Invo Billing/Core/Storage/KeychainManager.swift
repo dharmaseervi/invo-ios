@@ -27,11 +27,12 @@ final class KeychainManager {
         var query = makeQuery(forKey: key)
         // if exists -> update, else add
         if SecItemCopyMatching(query as CFDictionary, nil) == errSecSuccess {
-            let attrs: [String: Any] = [kSecValueData as String: data]
+            let attrs: [String: Any] = [kSecValueData as String: data, kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly]
             let status = SecItemUpdate(query as CFDictionary, attrs as CFDictionary)
             return status == errSecSuccess
         } else {
             query[kSecValueData as String] = data
+            query[kSecAttrAccessible as String] = kSecAttrAccessibleWhenUnlockedThisDeviceOnly
             let status = SecItemAdd(query as CFDictionary, nil)
             return status == errSecSuccess
         }

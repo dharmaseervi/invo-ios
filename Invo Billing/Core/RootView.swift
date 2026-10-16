@@ -37,6 +37,15 @@ struct RootView: View {
                 } else {
                     BiometricLockView()
                 }
+            } else if let message = session.recoveryError {
+                ContentUnavailableView {
+                    Label("Unable to reconnect", systemImage: "wifi.exclamationmark")
+                } description: {
+                    Text(message)
+                } actions: {
+                    Button("Retry") { session.loadTokenFromKeychain() }.buttonStyle(.borderedProminent)
+                    Button("Sign out", role: .destructive) { session.logout() }
+                }
             } else {
                 AuthView()
                     .environmentObject(authViewModel)
@@ -46,9 +55,8 @@ struct RootView: View {
             session.loadTokenFromKeychain()
         }
         .onChange(of: scenePhase) { phase in
-            if phase == .background {
-                session.lock()
-            }
+            if phase == .background { session.lock() }
+            if phase == .active { Task { await session.refreshOnActivation() } }
         }
     }
 }

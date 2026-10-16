@@ -24,6 +24,12 @@ final class GSTReportViewModel: ObservableObject {
     /// and the first one answering last would still be stale.
     private var requestCounter = 0
     private var currentRequest = 0
+    private var loadedCompanyID: Int?
+    private var loadedStart: String?
+
+    var canExport: Bool {
+        report != nil && !isLoading && errorMessage == nil && loadedCompanyID == SessionManager.shared.selectedCompanyId && loadedStart == monthRange().start
+    }
 
     /// True when this reply is still the one being waited for.
     private func isCurrent(_ request: Int) -> Bool { request == currentRequest }
@@ -35,21 +41,21 @@ final class GSTReportViewModel: ObservableObject {
     }
 
     func goToPreviousMonth() {
-        if let date = Calendar.current.date(byAdding: .month, value: -1, to: selectedMonth) {
+        if let date = Calendar(identifier: .gregorian).date(byAdding: .month, value: -1, to: selectedMonth) {
             selectedMonth = date
             Task { await load() }
         }
     }
 
     func goToNextMonth() {
-        if let date = Calendar.current.date(byAdding: .month, value: 1, to: selectedMonth) {
+        if let date = Calendar(identifier: .gregorian).date(byAdding: .month, value: 1, to: selectedMonth) {
             selectedMonth = date
             Task { await load() }
         }
     }
 
     private func monthRange() -> (start: String, end: String) {
-        let calendar = Calendar.current
+        let calendar = Calendar(identifier: .gregorian)
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         // Pinned: an unpinned formatter follows the device calendar, so a phone set
@@ -80,28 +86,30 @@ final class GSTReportViewModel: ObservableObject {
         errorMessage = nil
 
         let (start, end) = monthRange()
+        if loadedCompanyID != companyID || loadedStart != start { report = nil }
 
         do {
             let result = try await service.fetchGSTReport(companyID: companyID, start: start, end: end)
             // A superseded load leaves everything alone, including `isLoading`: the
             // spinner belongs to the load still running.
-            guard isCurrent(request) else { return }
+            guard isCurrent(request), companyID == SessionManager.shared.selectedCompanyId, monthRange().start == start else { return }
             report = result
+            loadedCompanyID = companyID
+            loadedStart = start
             isLoading = false
         } catch {
-            guard isCurrent(request) else { return }
-            errorMessage = "Couldn't load the GST report. Pull to retry."
-            showAlert = true
+            guard isCurrent(request), companyID == SessionManager.shared.selectedCompanyId, monthRange().start == start else { return }
+            errorMessage = "Couldn't load the GST report."
             isLoading = false
         }
     }
 
     // MARK: - CSV export (GSTR-1 style: HSN summary + invoice-wise, as two sections in one file)
     func exportCSV() -> URL? {
-        guard let report else { return nil }
+        guard canExport, let report else { return nil }
 
-        var csv = "GSTR-1 Summary — \(monthLabel)\n"
-        csv += "Company state,\(report.company_state)\n\n"
+        var csv = "GSTR-1 Summary,\(SafeCSV.text(report.start)),\(SafeCSV.text(report.end))\n"
+        csv += "Company state,\(SafeCSV.text(report.company_state))\n\n"
 
         csv += "Summary\n"
         csv += "Invoices,Taxable Value,CGST,SGST,IGST,Total\n"
@@ -110,23 +118,20 @@ final class GSTReportViewModel: ObservableObject {
         csv += "HSN Summary\n"
         csv += "HSN Code,Tax Rate,Qty,Taxable Value,CGST,SGST,IGST,Total\n"
         for row in report.hsn_summary {
-            csv += "\(row.hsn_code),\(row.tax_rate),\(row.total_qty),\(row.taxable_value),\(row.cgst),\(row.sgst),\(row.igst),\(row.total_value)\n"
+            csv += "\(SafeCSV.text(row.hsn_code)),\(row.tax_rate),\(row.total_qty),\(row.taxable_value),\(row.cgst),\(row.sgst),\(row.igst),\(row.total_value)\n"
         }
         csv += "\n"
 
         csv += "Invoice-wise (B2B)\n"
         csv += "Invoice No,Date,Client,GSTIN,Place of Supply,Taxable Value,CGST,SGST,IGST,Total\n"
         for row in report.invoices {
-            csv += "\(row.invoice_number),\(row.invoice_date),\(row.client_name),\(row.client_gstin),\(row.place_of_supply),\(row.taxable_value),\(row.cgst),\(row.sgst),\(row.igst),\(row.total)\n"
+            csv += "\(SafeCSV.text(row.invoice_number)),\(SafeCSV.text(row.invoice_date)),\(SafeCSV.text(row.client_name)),\(SafeCSV.text(row.client_gstin)),\(SafeCSV.text(row.place_of_supply)),\(row.taxable_value),\(row.cgst),\(row.sgst),\(row.igst),\(row.total)\n"
         }
 
-        let fileName = "GSTR1_\(monthLabel.replacingOccurrences(of: " ", with: "_")).csv"
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
-
-        do {
-            try csv.write(to: url, atomically: true, encoding: .utf8)
-            return url
-        } catch {
+        do { return try SafeCSV.write(csv, filename: "GSTR1_\(report.start)_\(report.end).csv") }
+        catch {
+            errorMessage = "Couldn't save the CSV: \(error.localizedDescription)"
+            showAlert = true
             return nil
         }
     }

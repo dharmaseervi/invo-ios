@@ -73,12 +73,12 @@ struct BulkPrintLabelsScreen: View {
 
             VStack(spacing: 8) {
                 ForEach(items) { item in
-                    HStack(spacing: 12) {
+                    AdaptiveFormRow {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(item.name)
                                 .font(.subheadline.weight(.medium))
                                 .foregroundColor(.sForeground)
-                                .lineLimit(1)
+
                             Text(Money.text(item.price)).moneyLine()
                                 .font(.caption)
                                 .foregroundColor(.sMutedFG)
@@ -86,23 +86,14 @@ struct BulkPrintLabelsScreen: View {
 
                         Spacer()
 
-                        HStack(spacing: 0) {
-                            quantityButton(systemImage: "minus") {
-                                let current = quantities[item.id] ?? 1
-                                if current > 1 { quantities[item.id] = current - 1 }
-                            }
-                            Text("\(quantities[item.id] ?? 1)")
-                                .font(.body.weight(.semibold))
-                                .foregroundColor(.sForeground)
-                                .frame(minWidth: 28)
-                            quantityButton(systemImage: "plus") {
-                                let current = quantities[item.id] ?? 1
-                                if current < 50 { quantities[item.id] = current + 1 }
-                            }
+                        Stepper(value: Binding(
+                            get: { quantities[item.id] ?? 1 },
+                            set: { quantities[item.id] = $0 }
+                        ), in: 1...50) {
+                            Text("\(quantities[item.id] ?? 1) copies").font(.body)
                         }
-                        .background(Color.sCard)
-                        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.sBorder, lineWidth: 0.5))
-                        .cornerRadius(6)
+                        .accessibilityLabel("Label copies for \(item.name)")
+                        .accessibilityValue("\(quantities[item.id] ?? 1)")
                     }
                     .padding(12)
                     .background(Color.sCard)
@@ -110,15 +101,6 @@ struct BulkPrintLabelsScreen: View {
                     .cornerRadius(10)
                 }
             }
-        }
-    }
-
-    private func quantityButton(systemImage: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.caption.weight(.semibold))
-                .foregroundColor(.sForeground)
-                .frame(width: 26, height: 26)
         }
     }
 

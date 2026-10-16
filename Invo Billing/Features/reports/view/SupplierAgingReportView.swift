@@ -31,12 +31,20 @@ struct SupplierAgingReportView: View {
                 .listStyle(.plain)
                 .contentMargins(.bottom, 16, for: .scrollContent)
                 .refreshable { await vm.load() }
-            } else {
+            } else if vm.errorMessage == nil {
                 ContentUnavailableView(
                     "No outstanding supplier bills",
                     systemImage: "doc.text.magnifyingglass",
                     description: Text("All bills are paid or there are no bills yet.")
                 )
+            }
+        }
+        .safeAreaInset(edge: .top) {
+            if let message = vm.errorMessage {
+                ReportStatusView(message: message, hasData: vm.report != nil) { await vm.load() }
+                    .background(Color.sBackground)
+            } else if vm.isLoading && vm.report != nil {
+                ProgressView("Refreshing…").padding(8)
             }
         }
         .navigationTitle("Supplier Aging")
@@ -48,7 +56,7 @@ struct SupplierAgingReportView: View {
                 } label: {
                     Image(systemName: "square.and.arrow.up")
                 }
-                .disabled(vm.report == nil)
+                .disabled(!vm.canExport)
             }
         }
         .sheet(item: $shareItem) { wrapper in
@@ -57,7 +65,7 @@ struct SupplierAgingReportView: View {
         .alert("Error", isPresented: $vm.showAlert) {
             Button("OK", role: .cancel) {}
         } message: { Text(vm.errorMessage ?? "") }
-        .task { await vm.load() }
+        .task(id: SessionManager.shared.selectedCompanyId) { await vm.load() }
     }
 
     private func summaryCard(_ report: SupplierAgingReport) -> some View {

@@ -23,7 +23,7 @@ struct PricingStockSection: View {
                 .padding(.horizontal, AppSpacing.page)
 
             VStack(spacing: 12) {
-                HStack(spacing: 10) {
+                AdaptiveFormRow {
                     VStack(alignment: .leading, spacing: 4) {
                         FormFieldHalf(
                             title: "Cost price",
@@ -51,7 +51,7 @@ struct PricingStockSection: View {
                     .focused($focusedField, equals: .sellingPrice)
                 }
 
-                HStack(spacing: 10) {
+                AdaptiveFormRow {
                     FormFieldHalf(
                         title: "Stock quantity",
                         placeholder: "0",
@@ -151,7 +151,8 @@ struct FormField: View {
                 }
             }
 
-            TextField(placeholder, text: $text)
+            TextField(title, text: $text, prompt: Text(placeholder))
+                .accessibilityLabel(title)
                 .keyboardType(keyboardType)
                 .font(.body)
                 .foregroundColor(.sForeground)
@@ -189,7 +190,8 @@ struct FormFieldHalf: View {
                 .font(.subheadline.weight(.medium))
                 .foregroundColor(.sForeground)
 
-            TextField(placeholder, text: $text)
+            TextField(title, text: $text, prompt: Text(placeholder))
+                .accessibilityLabel(title)
                 .keyboardType(keyboardType)
                 .font(.body)
                 .foregroundColor(.sForeground)

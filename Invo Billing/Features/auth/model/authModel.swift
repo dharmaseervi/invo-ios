@@ -12,8 +12,9 @@ struct AuthResponse: Codable {
     let user: User
 }
 
-struct AuthErrorResponse: Codable, Error {
+struct AuthErrorResponse: Codable, LocalizedError {
     let error: String
+    var errorDescription: String? { error }
 }
 
 // Add to your existing models
@@ -23,6 +24,8 @@ struct OTPSendResponse: Codable {
 }
 
 struct OTPVerifyResponse: Codable {
+    let refresh_token: String?
+    let session_id: String?
     let token: String
     let user: User
     let expires_in: Int

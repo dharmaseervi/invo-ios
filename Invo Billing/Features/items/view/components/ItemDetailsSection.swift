@@ -27,10 +27,10 @@ struct ItemDetailsSection: View {
 
             VStack(spacing: 12) {
                 FormField(
-                    title: "Item name",
+                    title: "Item name (required)",
                     placeholder: "Enter item name",
                     text: $vm.name,
-                    error: vm.name.isEmpty ? "Required" : nil,
+                    error: nil,
                     focused: focusedField == .name
                 )
                 .focused($focusedField, equals: .name)
@@ -86,7 +86,7 @@ struct ItemDetailsSection: View {
                             .cornerRadius(4)
                     }
 
-                    TextField("e.g. 1234", text: $vm.hsnCode)
+                    TextField("HSN code", text: $vm.hsnCode, prompt: Text("e.g. 1234"))
                         .font(.body)
                         .foregroundColor(.sForeground)
                         .tint(.sAccent)
@@ -132,6 +132,7 @@ struct ItemDetailsSection: View {
                                 .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.sInput, lineWidth: 0.5))
                                 .cornerRadius(8)
                         }
+                        .accessibilityLabel("Scan barcode")
                     }
                 }
                 .sheet(isPresented: $showBarcodeScanner) {
@@ -162,6 +163,7 @@ struct ItemDetailsSection: View {
                         .foregroundColor(.sForeground)
 
                     TextEditor(text: $vm.description)
+                        .accessibilityLabel("Item description")
                         .font(.body)
                         .foregroundColor(.sForeground)
                         .scrollContentBackground(.hidden)

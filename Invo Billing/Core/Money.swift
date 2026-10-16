@@ -125,6 +125,6 @@ extension View {
     /// Money never wraps. A total broken across two lines reads as a different number —
     /// at a large text size the items list showed "₹750.0" above a lone "0".
     func moneyLine() -> some View {
-        self.lineLimit(1).minimumScaleFactor(0.6)
+        self.monospacedDigit().lineLimit(1).minimumScaleFactor(0.9)
     }
 }

@@ -27,6 +27,21 @@ class InvoiceViewModel: ObservableObject {
     // MARK: - Invoice Data
     @Published var invoices: [InvoiceResponse] = []
     @Published var invoiceDetail: InvoiceDetailResponse?
+    @Published var detailError: String?
+    private var detailRequest = UUID()
+    private var detailCompanyID: Int?
+    private var detailInvoiceID: Int?
+    private var isMutatingDetail = false
+
+    func matchingDetail(for id: Int) -> InvoiceDetailResponse? {
+        guard detailCompanyID == SessionManager.shared.selectedCompanyId,
+              detailInvoiceID == id, invoiceDetail?.id == id else { return nil }
+        return invoiceDetail
+    }
+
+    func canAct(on id: Int) -> Bool {
+        matchingDetail(for: id) != nil && !isFetchingDetail && !isMutatingDetail && detailError == nil
+    }
     @Published var itemNames: [Int: String] = [:]
     @Published var isFetchingList = false
     @Published var isLoadingMoreInvoices = false
@@ -490,15 +505,27 @@ class InvoiceViewModel: ObservableObject {
     // MARK: - Fetch Invoice Detail
     func fetchInvoiceDetail(invoiceID: Int) async {
         guard !previewMode else { return }
+        let companyID = SessionManager.shared.selectedCompanyId
+        let request = UUID()
+        detailRequest = request
+        if detailCompanyID != companyID || detailInvoiceID != invoiceID {
+            invoiceDetail = nil
+            itemNames = [:]
+        }
+        detailCompanyID = companyID
+        detailInvoiceID = invoiceID
+        detailError = nil
         isFetchingDetail = true
-        defer { isFetchingDetail = false }
-
+        defer { if detailRequest == request { isFetchingDetail = false } }
         do {
             let detail = try await service.getInvoiceByID(invoiceID)
+            guard detailRequest == request, companyID == SessionManager.shared.selectedCompanyId else { return }
+            guard detail.id == invoiceID else { throw URLError(.badServerResponse) }
             invoiceDetail = detail
-            await loadItemNames(for: detail.items)
+            await loadItemNames(for: detail.items, request: request)
         } catch {
-            showError(error.localizedDescription)
+            guard detailRequest == request, companyID == SessionManager.shared.selectedCompanyId else { return }
+            detailError = error.localizedDescription
         }
     }
 
@@ -509,7 +536,7 @@ class InvoiceViewModel: ObservableObject {
     /// six-line invoice meant six more round trips before the screen could finish
     /// drawing, every time it was opened. Anything the server left out is still fetched,
     /// so an older server keeps working.
-    private func loadItemNames(for items: [InvoiceItemDetail]) async {
+    private func loadItemNames(for items: [InvoiceItemDetail], request: UUID) async {
         for item in items where itemNames[item.item_id] == nil {
             if let name = item.item_name, !name.isEmpty {
                 itemNames[item.item_id] = name
@@ -518,6 +545,7 @@ class InvoiceViewModel: ObservableObject {
         for item in items where itemNames[item.item_id] == nil {
             if let response = try? await ItemService().getItemByID(item.item_id),
                let name = response.first?.name {
+                guard request == detailRequest else { return }
                 itemNames[item.item_id] = name
             }
         }
@@ -526,6 +554,7 @@ class InvoiceViewModel: ObservableObject {
     // MARK: - Update invoice status issue
     @MainActor
     func issueInvoice(invoiceID: Int) async {
+        guard canAct(on: invoiceID) else { return }
         isFetchingDetail = true
         defer { isFetchingDetail = false }
 
@@ -545,7 +574,7 @@ class InvoiceViewModel: ObservableObject {
     /// Called when the user confirms "Issue anyway" on the oversell warning.
     @MainActor
     func confirmIssueDespiteOversell() async {
-        guard let invoiceID = pendingIssueInvoiceID else { return }
+        guard let invoiceID = pendingIssueInvoiceID, canAct(on: invoiceID) else { return }
         showOversellConfirm = false
         pendingIssueInvoiceID = nil
         oversellItems = []
@@ -644,6 +673,9 @@ class InvoiceViewModel: ObservableObject {
     /// Deletes a draft invoice. Returns true so the caller can dismiss the detail screen,
     /// which would otherwise sit there showing an invoice that no longer exists.
     func deleteInvoice(invoiceID: Int) async -> Bool {
+        guard canAct(on: invoiceID) else { return false }
+        isMutatingDetail = true
+        defer { isMutatingDetail = false }
         isLoading = true
         defer { isLoading = false }
         do {
@@ -657,6 +689,9 @@ class InvoiceViewModel: ObservableObject {
 
     /// Cancels an issued/partial invoice. Returns true so the caller can refresh the view.
     func cancelInvoice(invoiceID: Int) async -> Bool {
+        guard canAct(on: invoiceID) else { return false }
+        isMutatingDetail = true
+        defer { isMutatingDetail = false }
         isLoading = true
         defer { isLoading = false }
         do {
@@ -668,26 +703,55 @@ class InvoiceViewModel: ObservableObject {
         }
     }
 
-    func markPaidBulk(invoices: [InvoiceResponse]) async {
-        var failed = 0
-        for inv in invoices where inv.remaining_amount > 0 {
-            let dto = PaymentRequestDTO(
-                client_id: inv.client_id,
-                amount: inv.remaining_amount,
-                payment_method: .cash,
-                reference: nil,
-                notes: "Bulk mark paid",
-                allocations: [PaymentAllocationDTO(invoice_id: inv.id, amount: inv.remaining_amount)]
-            )
-            do {
-                try await PaymentService.shared.recordPayment(requestDTO: dto)
-            } catch {
-                failed += 1
+    @Published var isRecordingBatch = false
+
+    struct BulkPaymentFailure: Identifiable {
+        let invoice: InvoiceResponse
+        let message: String
+        var id: Int { invoice.id }
+    }
+
+    func markPaidBulk(invoices: [InvoiceResponse], method: PaymentMethods, date: Date, reference: String) async -> [BulkPaymentFailure] {
+        guard !isRecordingBatch else { return [] }
+        isRecordingBatch = true
+        defer { isRecordingBatch = false }
+        let companyID = SessionManager.shared.selectedCompanyId
+        var failures: [BulkPaymentFailure] = []
+        for invoice in invoices {
+            guard companyID == SessionManager.shared.selectedCompanyId else {
+                failures.append(.init(invoice: invoice, message: "Company changed. No payment submitted."))
+                continue
             }
+            guard invoice.status.acceptsPayment, invoice.remaining_amount > 0 else {
+                failures.append(.init(invoice: invoice, message: "Only issued invoices with an amount due can receive payment."))
+                continue
+            }
+            do {
+                let current = try await service.getInvoiceByID(invoice.id)
+                guard current.id == invoice.id, companyID == SessionManager.shared.selectedCompanyId,
+                      current.status.acceptsPayment, abs(current.remaining_amount - invoice.remaining_amount) < 0.005 else {
+                    failures.append(.init(invoice: invoice, message: "Invoice changed. Refresh and review the amount due."))
+                    continue
+                }
+                guard (current.tds_rate ?? 0) == 0 else {
+                    failures.append(.init(invoice: invoice, message: "This invoice has TDS. Record its cash and tax withheld individually."))
+                    continue
+                }
+            } catch {
+                failures.append(.init(invoice: invoice, message: "Could not verify this invoice: \(error.localizedDescription)"))
+                continue
+            }
+            var dto = PaymentRequestDTO(
+                client_id: invoice.client_id, amount: invoice.remaining_amount,
+                payment_method: method, reference: reference.isEmpty ? nil : reference,
+                notes: "Recorded from invoice selection",
+                allocations: [PaymentAllocationDTO(invoice_id: invoice.id, amount: invoice.remaining_amount)]
+            )
+            dto.payment_date = AppDate.wireString(from: date)
+            do { try await PaymentService.shared.recordPayment(requestDTO: dto) }
+            catch { failures.append(.init(invoice: invoice, message: error.localizedDescription)) }
         }
-        if failed > 0 {
-            showError("\(failed) invoice(s) could not be marked paid")
-        }
+        return failures
     }
 
     private func showError(_ message: String) {
@@ -714,7 +778,9 @@ extension InvoiceViewModel {
             },
             invoiceDate: invoiceDate,
             dueDate: dueDate,
-            discount: discount
+            discount: discount,
+            tdsRate: tdsRate,
+            docType: docType
         )
     }
 
@@ -752,6 +818,8 @@ extension InvoiceViewModel {
         invoiceDate = draft.invoiceDate
         dueDate = draft.dueDate
         discount = draft.discount
+        tdsRate = draft.tdsRate ?? 0
+        docType = draft.docType ?? ""
         selectedClient = draft.client
     }
 }

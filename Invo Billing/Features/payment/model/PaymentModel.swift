@@ -25,6 +25,8 @@ struct PaymentRequestDTO: Codable {
     
     /// 🔑 This is mandatory now
     let allocations: [PaymentAllocationDTO]
+    var payment_date: String? = nil
+    var tds_amount: Double? = nil
 }
 
 struct PaymentResponse: Codable {
@@ -39,6 +41,7 @@ struct PaymentResponse: Codable {
 struct PaymentAllocationDTO: Codable {
     let invoice_id: Int
     let amount: Double
+    var tds_amount: Double? = nil
 }
 
 enum PaymentContext {

@@ -48,6 +48,14 @@ struct StockReportView: View {
             }
         }
         .searchable(text: $vm.searchText, prompt: "Search name, SKU or category")
+        .safeAreaInset(edge: .top) {
+            if let message = vm.errorMessage {
+                ReportStatusView(message: message, hasData: vm.report != nil) { await vm.load() }
+                    .background(Color.sBackground)
+            } else if vm.isLoading && vm.report != nil {
+                ProgressView("Refreshing…").padding(8)
+            }
+        }
         .navigationTitle("Stock Report")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -60,7 +68,7 @@ struct StockReportView: View {
                 .disabled(vm.report == nil || vm.report?.total_items == 0)
             }
         }
-        .task { await vm.load() }
+        .task(id: SessionManager.shared.selectedCompanyId) { await vm.load() }
         .sheet(item: Binding(
             get: { shareURL.map { StockShareURL(url: $0) } },
             set: { shareURL = $0?.url }

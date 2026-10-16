@@ -52,7 +52,7 @@ final class PurchasesViewModel: ObservableObject {
         bills.filter { !$0.isSettled && !$0.isCancelled }
     }
 
-    func load() async {
+    func load(refreshRelated: Bool = true) async {
         guard let companyID = SessionManager.shared.selectedCompanyId else {
             show("Select a company first.")
             return
@@ -61,9 +61,11 @@ final class PurchasesViewModel: ObservableObject {
         requestID += 1
         let request = requestID
         isLoading = true
+        errorMessage = nil
         hasMoreBills = false
         pageError = nil
         isLoadingMoreBills = false
+        let needsRelated = refreshRelated || loadedCompanyID != companyID || totalDue == nil
         if loadedCompanyID != companyID || loadedFilter != billFilter || loadedSearch != search {
             bills = []
         }
@@ -76,23 +78,34 @@ final class PurchasesViewModel: ObservableObject {
         do {
             // Both at once: the screen shows what is owed overall beside the bills that
             // make it up, and they should never be a refresh apart.
-            async let suppliersResult = service.suppliers(companyID: companyID)
-            async let billsResult = service.bills(companyID: companyID, status: billFilter, search: search, limit: pageSize)
-            async let returnsResult = service.returns(companyID: companyID)
-
-            let (supplierPage, billPage, returnList) = try await (suppliersResult, billsResult, returnsResult)
-            guard request == requestID else { return }
-            suppliers = supplierPage.data
-            totalDue = supplierPage.total_due
+            async let related: Void = needsRelated ? loadRelated(companyID: companyID, request: request) : ()
+            let billPage = try await service.bills(companyID: companyID, status: loadedFilter, search: loadedSearch, limit: pageSize)
+            await related
+            guard request == requestID, !Task.isCancelled else { return }
             bills = billPage
             billOffset = billPage.count
             hasMoreBills = billPage.count == pageSize
-            returns = returnList
             loadFailed = false
         } catch {
-            guard request == requestID else { return }
+            guard request == requestID, !Task.isCancelled else { return }
             loadFailed = true
             show(error.localizedDescription)
+        }
+    }
+
+    private func loadRelated(companyID: Int, request: Int) async {
+        do {
+            async let suppliersResult = service.suppliers(companyID: companyID)
+            async let returnsResult = service.returns(companyID: companyID)
+            let (page, returnList) = try await (suppliersResult, returnsResult)
+            guard request == requestID, !Task.isCancelled else { return }
+            suppliers = page.data
+            totalDue = page.total_due
+            returns = returnList
+        } catch {
+            guard request == requestID, !Task.isCancelled else { return }
+            totalDue = nil
+            errorMessage = "Supplier totals or returns couldn't be refreshed. Pull to retry."
         }
     }
 
@@ -107,13 +120,13 @@ final class PurchasesViewModel: ObservableObject {
         do {
             let page = try await service.bills(companyID: companyID, status: loadedFilter,
                 search: loadedSearch, limit: pageSize, offset: billOffset)
-            guard request == requestID else { return }
+            guard request == requestID, !Task.isCancelled else { return }
             let known = Set(bills.map(\.id))
             bills += page.filter { !known.contains($0.id) }
             billOffset += page.count
             hasMoreBills = page.count == pageSize
         } catch {
-            guard request == requestID else { return }
+            guard request == requestID, !Task.isCancelled else { return }
             pageError = error.localizedDescription
         }
     }

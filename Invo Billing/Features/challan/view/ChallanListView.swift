@@ -6,13 +6,19 @@ struct ChallanListView: View {
 
     var body: some View {
         contentArea
+            .searchable(text: $vm.searchText, prompt: "Challan number or customer")
+            .task(id: vm.searchText) {
+                try? await Task.sleep(nanoseconds: 300_000_000)
+                guard !Task.isCancelled else { return }
+                await vm.loadChallans()
+            }
             .navigationTitle("Delivery Challans")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: { showCreate = true }) {
                         Image(systemName: "plus")
-                    }
+                    }.accessibilityLabel("New delivery challan")
                 }
             }
             .sheet(isPresented: $showCreate, onDismiss: {
@@ -30,7 +36,7 @@ struct ChallanListView: View {
 
     @ViewBuilder
     private var contentArea: some View {
-        if vm.isLoading && vm.challans.isEmpty {
+        if vm.isLoadingList && vm.challans.isEmpty {
             VStack(spacing: 12) {
                 ProgressView().tint(.sAccent)
                 Text("Loading challans...")
@@ -38,6 +44,10 @@ struct ChallanListView: View {
                     .foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if vm.challans.isEmpty, let message = vm.listError {
+            ReportStatusView(message: message, hasData: false) { await vm.loadChallans() }
+        } else if vm.challans.isEmpty && !vm.searchText.isEmpty {
+            ContentUnavailableView.search(text: vm.searchText)
         } else if vm.challans.isEmpty {
             VStack(spacing: 14) {
                 Image(systemName: "shippingbox")
@@ -65,14 +75,26 @@ struct ChallanListView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             List {
+                if let message = vm.listError {
+                    ReportStatusView(message: message, hasData: true) { await vm.loadChallans() }
+                }
                 ForEach(vm.challans) { challan in
                     NavigationLink {
                         ChallanDetailView(challanID: challan.id, vm: vm)
                     } label: {
                         ChallanRow(challan: challan)
                     }
+                    .onAppear {
+                        if challan.id == vm.challans.suffix(5).first?.id, vm.pageError == nil {
+                            Task { await vm.loadMore() }
+                        }
+                    }
                     .standardListRow()
                     .listRowSeparator(.hidden, edges: challan.id == vm.challans.first?.id ? .top : [])
+                }
+                if vm.isLoadingMore { ProgressView("Loading more…") }
+                else if let message = vm.pageError {
+                    ReportStatusView(message: message, hasData: true) { await vm.loadMore() }
                 }
             }
             .listStyle(.plain)

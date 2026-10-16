@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct PurchasesView: View {
+    @EnvironmentObject private var session: SessionManager
     @StateObject private var vm = PurchasesViewModel()
 
     @State private var showAddSupplier = false
@@ -18,60 +19,78 @@ struct PurchasesView: View {
     @State private var isLoadingDebitNote = false
 
     var body: some View {
-        Group {
-            if vm.isLoading && vm.suppliers.isEmpty {
-                ProgressView()
-                    .tint(.sAccent)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+        List {
+            dueCard.listHeaderRow()
+            NavigationLink {
+                PurchaseLedgerView(showSupplierDetails: true)
+            } label: {
+                Label("Suppliers and payments", systemImage: "person.2")
+            }
+            .standardListRow()
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: AppSpacing.inline) {
+                    billFilter("All bills", nil)
+                    billFilter("Owed", "owed")
+                    billFilter("Overdue", "overdue")
+                    billFilter("Paid", "paid")
+                }.padding(.horizontal, AppSpacing.page)
+            }.listHeaderRow()
+
+            if vm.isLoading && vm.bills.isEmpty {
+                ProgressView("Loading bills…").frame(maxWidth: .infinity)
+                    .listRowSeparator(.hidden)
+            } else if vm.bills.isEmpty {
+                ContentUnavailableView {
+                    Label(vm.search.isEmpty && vm.billFilter == nil ? "No purchase bills yet" : "No matching bills", systemImage: "doc.text.magnifyingglass")
+                } description: {
+                    Text(vm.loadFailed ? "Bills couldn't be loaded. Try again." : "Record an invoice amount or the items you received from a supplier.")
+                } actions: {
+                    if vm.loadFailed { Button("Retry") { Task { await vm.load() } } }
+                    else if !vm.search.isEmpty || vm.billFilter != nil {
+                        Button("Clear filters") { vm.search = ""; vm.billFilter = nil }
+                    } else { Button("Record bill") { showRecordBill = true } }
+                }.listRowSeparator(.hidden)
             } else {
-                List {
-                    dueCard
-                        .listHeaderRow()
-
-                    if vm.suppliers.isEmpty {
-                        emptyState
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
-                    } else {
-                        Section {
-                            ForEach(vm.suppliers) { supplier in
-                                supplierRow(supplier)
-                                    .standardListRow()
-                                    .swipeActions(edge: .trailing) {
-                                        if supplier.due > 0 {
-                                            Button("Pay") { payingSupplier = supplier }
-                                                .tint(.sAccent)
-                                        }
-                                    }
+                if vm.loadFailed {
+                    Text("Couldn't refresh bills. Showing the previous results.")
+                        .font(.footnote).foregroundStyle(Color.sDestructive)
+                }
+                Section("Bills") {
+                    ForEach(vm.bills) { bill in
+                        NavigationLink { PurchaseBillDetailView(bill: bill) } label: {
+                            purchaseBillRow(bill)
+                        }.standardListRow()
+                            .task {
+                                if bill.id == vm.bills.suffix(5).first?.id { await vm.loadMoreBills() }
                             }
-                        } header: {
-                            Text("Suppliers")
+                    }
+                    if vm.isLoadingMoreBills { ProgressView("Loading more bills…") }
+                    else if let error = vm.pageError {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(error).font(.footnote).foregroundStyle(.secondary)
+                            Button("Retry more bills") { Task { await vm.loadMoreBills(retry: true) } }
                         }
-
-                        if !vm.returns.isEmpty {
-                            Section {
-                                ForEach(vm.returns) { ret in
-                                    returnRow(ret)
-                                        .standardListRow()
-                                        .contextMenu {
-                                            Button {
-                                                fetchDebitNote(ret)
-                                            } label: {
-                                                Label("View debit note", systemImage: "doc.text")
-                                            }
-                                        }
-                                }
-                            } header: {
-                                Text("Returns")
-                            }
-                        }
+                    } else if vm.hasMoreBills {
+                        Button("Load more bills") { Task { await vm.loadMoreBills() } }
                     }
                 }
-                .listStyle(.plain)
-                .contentMargins(.bottom, 16, for: .scrollContent)
-                .refreshable { await vm.load() }
             }
+            if vm.search.isEmpty && vm.billFilter == nil && !vm.returns.isEmpty {
+                Section("Returns") {
+                    ForEach(vm.returns) { ret in
+                        Button { fetchDebitNote(ret) } label: { returnRow(ret) }
+                            .standardListRow()
+                            .disabled(isLoadingDebitNote)
+                            .accessibilityLabel("View debit note \(ret.return_number) for \(ret.supplier_name)")
+                    }
+                }
+            }
+            if isLoadingDebitNote { ProgressView("Generating debit note…") }
         }
+        .listStyle(.plain)
+        .contentMargins(.bottom, 16, for: .scrollContent)
+        .refreshable { await vm.load() }
         .navigationTitle("Purchases")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -82,14 +101,12 @@ struct PurchasesView: View {
                     } label: {
                         Label("Record a bill", systemImage: "doc.text")
                     }
-                    .disabled(vm.suppliers.isEmpty)
 
                     Button {
                         showCreateDebitNote = true
                     } label: {
                         Label("New debit note", systemImage: "arrow.uturn.backward.circle")
                     }
-                    .disabled(vm.suppliers.isEmpty)
 
                     Button {
                         showAddSupplier = true
@@ -102,11 +119,11 @@ struct PurchasesView: View {
             }
         }
         .searchable(text: $vm.search, prompt: "Invoice number or supplier")
-        .task(id: vm.search) {
+        .task(id: "\(session.selectedCompanyId ?? 0):\(vm.search)") {
             do { try await Task.sleep(for: .milliseconds(300)) } catch { return }
-            await vm.load()
+            await vm.load(refreshRelated: false)
         }
-        .onChange(of: vm.billFilter) { _, _ in Task { await vm.load() } }
+        .onChange(of: vm.billFilter) { _, _ in Task { await vm.load(refreshRelated: false) } }
         .sheet(isPresented: $showAddSupplier) {
             NavigationStack { AddSupplierSheet(vm: vm) }
         }
@@ -127,20 +144,23 @@ struct PurchasesView: View {
         .sheet(item: $debitNotePDFURL) { wrapper in
             NavigationStack { PDFLookView(pdfURL: wrapper.url) }
         }
-        .overlay {
-            if isLoadingDebitNote {
-                ZStack {
-                    Color.black.opacity(0.3).ignoresSafeArea()
-                    VStack(spacing: 10) {
-                        ProgressView().tint(.white)
-                        Text("Generating debit note…")
-                            .font(.subheadline)
-                            .foregroundColor(.white)
-                    }
-                    .padding(24)
-                    .background(Color.black.opacity(0.7))
-                    .cornerRadius(14)
-                }
+    }
+
+    private func billFilter(_ title: String, _ value: String?) -> some View {
+        AppFilterChip(title: title, isSelected: vm.billFilter == value) { vm.billFilter = value }
+    }
+
+    private func purchaseBillRow(_ bill: PurchaseBill) -> some View {
+        AdaptiveFormRow {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(bill.supplier_name).font(.body.weight(.medium)).foregroundStyle(.primary)
+                Text("\(bill.bill_number) · \(AppDate.shortText(fromWire: bill.bill_date))")
+                    .font(.footnote).foregroundStyle(.secondary)
+            }.frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Total \(Money.text(bill.total))").font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
+                Text(bill.isCancelled ? "Cancelled" : bill.isSettled ? "Paid" : "Due \(Money.text(bill.remaining_amount))")
+                    .font(.footnote).foregroundStyle(bill.isOverdue ? Color.sDestructive : .secondary)
             }
         }
     }

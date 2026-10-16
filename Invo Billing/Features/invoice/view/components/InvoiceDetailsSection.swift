@@ -29,7 +29,7 @@ struct InvoiceDetailsSection: View {
 
                 if let docType {
                     row(label: "Invoice type") {
-                        Picker("", selection: docType) {
+                        Picker("Invoice type", selection: docType) {
                             Text("Tax Invoice").tag("")
                             Text("Credit Invoice").tag("CREDIT INVOICE")
                         }
@@ -40,14 +40,14 @@ struct InvoiceDetailsSection: View {
                 }
 
                 row(label: "Invoice date") {
-                    DatePicker("", selection: $invoiceDate, displayedComponents: .date)
+                    DatePicker("Invoice date", selection: $invoiceDate, displayedComponents: .date)
                         .labelsHidden()
                         .tint(.sAccent)
                 }
                 divider
 
                 row(label: "Due date") {
-                    DatePicker("", selection: $dueDate, in: invoiceDate..., displayedComponents: .date)
+                    DatePicker("Due date", selection: $dueDate, in: invoiceDate..., displayedComponents: .date)
                         .labelsHidden()
                         .tint(.sAccent)
                 }
@@ -89,7 +89,7 @@ struct InvoiceDetailsSection: View {
     }
 
     private func row<Content: View>(label: String, @ViewBuilder content: () -> Content) -> some View {
-        HStack {
+        AdaptiveFormRow {
             Text(label)
                 .font(.body)
                 .foregroundColor(.sForeground)

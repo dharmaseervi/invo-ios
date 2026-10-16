@@ -52,8 +52,7 @@ final class AuthViewModel: ObservableObject {
                 email: email,
                 password: password
             )
-            _ = keychain.saveToken(resp.token)
-            authService.setAuthToken(resp.token)
+            try SessionManager.shared.storeCredentials(token: resp.token, refreshToken: resp.refresh_token, sessionID: resp.session_id, replacingSession: true)
             resetFields()
             SessionManager.shared.loadTokenFromKeychain(freshLogin: true)
             
@@ -113,8 +112,7 @@ final class AuthViewModel: ObservableObject {
                 email: verificationEmail,
                 code: verificationCode
             )
-            _ = keychain.saveToken(resp.token)
-            authService.setAuthToken(resp.token)
+            try SessionManager.shared.storeCredentials(token: resp.token, refreshToken: resp.refresh_token, sessionID: resp.session_id, replacingSession: true)
             requiresVerification = false
             verificationCode = ""
             verificationEmail = ""
@@ -170,8 +168,7 @@ final class AuthViewModel: ObservableObject {
                 email: otpEmail,
                 code: otpCode
             )
-            _ = keychain.saveToken(resp.token)
-            authService.setAuthToken(resp.token)
+            try SessionManager.shared.storeCredentials(token: resp.token, refreshToken: resp.refresh_token, sessionID: resp.session_id, replacingSession: true)
             otpSent = false
             otpEmail = ""
             otpCode = ""
@@ -215,9 +212,7 @@ final class AuthViewModel: ObservableObject {
 
         do {
             try await authService.deleteAccount(password: password)
-            _ = keychain.deleteToken()
-            authService.setAuthToken(nil)
-            SessionManager.shared.loadTokenFromKeychain(freshLogin: true)
+            SessionManager.shared.clearLocalSession()
             return true
         } catch let authErr as AuthErrorResponse {
             errorMessage = authErr.error
@@ -229,9 +224,7 @@ final class AuthViewModel: ObservableObject {
     }
     
     func logout() {
-        _ = KeychainManager.shared.deleteToken()
-        AuthService.shared.setAuthToken(nil)
-        SessionManager.shared.loadTokenFromKeychain(freshLogin: true)
+        SessionManager.shared.logout()
     }
     
     
@@ -275,8 +268,7 @@ final class AuthViewModel: ObservableObject {
                 code: resetCode,
                 newPassword: resetNewPassword
             )
-            _ = keychain.saveToken(resp.token)
-            authService.setAuthToken(resp.token)
+            try SessionManager.shared.storeCredentials(token: resp.token, refreshToken: resp.refresh_token, sessionID: resp.session_id, replacingSession: true)
             showForgotPassword = false
             resetCodeSent = false
             resetEmail = ""

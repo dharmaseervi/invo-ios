@@ -7,6 +7,11 @@ struct ClientFormView: View {
     @StateObject var vm = ClientViewModel()
     @Environment(\.dismiss) var dismiss
     @FocusState private var focusedField: FormField?
+    @State private var attemptedSave = false
+    @State private var confirmDiscard = false
+    private var isDirty: Bool {
+        !vm.name.isEmpty || !vm.email.isEmpty || !vm.phone.isEmpty || !vm.address.isEmpty || !vm.city.isEmpty || !vm.pincode.isEmpty || vm.state != IndianStates.defaultState
+    }
 
     enum FormField {
         case name, email, phone, address, city, state, pincode
@@ -27,10 +32,10 @@ struct ClientFormView: View {
 
                         VStack(spacing: 12) {
                             ClientField(
-                                label: "Full name",
+                                label: "Full name (required)",
                                 placeholder: "Client name",
                                 text: $vm.name,
-                                error: vm.name.isEmpty ? "Required" : nil
+                                error: attemptedSave && vm.name.trimmingCharacters(in: .whitespaces).isEmpty ? "Enter the client name." : nil
                             )
                             .focused($focusedField, equals: .name)
 
@@ -66,7 +71,7 @@ struct ClientFormView: View {
                             )
                             .focused($focusedField, equals: .address)
 
-                            HStack(spacing: 10) {
+                            AdaptiveFormRow {
                                 ClientField(
                                     label: "City",
                                     placeholder: "City",
@@ -90,6 +95,7 @@ struct ClientFormView: View {
                     // MARK: - Action Buttons
                     VStack(spacing: 10) {
                         Button {
+                            attemptedSave = true
                             focusedField = nil
                             Task {
                                 let success = await vm.createNewClient()
@@ -117,22 +123,6 @@ struct ClientFormView: View {
                         }
                         .disabled(vm.isLoading)
 
-                        Button {
-                            vm.resetForm()
-                        } label: {
-                            Text("Clear")
-                                .font(.subheadline.weight(.medium))
-                                .foregroundColor(.sForeground)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 14)
-                                .background(Color.sCard)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .stroke(Color.sBorder, lineWidth: 0.5)
-                                )
-                                .cornerRadius(10)
-                        }
-                        .disabled(vm.isLoading)
                     }
                     .padding(.top, 4)
                 }
@@ -141,7 +131,13 @@ struct ClientFormView: View {
         }
         .navigationTitle("New client")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(false)
+        .navigationBarBackButtonHidden(isDirty)
+        .protectUnsavedChanges(isDirty: isDirty, confirmDiscard: $confirmDiscard) { dismiss() }
+        .toolbar {
+            if isDirty {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { confirmDiscard = true }.disabled(vm.isLoading) }
+            }
+        }
         .alert(
             "Error",
             isPresented: $vm.showAlert,
@@ -174,7 +170,8 @@ struct ClientField: View {
                 }
             }
 
-            TextField(placeholder, text: $text)
+            TextField(label, text: $text, prompt: Text(placeholder))
+                .accessibilityLabel(label)
                 .keyboardType(keyboard)
                 .font(.body)
                 .foregroundColor(.sForeground)

@@ -154,6 +154,7 @@ struct InvoiceDetailResponse: Codable {
 
     let tds_rate: Double?
     let tds_amount: Double?
+    var tds_withheld: Double? = nil
     let doc_type: String?
 
     let client: ClientSummary
@@ -275,6 +276,16 @@ enum InvoiceWatermark {
         case .draft: return "DRAFT"
         case .paid: return "PAID"
         case .cancelled: return "CANCELLED"
+        }
+    }
+}
+
+
+extension InvoiceStatus {
+    var acceptsPayment: Bool {
+        switch self {
+        case .issued, .partial, .sent, .pending, .overdue: return true
+        case .draft, .paid, .cancelled: return false
         }
     }
 }

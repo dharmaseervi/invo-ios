@@ -35,38 +35,56 @@ final class ProfitLossViewModel: ObservableObject {
 
     private let service = ProfitLossService()
 
+    private var loadID = UUID()
+    private var loadedCompanyID: Int?
+    private var loadedPeriod: Period?
+    var canExport: Bool { report != nil && !isLoading && errorMessage == nil && loadedCompanyID == SessionManager.shared.selectedCompanyId && loadedPeriod == selectedPeriod }
+
     func load() async {
         guard let companyID = SessionManager.shared.selectedCompanyId else {
             errorMessage = "Select a company first."
             showAlert = true
             return
         }
+        let request = UUID()
+        loadID = request
+        let period = selectedPeriod
+        if loadedCompanyID != companyID || loadedPeriod != period { report = nil }
         isLoading = true
         errorMessage = nil
-        defer { isLoading = false }
+        defer { if request == loadID { isLoading = false } }
         do {
-            report = try await service.fetch(companyID: companyID, period: selectedPeriod.rawValue)
+            let result = try await service.fetch(companyID: companyID, period: period.rawValue)
+            guard request == loadID, companyID == SessionManager.shared.selectedCompanyId, period == selectedPeriod else { return }
+            report = result
+            loadedCompanyID = companyID
+            loadedPeriod = period
         } catch {
-            errorMessage = "Couldn't load the report. Pull to retry."
+            guard request == loadID, companyID == SessionManager.shared.selectedCompanyId, period == selectedPeriod else { return }
+            errorMessage = "Couldn't load the report. Tap Retry to try again."
             showAlert = true
         }
     }
 
     func exportCSV() -> URL? {
-        guard let r = report else { return nil }
-        var csv = "Profit & Loss — \(r.period)\n"
+        guard canExport, let r = report else { return nil }
+        var csv = "Business summary — \(r.period)\n"
         csv += "From,\(r.from)\nTo,\(r.to)\n\n"
         csv += "Metric,Amount\n"
-        csv += "Revenue,\(r.revenue)\n"
+        csv += "Invoice sales (including tax),\(r.revenue)\n"
         csv += "Purchases,\(r.purchases)\n"
         csv += "Expenses,\(r.expenses)\n"
-        csv += "Gross Profit,\(r.gross_profit)\n"
-        csv += "Net Profit,\(r.net_profit)\n"
-        csv += "Gross Margin %,\(r.gross_margin_pct)\n"
-        csv += "Net Margin %,\(r.net_margin_pct)\n"
+        csv += "Sales less purchases,\(r.gross_profit)\n"
+        csv += "After expenses,\(r.net_profit)\n"
+        csv += "Sales less purchases %,\(r.gross_margin_pct)\n"
+        csv += "After expenses %,\(r.net_margin_pct)\n"
         csv += "Invoices,\(r.invoice_count)\n"
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("ProfitLoss_\(r.period).csv")
-        try? csv.write(to: url, atomically: true, encoding: .utf8)
-        return url
+        csv += "\nScope,\(SafeCSV.text("Includes tax and all purchases in the period, not the cost of inventory sold. Credit notes and purchase returns are not deducted. This is not an accounting profit statement."))\n"
+        do { return try SafeCSV.write(csv, filename: "BusinessSummary_\(r.from)_\(r.to).csv") }
+        catch {
+            errorMessage = "Couldn't save the CSV: \(error.localizedDescription)"
+            showAlert = true
+            return nil
+        }
     }
 }

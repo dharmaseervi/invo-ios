@@ -47,6 +47,8 @@ struct InvoiceDraft: Codable {
     var invoiceDate: Date = Date()
     var dueDate: Date = Date()
     var discount: Double = 0
+    var tdsRate: Double? = nil
+    var docType: String? = nil
 
     var savedAt: Date = Date()
 

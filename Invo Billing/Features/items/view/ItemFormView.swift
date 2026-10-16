@@ -7,6 +7,14 @@ struct ItemFormView: View {
     @StateObject var vm = ItemViewModel()
     @Environment(\.dismiss) var dismiss
     @State private var showRestockSheet = false
+    @State private var initialFields: [String]?
+    @State private var confirmDiscard = false
+    private var fields: [String] {
+        [vm.name, vm.sku, vm.description, vm.costPrice, vm.price, vm.quantity,
+         vm.lowStockAlert, vm.taxRate, vm.unit ?? "", vm.hsnCode, vm.barcode,
+         vm.selectedCategoryId.map(String.init) ?? ""]
+    }
+    private var isDirty: Bool { initialFields.map { $0 != fields } ?? false }
 
     var body: some View {
         ZStack {
@@ -79,24 +87,6 @@ struct ItemFormView: View {
                     }
                     .disabled(vm.isLoading || !vm.isValid)
 
-                    if !vm.isEditMode {
-                        Button(action: {
-                            vm.resetForm()
-                        }) {
-                            Text("Clear")
-                                .font(.subheadline.weight(.medium))
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 14)
-                                .foregroundColor(.sForeground)
-                                .background(Color.sCard)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .stroke(Color.sBorder, lineWidth: 0.5)
-                                )
-                                .cornerRadius(10)
-                        }
-                        .disabled(vm.isLoading)
-                    }
                 }
                 .padding(.horizontal, AppSpacing.page)
                 .padding(.top, 14)
@@ -106,14 +96,21 @@ struct ItemFormView: View {
         }
         .navigationTitle(vm.isEditMode ? "Edit item" : "New item")
         .navigationBarTitleDisplayMode(.inline)
-        .task {
-            if let existingItem {
-                vm.loadForEdit(existingItem)
+        .navigationBarBackButtonHidden(isDirty)
+        .protectUnsavedChanges(isDirty: isDirty, confirmDiscard: $confirmDiscard) { dismiss() }
+        .toolbar {
+            if isDirty {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { confirmDiscard = true }.disabled(vm.isLoading) }
             }
+        }
+        .task {
+            guard initialFields == nil else { return }
+            if let existingItem { vm.loadForEdit(existingItem) }
+            initialFields = fields
         }
         .sheet(isPresented: $showRestockSheet) {
             RestockSheet(vm: vm)
-                .presentationDetents([.medium])
+                .presentationDetents([.medium, .large])
         }
         .alert("Error", isPresented: $vm.showAlert) {
             Button("OK", role: .cancel) {}

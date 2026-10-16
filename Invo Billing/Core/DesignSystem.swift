@@ -110,6 +110,21 @@ struct AdaptiveFormRow<Content: View>: View {
     }
 }
 
+/// Keeps sheet dismissal consistent without prompting for untouched forms.
+extension View {
+    func protectUnsavedChanges(
+        isDirty: Bool, confirmDiscard: Binding<Bool>, discard: @escaping () -> Void
+    ) -> some View {
+        interactiveDismissDisabled(isDirty)
+            .confirmationDialog("Discard your changes?", isPresented: confirmDiscard, titleVisibility: .visible) {
+                Button("Discard changes", role: .destructive, action: discard)
+                Button("Keep editing", role: .cancel) {}
+            } message: {
+                Text("Your unsaved changes will be lost.")
+            }
+    }
+}
+
 /// Shared scrollable-filter treatment with a full-size touch target and selection
 /// information for VoiceOver; labels grow with Dynamic Type.
 struct AppFilterChip: View {

@@ -12,12 +12,17 @@ struct PaymentCorrectionService {
     private let baseURL = AppEnvironment.baseURL
 
     /// A company's payments, newest first.
-    func history(companyID: Int, limit: Int = 50, offset: Int = 0) async throws -> [PaymentHistoryRow] {
+    func history(companyID: Int, limit: Int = 50, offset: Int = 0, search: String = "", start: String? = nil, end: String? = nil, clientID: Int? = nil, method: String? = nil) async throws -> [PaymentHistoryRow] {
         var components = URLComponents(string: "\(baseURL)/companies/\(companyID)/payments")
         components?.queryItems = [
             URLQueryItem(name: "limit", value: String(limit)),
             URLQueryItem(name: "offset", value: String(offset)),
         ]
+        if !search.isEmpty { components?.queryItems?.append(URLQueryItem(name: "search", value: search)) }
+        if let start { components?.queryItems?.append(URLQueryItem(name: "start", value: start)) }
+        if let end { components?.queryItems?.append(URLQueryItem(name: "end", value: end)) }
+        if let clientID { components?.queryItems?.append(URLQueryItem(name: "client_id", value: String(clientID))) }
+        if let method, !method.isEmpty { components?.queryItems?.append(URLQueryItem(name: "method", value: method)) }
         guard let url = components?.url else { throw URLError(.badURL) }
 
         struct Wrapper: Decodable { let payments: [PaymentHistoryRow] }

@@ -69,7 +69,7 @@ struct InvoiceView: View {
     @State private var hasLoadedOnce = false
     @State private var isSelecting = false
     @State private var selectedIDs: Set<Int> = []
-    @State private var isBulkWorking = false
+    @State private var showBulkPayment = false
 
     private var isFirstLoad: Bool { vm.isFetchingList && !hasLoadedOnce }
 
@@ -112,6 +112,13 @@ struct InvoiceView: View {
             try? await Task.sleep(nanoseconds: 300_000_000)
             guard !Task.isCancelled else { return }
             await reload()
+        }
+        .sheet(isPresented: $showBulkPayment) {
+            BulkInvoicePaymentView(invoices: payableSelection, vm: vm) { failedIDs in
+                selectedIDs = failedIDs
+                isSelecting = !failedIDs.isEmpty
+                Task { await reload() }
+            }
         }
         .fullScreenCover(isPresented: $showCreateInvoice) {
             NavigationStack { CreateInvoiceView() }
@@ -414,46 +421,24 @@ struct InvoiceView: View {
 
     // MARK: - Bulk action bar
 
-    private var bulkActionBar: some View {
-        VStack(spacing: 0) {
-            Spacer()
-            HStack(spacing: 16) {
-                Text("\(selectedIDs.count) selected")
-                    .font(.subheadline.weight(.medium))
-                Spacer()
-                let payable = filteredInvoices.filter { selectedIDs.contains($0.id) && $0.remaining_amount > 0 }
-                if !payable.isEmpty {
-                    Button {
-                        Task {
-                            isBulkWorking = true
-                            await vm.markPaidBulk(invoices: payable)
-                            isBulkWorking = false
-                            isSelecting = false
-                            selectedIDs.removeAll()
-                            await reload()
-                        }
-                    } label: {
-                        if isBulkWorking {
-                            ProgressView().tint(Color.sAccentFG)
-                        } else {
-                            Text("Mark paid (\(payable.count))")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(Color.sAccentFG)
-                                .padding(.horizontal, AppSpacing.page)
-                                .padding(.vertical, 8)
-                                .background(Color.sAccent, in: Capsule())
-                        }
-                    }
-                    .disabled(isBulkWorking)
-                }
-            }
-            .padding(.horizontal, AppSpacing.page)
-            .padding(.vertical, 14)
-            .background(.ultraThinMaterial)
-            .overlay(Divider(), alignment: .top)
-        }
-        .ignoresSafeArea(edges: .bottom)
+    private var payableSelection: [InvoiceResponse] {
+        filteredInvoices.filter { selectedIDs.contains($0.id) && $0.status.acceptsPayment && $0.remaining_amount > 0 }
     }
+
+    private var bulkActionBar: some View {
+        AdaptiveFormRow {
+            Text("\(selectedIDs.count) selected")
+                .font(.subheadline.weight(.medium))
+            Spacer(minLength: 8)
+            Button("Record payment (\(payableSelection.count))") { showBulkPayment = true }
+                .buttonStyle(.borderedProminent)
+                .disabled(payableSelection.isEmpty)
+        }
+        .padding()
+        .background(.regularMaterial)
+        .overlay(Divider(), alignment: .top)
+    }
+
 }
 
 // MARK: - Invoice Row
@@ -565,12 +550,15 @@ struct InvoiceRow: View {
 
     private var amountAndStatus: some View {
         VStack(alignment: textSize.isAccessibilitySize ? .leading : .trailing, spacing: AppSpacing.compact) {
-            Text(Money.text(invoice.total))
+            Text("\(invoice.status.acceptsPayment ? "Due" : "Total") \(Money.text(invoice.status.acceptsPayment ? invoice.remaining_amount : invoice.total))")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.primary)
                 .monospacedDigit()
                 .fixedSize(horizontal: false, vertical: true)
                 .layoutPriority(1)
+            if invoice.status.acceptsPayment && abs(invoice.remaining_amount - invoice.total) > 0.004 {
+                Text("Total \(Money.text(invoice.total))").font(.footnote).foregroundStyle(.secondary)
+            }
             Text(statusConfig.label)
                 .font(.caption.weight(.medium))
                 .foregroundStyle(statusConfig.color)

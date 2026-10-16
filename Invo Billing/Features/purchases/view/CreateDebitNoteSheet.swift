@@ -1,46 +1,5 @@
 import SwiftUI
 
-// MARK: - Item picker (file-private so it doesn't clash with PurchaseSheets)
-
-private struct DebitNoteItemPicker: View {
-    let onPick: (ItemResponse) -> Void
-    @Environment(\.dismiss) private var dismiss
-    @StateObject private var itemVM = ItemViewModel()
-    @State private var search = ""
-
-    var body: some View {
-        NavigationStack {
-            List {
-                ForEach(itemVM.items.filter {
-                    search.isEmpty || $0.name.localizedCaseInsensitiveContains(search)
-                }) { item in
-                    Button {
-                        onPick(item)
-                        dismiss()
-                    } label: {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(item.name).foregroundColor(.sForeground)
-                            Text("\(item.quantity) in stock · last cost \(Money.text(item.cost_price ?? 0))")
-                                .font(.footnote).foregroundColor(.sMutedFG)
-                        }
-                    }
-                }
-            }
-            .searchable(text: $search)
-            .navigationTitle("Add item")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
-            .task { await itemVM.loadItems() }
-        }
-    }
-}
-
-// MARK: -
-
 /// Standalone debit note creation — no bill required.
 /// The user picks a supplier, optionally links a bill, and enters the items going back.
 struct CreateDebitNoteSheet: View {
@@ -48,6 +7,12 @@ struct CreateDebitNoteSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var supplierID: Int?
+    @State private var chosenSupplier: Supplier?
+    @State private var showSupplierPicker = false
+    @State private var confirmDiscard = false
+    @State private var loadError: String?
+    @State private var billsGeneration = 0
+    @State private var detailGeneration = 0
     @State private var returnNumber = ""
     @State private var returnDate = Date()
     @State private var reason = ""
@@ -79,7 +44,7 @@ struct CreateDebitNoteSheet: View {
     }
 
     private var selectedSupplier: Supplier? {
-        vm.suppliers.first { $0.id == supplierID }
+        chosenSupplier ?? vm.suppliers.first { $0.id == supplierID }
     }
 
     private var usingBill: Bool { billID != nil && !billLines.isEmpty }
@@ -106,22 +71,23 @@ struct CreateDebitNoteSheet: View {
     private var canSave: Bool {
         guard supplierID != nil,
               !returnNumber.trimmingCharacters(in: .whitespaces).isEmpty,
-              !vm.isWorking else { return false }
+              !vm.isWorking, !loadingBills, !loadingBillDetail, loadError == nil else { return false }
         if usingBill { return total > 0 && !overReturning }
         return !manualLines.isEmpty && manualLines.allSatisfy {
             (Int($0.qty) ?? 0) > 0 && (Double($0.rate) ?? 0) > 0
         }
     }
 
+    private var isDirty: Bool {
+        supplierID != nil || !returnNumber.isEmpty || !reason.isEmpty || !manualLines.isEmpty || billLines.contains { !$0.qty.isEmpty }
+    }
+
     var body: some View {
         Form {
             // ── Supplier & document ──────────────────────────────
             Section("Debit note") {
-                Picker("Supplier", selection: $supplierID) {
-                    Text("Choose").tag(Int?.none)
-                    ForEach(vm.suppliers) { s in
-                        Text(s.name).tag(Int?.some(s.id))
-                    }
+                Button { showSupplierPicker = true } label: {
+                    LabeledContent("Supplier", value: selectedSupplier?.name ?? "Choose supplier")
                 }
                 .onChange(of: supplierID) { _, _ in
                     billID = nil
@@ -144,6 +110,9 @@ struct CreateDebitNoteSheet: View {
                             ProgressView().tint(.sAccent)
                             Text("Loading bills…").font(.subheadline).foregroundColor(.sMutedFG)
                         }
+                    } else if let loadError {
+                        Text(loadError).font(.footnote).foregroundStyle(Color.sDestructive)
+                        Button("Retry bills") { Task { await loadBills() } }
                     } else if supplierBills.isEmpty {
                         Text("No open bills for this supplier.")
                             .font(.subheadline).foregroundColor(.sMutedFG)
@@ -204,7 +173,7 @@ struct CreateDebitNoteSheet: View {
                     ForEach($manualLines) { $l in
                         VStack(alignment: .leading, spacing: 6) {
                             Text(l.item.name).font(.subheadline.weight(.medium))
-                            HStack(spacing: 12) {
+                            AdaptiveFormRow {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text("Qty").font(.caption).foregroundColor(.sMutedFG)
                                     TextField("0", text: $l.qty)
@@ -243,18 +212,25 @@ struct CreateDebitNoteSheet: View {
                 }
             }
         }
+        .protectUnsavedChanges(isDirty: isDirty, confirmDiscard: $confirmDiscard) { dismiss() }
+        .sheet(isPresented: $showSupplierPicker) {
+            SupplierPickerSheet(purchasesVM: vm, selectedID: supplierID) { supplier in
+                chosenSupplier = supplier
+                supplierID = supplier.id
+            }
+        }
         .navigationTitle("New debit note")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Button("Cancel") { dismiss() }
+                Button("Cancel") { if isDirty { confirmDiscard = true } else { dismiss() } }
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Save") { save() }.disabled(!canSave)
             }
         }
         .sheet(isPresented: $showItemPicker) {
-            DebitNoteItemPicker { item in
+            PurchaseItemPicker { item in
                 if !manualLines.contains(where: { $0.item.id == item.id }) {
                     manualLines.append(ManualReturnLine(
                         item: item,
@@ -271,30 +247,60 @@ struct CreateDebitNoteSheet: View {
     private func loadBills() async {
         guard let companyID = SessionManager.shared.selectedCompanyId,
               let sid = supplierID else { return }
+        billsGeneration += 1
+        let request = billsGeneration
+        supplierBills = []
+        loadError = nil
         loadingBills = true
-        defer { loadingBills = false }
-        supplierBills = (try? await PurchasesService().bills(
-            companyID: companyID, supplierID: sid, status: "owed"
-        )) ?? []
+        defer { if request == billsGeneration { loadingBills = false } }
+        do {
+            // A bill may be returned after it was paid. Include every non-cancelled,
+            // itemised bill, fetching all pages for this optional picker.
+            var offset = 0
+            var all: [PurchaseBill] = []
+            while true {
+                let page = try await PurchasesService().bills(companyID: companyID, supplierID: sid, limit: 100, offset: offset)
+                guard request == billsGeneration, supplierID == sid, !Task.isCancelled else { return }
+                all += page.filter { !$0.isCancelled && !$0.isAmountOnly }
+                offset += page.count
+                if page.count < 100 { break }
+            }
+            supplierBills = all
+        } catch {
+            guard request == billsGeneration, supplierID == sid else { return }
+            loadError = "Couldn't load this supplier's bills. Try again."
+        }
     }
 
     private func loadBillDetail() async {
         guard let companyID = SessionManager.shared.selectedCompanyId,
               let bid = billID else {
+            detailGeneration += 1
+            loadingBillDetail = false
             billDetail = nil; billLines = []; return
         }
+        detailGeneration += 1
+        let request = detailGeneration
+        billDetail = nil
+        billLines = []
+        loadError = nil
         loadingBillDetail = true
-        defer { loadingBillDetail = false }
-        if let detail = try? await PurchasesService().billDetail(companyID: companyID, billID: bid) {
+        defer { if request == detailGeneration { loadingBillDetail = false } }
+        do {
+            let detail = try await PurchasesService().billDetail(companyID: companyID, billID: bid)
+            guard request == detailGeneration, billID == bid, !Task.isCancelled else { return }
             billDetail = detail
             billLines = detail.items.map { BillReturnLine(line: $0) }
+        } catch {
+            guard request == detailGeneration, billID == bid else { return }
+            loadError = "Couldn't load bill items. Select the bill again to retry."
         }
     }
 
     // MARK: - Save
 
     private func save() {
-        guard let sid = supplierID,
+        guard canSave, let sid = supplierID,
               let companyID = SessionManager.shared.selectedCompanyId else { return }
 
         let df = DateFormatter()

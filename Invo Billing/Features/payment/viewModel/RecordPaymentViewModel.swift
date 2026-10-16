@@ -21,6 +21,10 @@ final class RecordPaymentViewModel: ObservableObject {
 
     // MARK: - Inputs
     @Published var amount: String = ""
+    @Published var tdsAmount: String = ""
+    @Published var paymentDate = Date()
+    @Published var expectedTDS: Double?
+    private var amountBeforeEdit = ""
     @Published var method: PaymentMethods = .upi
     @Published var reference: String = ""
     @Published var notes: String = ""
@@ -61,7 +65,10 @@ final class RecordPaymentViewModel: ObservableObject {
 
     // MARK: - Validation
     var isValid: Bool {
-        (Double(amount) ?? 0) > 0
+        guard let received = Money.parse(amount), received >= 0,
+              let withheld = Money.parse(tdsAmount.isEmpty ? "0" : tdsAmount), withheld >= 0 else { return false }
+        let total = Money.rounded(received + withheld)
+        return total > 0 && (dueAmount.map { total <= Money.rounded($0) } ?? true) && (isInvoiceMode || withheld == 0)
     }
 
     var dueAmount: Double? {
@@ -71,8 +78,13 @@ final class RecordPaymentViewModel: ObservableObject {
     
     // MARK: - Load unpaid invoices (client flow only)
     func loadUnpaidInvoices() async {
-        guard case .client = context else { return }
-        
+        if case let .invoice(invoiceID, _) = context {
+            do {
+                let detail = try await invoiceService.fetchInvoiceDetail(id: invoiceID)
+                expectedTDS = max((detail.tds_amount ?? 0) - (detail.tds_withheld ?? 0), 0)
+            } catch { /* Withholding can still be entered explicitly; never guess it. */ }
+            return
+        }
         isLoading = true
         defer { isLoading = false }
         
@@ -91,7 +103,9 @@ final class RecordPaymentViewModel: ObservableObject {
     // MARK: - Submit payment
     func submitPayment() async -> Bool {
         
-        guard let amountValue = Double(amount), amountValue > 0 else {
+        guard !isLoading else { return false }
+        guard isValid, let amountValue = Money.parse(amount),
+              let withheldValue = Money.parse(tdsAmount.isEmpty ? "0" : tdsAmount) else {
             errorMessage = "Enter a valid amount"
             showAlert = true
             return false
@@ -109,27 +123,16 @@ final class RecordPaymentViewModel: ObservableObject {
             allocations = [
                 PaymentAllocationDTO(
                     invoice_id: invoiceID,
-                    amount: amountValue
+                    amount: Money.rounded(amountValue + withheldValue),
+                    tds_amount: withheldValue
                 )
             ]
             
             // ✅ CLIENT PAYMENT (FIFO allocation)
         case .client:
-            var remaining = amountValue
-            var temp: [PaymentAllocationDTO] = []
-            
-            for invoice in unpaidInvoices where remaining > 0 {
-                let applied = min(invoice.remainingAmount, remaining)
-                temp.append(
-                    PaymentAllocationDTO(
-                        invoice_id: invoice.id,
-                        amount: applied
-                    )
-                )
-                remaining -= applied
-            }
-            
-            allocations = temp
+            // The server allocates cash against the current complete balance,
+            // including invoices not present in this preview page.
+            allocations = []
         }
         
         let dto = PaymentRequestDTO(
@@ -138,7 +141,9 @@ final class RecordPaymentViewModel: ObservableObject {
             payment_method: method.self,
             reference: reference.isEmpty ? nil : reference,
             notes: notes.isEmpty ? nil : notes,
-            allocations: allocations
+            allocations: allocations,
+            payment_date: AppDate.wireDate(paymentDate),
+            tds_amount: withheldValue
         )
         
         do {
