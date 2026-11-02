@@ -87,7 +87,7 @@ struct ItemsView: View {
                     }
                 }
                 .task { await vm.loadItems() }
-                .onChange(of: SessionManager.shared.selectedCompanyId) { _ in
+                .onChange(of: SessionManager.shared.selectedCompanyId) {
                     Task { await vm.loadItems() }
                 }
                 .navigationDestination(item: $selectedItemForEdit) { item in
@@ -139,7 +139,7 @@ struct ItemsView: View {
     private var contentArea: some View {
         if vm.isLoading && vm.items.isEmpty {
             VStack(spacing: 12) {
-                ProgressView().tint(.sAccent)
+                ProgressView().tint(Color.sAccent)
                 Text("Loading items...")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -148,21 +148,21 @@ struct ItemsView: View {
         } else if let error = vm.errorMessage {
             VStack(spacing: 10) {
                 Image(systemName: "exclamationmark.triangle")
-                    .font(.title)
+                    .font(.title2)
                     .foregroundStyle(Color.sDestructive)
+                Text("Couldn't load items")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.primary)
                 Text(error)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
+                    .padding(.horizontal, 16)
                 if !vm.sessionExpired {
-                    Button(action: {
-                        Task { await vm.loadItems() }
-                    }) {
-                        Text("Try again")
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(Color.sAccent)
-                    }
-                    .padding(.top, 4)
+                    Button("Try again") { Task { await vm.loadItems() } }
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(Color.sAccent)
+                        .padding(.top, 4)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -187,11 +187,11 @@ struct ItemsView: View {
                         } label: {
                             Text("Add item")
                                 .font(.subheadline.weight(.semibold))
-                                .foregroundColor(.sAccentFG)
+                                .foregroundStyle(Color.sAccentFG)
                                 .padding(.horizontal, AppSpacing.page)
                                 .padding(.vertical, 10)
                                 .background(Color.sPrimary)
-                                .cornerRadius(8)
+                                .clipShape(.rect(cornerRadius: 8))
                         }
                         .padding(.top, 4)
                     }
@@ -224,7 +224,7 @@ struct ItemsView: View {
                     }
 
                     if vm.isLoadingMore {
-                        HStack { Spacer(); ProgressView().tint(.sAccent); Spacer() }
+                        HStack { Spacer(); ProgressView().tint(Color.sAccent); Spacer() }
                             .padding(.vertical, 12)
                             .listRowSeparator(.hidden)
                             .listRowBackground(Color.clear)
@@ -252,11 +252,11 @@ struct ItemsView: View {
                 }
             }
             .listStyle(.plain)
-            .contentMargins(.bottom, isSelectMode && !selectedItemIDs.isEmpty ? 80 : 16, for: .scrollContent)
+            .contentMargins(.bottom, isSelectMode && !selectedItemIDs.isEmpty ? 80 : 24, for: .scrollContent)
             .overlay(alignment: .top) {
                 if vm.isLoading && !vm.items.isEmpty {
                     ProgressView()
-                        .tint(.sAccent)
+                        .tint(Color.sAccent)
                         .padding(8)
                         .background(.ultraThinMaterial, in: Capsule())
                         .transition(.opacity)
@@ -288,17 +288,17 @@ extension ItemsView {
                     Text("Print labels")
                 }
                 .font(.subheadline.weight(.semibold))
-                .foregroundColor(.sAccentFG)
+                .foregroundStyle(Color.sAccentFG)
                 .padding(.horizontal, AppSpacing.page)
                 .padding(.vertical, 10)
                 .background(Color.sPrimary)
-                .cornerRadius(10)
+                .clipShape(.rect(cornerRadius: 10))
             }
         }
         .padding(.horizontal, AppSpacing.page)
         .padding(.vertical, 14)
-        .background(Color(UIColor.secondarySystemGroupedBackground))
-        .overlay(Rectangle().fill(Color(UIColor.separator)).frame(height: 0.5), alignment: .top)
+        .background(Color.sCard)
+        .overlay(alignment: .top) { Rectangle().fill(Color.sBorder).frame(height: 0.5) }
     }
 }
 
@@ -329,7 +329,7 @@ struct ItemLookupResultSheet: View {
                 }
                 .frame(maxWidth: .infinity)
 
-                Rectangle().fill(Color(UIColor.separator)).frame(width: 0.5, height: 40)
+                Rectangle().fill(Color.sBorder).frame(width: 0.5, height: 40)
 
                 VStack(spacing: 4) {
                     Text("\(item.quantity)")
@@ -349,7 +349,7 @@ struct ItemLookupResultSheet: View {
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
                     .background(Color.sDestructive.opacity(0.1))
-                    .cornerRadius(6)
+                    .clipShape(.rect(cornerRadius: 6))
             }
 
             Spacer()
@@ -360,7 +360,6 @@ struct ItemLookupResultSheet: View {
 
 // MARK: - Item List Row View
 struct ItemListRowView: View {
-    @Environment(\.dynamicTypeSize) private var textSize
     let item: ItemResponse
     let onTapRow: () -> Void
     let onTapPrint: () -> Void
@@ -372,6 +371,15 @@ struct ItemListRowView: View {
         return item.quantity <= alert
     }
 
+    private var specsLine: String {
+        [item.sku, item.description]
+            .compactMap { s -> String? in
+                guard let v = s, !v.isEmpty else { return nil }
+                return v
+            }
+            .joined(separator: " · ")
+    }
+
     var body: some View {
         HStack(spacing: 12) {
             if isSelectMode {
@@ -381,58 +389,46 @@ struct ItemListRowView: View {
             }
 
             Button(action: onTapRow) {
-                HStack(spacing: 12) {
-                    if !textSize.isAccessibilitySize {
-                    Text(String(item.name.prefix(1)).uppercased())
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundColor(.sAccentFG)
-                        .frame(width: 40, height: 40)
-                        .background(Color.sAccent, in: RoundedRectangle(cornerRadius: 10))
-                        .accessibilityHidden(true)
-                    }
+                VStack(alignment: .leading, spacing: 3) {
+                    // Line 1: name + low/out-of-stock badge
+                    HStack(spacing: 6) {
+                        Text(item.name)
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.primary)
 
-                    VStack(alignment: .leading, spacing: 4) {
-                        AdaptiveFormRow {
-                            Text(item.name)
-                                .font(.subheadline.weight(.medium))
-                                .foregroundStyle(.primary)
-
-                            if isLowStock {
-                                Text(item.quantity <= 0 ? "Out of stock" : "Low stock")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(Color.sDestructive)
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(Color.sDestructive.opacity(0.1))
-                                    .cornerRadius(4)
-                            }
-                        }
-                        .alignmentGuide(.listRowSeparatorLeading) { d in d[.leading] }
-
-                        AdaptiveFormRow {
-                            Text(Money.text(item.price)).moneyLine()
-                                .font(.footnote)
-                                .foregroundStyle(.primary)
-
-                            Text("•")
-                                .foregroundStyle(.tertiary)
-                            Text("\(item.quantity) \(item.unit ?? "in stock")")
-                                .font(.caption)
-                                .foregroundStyle(isLowStock ? Color.sDestructive : .secondary)
-
-                            if let desc = item.description, !desc.isEmpty {
-                                Text("•")
-                                    .foregroundStyle(.tertiary)
-                                Text(desc)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(1)
-                            }
+                        if isLowStock {
+                            Text(item.quantity <= 0 ? "Out of stock" : "Low stock")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(Color.sDestructive)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.sDestructive.opacity(0.1))
+                                .clipShape(.rect(cornerRadius: 4))
                         }
                     }
 
-                    Spacer()
+                    // Line 2: SKU · description (specs, shown only when present)
+                    if !specsLine.isEmpty {
+                        Text(specsLine)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+
+                    // Line 3: price · stock count
+                    HStack(spacing: 4) {
+                        Text(Money.text(item.price)).moneyLine()
+                            .font(.footnote)
+                            .foregroundStyle(.primary)
+                        Text("·")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                        Text("\(item.quantity) \(item.unit ?? "in stock")")
+                            .font(.caption)
+                            .foregroundStyle(isLowStock ? Color.sDestructive : .secondary)
+                    }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -446,7 +442,7 @@ struct ItemListRowView: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Print labels for \(item.name)")
+                .accessibilityLabel("Print label for \(item.name)")
             }
         }
     }

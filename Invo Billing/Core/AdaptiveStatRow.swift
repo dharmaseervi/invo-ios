@@ -19,7 +19,7 @@ struct AdaptiveStatRow: View {
     struct Stat: Identifiable {
         let label: String
         let value: String
-        var color: Color = .sForeground
+        var color: Color = Color.sForeground
         var id: String { label }
     }
 
@@ -62,11 +62,11 @@ struct AdaptiveStatRow: View {
                 AdaptiveFormRow {
                     Text(stat.label)
                         .font(.footnote)
-                        .foregroundColor(.sMutedFG)
+                        .foregroundStyle(Color.sMutedFG)
                     if !textSize.isAccessibilitySize { Spacer(minLength: 12) }
                     Text(stat.value)
                         .font(.body.weight(.semibold))
-                        .foregroundColor(stat.color)
+                        .foregroundStyle(stat.color)
                         .monospacedDigit()
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -78,11 +78,11 @@ struct AdaptiveStatRow: View {
         VStack(alignment: .center, spacing: 3) {
             Text(stat.value)
                 .font(.body.weight(.semibold))
-                .foregroundColor(stat.color)
+                .foregroundStyle(stat.color)
                 .moneyLine()
             Text(stat.label)
                 .font(.caption)
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }

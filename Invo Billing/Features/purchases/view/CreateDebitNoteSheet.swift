@@ -107,15 +107,15 @@ struct CreateDebitNoteSheet: View {
                 Section {
                     if loadingBills {
                         HStack {
-                            ProgressView().tint(.sAccent)
-                            Text("Loading bills…").font(.subheadline).foregroundColor(.sMutedFG)
+                            ProgressView().tint(Color.sAccent)
+                            Text("Loading bills…").font(.subheadline).foregroundStyle(Color.sMutedFG)
                         }
                     } else if let loadError {
                         Text(loadError).font(.footnote).foregroundStyle(Color.sDestructive)
                         Button("Retry bills") { Task { await loadBills() } }
                     } else if supplierBills.isEmpty {
                         Text("No open bills for this supplier.")
-                            .font(.subheadline).foregroundColor(.sMutedFG)
+                            .font(.subheadline).foregroundStyle(Color.sMutedFG)
                     } else {
                         Picker("Bill", selection: $billID) {
                             Text("None").tag(Int?.none)
@@ -137,8 +137,8 @@ struct CreateDebitNoteSheet: View {
                 Section {
                     if loadingBillDetail {
                         HStack {
-                            ProgressView().tint(.sAccent)
-                            Text("Loading bill items…").font(.subheadline).foregroundColor(.sMutedFG)
+                            ProgressView().tint(Color.sAccent)
+                            Text("Loading bill items…").font(.subheadline).foregroundStyle(Color.sMutedFG)
                         }
                     } else {
                         ForEach($billLines) { $l in
@@ -147,7 +147,7 @@ struct CreateDebitNoteSheet: View {
                                     .font(.subheadline.weight(.medium))
                                 HStack {
                                     Text("\(l.line.qty) received at \(Money.text(l.line.rate))")
-                                        .font(.footnote).foregroundColor(.sMutedFG)
+                                        .font(.footnote).foregroundStyle(Color.sMutedFG)
                                     Spacer()
                                     TextField("0", text: $l.qty)
                                         .keyboardType(.numberPad)
@@ -156,7 +156,7 @@ struct CreateDebitNoteSheet: View {
                                 }
                                 if (Int(l.qty) ?? 0) > l.line.qty {
                                     Text("Only \(l.line.qty) on this bill.")
-                                        .font(.footnote).foregroundColor(.sDestructive)
+                                        .font(.footnote).foregroundStyle(Color.sDestructive)
                                 }
                             }
                         }
@@ -175,13 +175,13 @@ struct CreateDebitNoteSheet: View {
                             Text(l.item.name).font(.subheadline.weight(.medium))
                             AdaptiveFormRow {
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text("Qty").font(.caption).foregroundColor(.sMutedFG)
+                                    Text("Qty").font(.caption).foregroundStyle(Color.sMutedFG)
                                     TextField("0", text: $l.qty)
                                         .keyboardType(.numberPad)
                                         .frame(width: 56)
                                 }
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text("Rate").font(.caption).foregroundColor(.sMutedFG)
+                                    Text("Rate").font(.caption).foregroundStyle(Color.sMutedFG)
                                     TextField("0.00", text: $l.rate)
                                         .keyboardType(.decimalPad)
                                         .frame(width: 80)
@@ -201,7 +201,7 @@ struct CreateDebitNoteSheet: View {
                     } label: {
                         Label("Add item", systemImage: "plus.circle")
                             .font(.body)
-                            .foregroundColor(.sAccent)
+                            .foregroundStyle(Color.sAccent)
                     }
                 } header: {
                     Text("Items going back")

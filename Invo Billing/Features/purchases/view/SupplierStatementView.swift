@@ -25,7 +25,7 @@ struct SupplierStatementView: View {
         Group {
             if vm.isLoading && vm.entries.isEmpty {
                 ProgressView()
-                    .tint(.sAccent)
+                    .tint(Color.sAccent)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 List {
@@ -43,7 +43,7 @@ struct SupplierStatementView: View {
                         .listRowSeparator(.hidden)
                     } else {
                         if vm.isLoadingEarlier {
-                            HStack { Spacer(); ProgressView().tint(.sAccent); Spacer() }
+                            HStack { Spacer(); ProgressView().tint(Color.sAccent); Spacer() }
                                 .padding(.vertical, 4)
                                 .listRowSeparator(.hidden)
                         } else if vm.hasMore {
@@ -111,7 +111,7 @@ struct SupplierStatementView: View {
         SummaryCard(
             title: vm.isInCredit ? "Paid ahead" : "Owed to them",
             value: vm.balance.map { Money.text(abs($0)) } ?? "—",
-            valueColor: vm.balance.map { $0 > 0.004 ? Color.sDestructive : Color.sSuccess } ?? .sMutedFG
+            valueColor: vm.balance.map { $0 > 0.004 ? Color.sDestructive : Color.sSuccess } ?? Color.sMutedFG
         ) {
             if vm.loadFailed {
                 Text(vm.summary == nil ? "Totals unavailable" : "Couldn't refresh — figures may be out of date")

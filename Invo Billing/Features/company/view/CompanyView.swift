@@ -11,7 +11,7 @@ struct CompanyView: View {
         Group {
             if vm.isLoading {
                 ProgressView()
-                    .tint(.sAccent)
+                    .tint(Color.sAccent)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             else if let error = vm.errorMessage {
@@ -50,7 +50,7 @@ struct CompanyView: View {
                 } actions: {
                     NavigationLink("Add company", destination: companyForm())
                         .buttonStyle(.borderedProminent)
-                        .tint(.sAccent)
+                        .tint(Color.sAccent)
                 }
             }
         }
@@ -93,7 +93,7 @@ struct CompanyRowZara: View {
                 HStack(spacing: 12) {
                     Text(String(company.name.prefix(1)).uppercased())
                         .font(.subheadline.weight(.semibold))
-                        .foregroundColor(.sAccentFG)
+                        .foregroundStyle(Color.sAccentFG)
                         .frame(width: 40, height: 40)
                         .background(Color.sAccent, in: RoundedRectangle(cornerRadius: 10))
 

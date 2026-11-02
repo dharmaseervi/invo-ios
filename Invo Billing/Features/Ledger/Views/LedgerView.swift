@@ -22,7 +22,7 @@ struct LedgerView: View {
                 // no-results search is cleared.
                 if isFirstLoad {
                     ProgressView()
-                        .tint(.sAccent)
+                        .tint(Color.sAccent)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     List {
@@ -30,7 +30,7 @@ struct LedgerView: View {
                             .listHeaderRow()
 
                         if vm.isLoading {
-                            HStack { Spacer(); ProgressView().tint(.sAccent); Spacer() }
+                            HStack { Spacer(); ProgressView().tint(Color.sAccent); Spacer() }
                                 .padding(.vertical, 60)
                                 .listRowSeparator(.hidden)
                         } else if vm.filteredClients.isEmpty {
@@ -59,7 +59,7 @@ struct LedgerView: View {
                             }
 
                             if vm.isLoadingMore {
-                                HStack { Spacer(); ProgressView().tint(.sAccent); Spacer() }
+                                HStack { Spacer(); ProgressView().tint(Color.sAccent); Spacer() }
                                     .padding(.vertical, 12)
                                     .listRowSeparator(.hidden)
                             } else if vm.loadMoreFailed {
@@ -83,7 +83,7 @@ struct LedgerView: View {
                 }
             }
             .searchable(text: $vm.searchText, prompt: "Search clients")
-            .navigationTitle("Ledger")
+            .navigationTitle("Client ledger")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 Task {
@@ -117,10 +117,10 @@ struct LedgerView: View {
         // A dash when the figure could not be fetched: ₹0 reads as "nobody owes
         // anything", which is the opposite of "we could not check".
         SummaryCard(
-            title: "Total receivable",
+            title: "To collect",
             value: vm.totalsFailed ? "—" : Money.text(vm.totalReceivable),
-            valueColor: vm.totalsFailed ? .sMutedFG
-                : (vm.totalReceivable > 0 ? .sDestructive : .sSuccess)
+            valueColor: vm.totalsFailed ? Color.sMutedFG
+                : (vm.totalReceivable > 0 ? Color.sDestructive : Color.sSuccess)
         ) {
             if vm.totalsFailed {
                 Button("Totals unavailable — retry") {
@@ -161,12 +161,12 @@ struct LedgerRow: View {
     let client: ClientLedger
 
     private var balanceColor: Color {
-        client.balance > 0 ? .sDestructive : .sSuccess
+        client.balance > 0 ? Color.primary : Color.sSuccess
     }
 
     private var balanceLabel: String {
         if client.balance == 0 { return "Settled" }
-        return client.balance > 0 ? "Receivable" : "Advance"
+        return client.balance > 0 ? "Owes you" : "Advance"
     }
 
     var body: some View {

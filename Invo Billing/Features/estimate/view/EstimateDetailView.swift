@@ -9,12 +9,12 @@ struct EstimateDetailView: View {
 
     private func statusConfig(_ status: EstimateStatus) -> (label: String, color: Color) {
         switch status {
-        case .draft:     return ("Draft", .sNeutral)
-        case .sent:      return ("Sent", .sAccent)
-        case .accepted:  return ("Accepted", .sSuccess)
-        case .rejected:  return ("Rejected", .sDestructive)
-        case .expired:   return ("Expired", .sWarning)
-        case .converted: return ("Converted", .sSuccess)
+        case .draft:     return ("Draft", Color.sNeutral)
+        case .sent:      return ("Sent", Color.sAccent)
+        case .accepted:  return ("Accepted", Color.sSuccess)
+        case .rejected:  return ("Rejected", Color.sDestructive)
+        case .expired:   return ("Expired", Color.sWarning)
+        case .converted: return ("Converted", Color.sSuccess)
         }
     }
 
@@ -31,7 +31,7 @@ struct EstimateDetailView: View {
             Color.sBackground.ignoresSafeArea()
 
             if vm.isFetchingDetail {
-                ProgressView().tint(.sAccent)
+                ProgressView().tint(Color.sAccent)
             } else if let detail = vm.estimateDetail {
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 0) {
@@ -43,24 +43,24 @@ struct EstimateDetailView: View {
                                     Circle().fill(Color.sAccentMuted).frame(width: 48, height: 48)
                                     Text(initials(for: detail.client.name))
                                         .font(.subheadline.weight(.semibold))
-                                        .foregroundColor(.sAccent)
+                                        .foregroundStyle(Color.sAccent)
                                 }
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(detail.client.name)
                                         .font(.subheadline.weight(.semibold))
-                                        .foregroundColor(.sForeground)
+                                        .foregroundStyle(Color.sForeground)
                                     Text(detail.estimate_number)
                                         .font(.subheadline)
-                                        .foregroundColor(.sMutedFG)
+                                        .foregroundStyle(Color.sMutedFG)
                                 }
                                 Spacer()
                                 let config = statusConfig(detail.status)
                                 Text(config.label)
                                     .font(.caption.weight(.medium))
-                                    .foregroundColor(config.color)
+                                    .foregroundStyle(config.color)
                                     .padding(.horizontal, 9)
                                     .padding(.vertical, 4)
-                                    .background(Capsule().fill(config.color.opacity(0.1)))
+                                    .background(config.color.opacity(0.1), in: Capsule())
                             }
 
                             Rectangle().fill(Color.sBorder).frame(height: 0.5)
@@ -68,22 +68,22 @@ struct EstimateDetailView: View {
                             VStack(alignment: .leading, spacing: 3) {
                                 Text("Total amount")
                                     .font(.caption)
-                                    .foregroundColor(.sMutedFG)
+                                    .foregroundStyle(Color.sMutedFG)
                                 Text(Money.text(detail.total)).moneyLine()
                                     .font(.title2.weight(.bold))
-                                    .foregroundColor(.sForeground)
+                                    .foregroundStyle(Color.sForeground)
                             }
 
                             if let expiry = detail.expiry_date {
                                 Text("Valid until \(expiry)")
                                     .font(.footnote)
-                                    .foregroundColor(.sMutedFG)
+                                    .foregroundStyle(Color.sMutedFG)
                             }
                         }
                         .padding(AppSpacing.card)
                         .background(Color.sCard)
-                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.sBorder, lineWidth: 0.5))
-                        .cornerRadius(14)
+                        .overlay { RoundedRectangle(cornerRadius: 14).stroke(Color.sBorder, lineWidth: 0.5) }
+                        .clipShape(.rect(cornerRadius: 14))
                         .padding(.horizontal, AppSpacing.page)
                         .padding(.top, 16)
 
@@ -94,7 +94,7 @@ struct EstimateDetailView: View {
                         VStack(alignment: .leading, spacing: 0) {
                             Text("Line items")
                                 .font(.subheadline.weight(.medium))
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
                                 .padding(.horizontal, AppSpacing.page)
                                 .padding(.bottom, 10)
                                 .padding(.top, 20)
@@ -105,20 +105,20 @@ struct EstimateDetailView: View {
                                         VStack(alignment: .leading, spacing: 4) {
                                             Text(vm.itemNames[item.item_id] ?? "Item #\(item.item_id)")
                                                 .font(.subheadline.weight(.semibold))
-                                                .foregroundColor(.sForeground)
+                                                .foregroundStyle(Color.sForeground)
                                             Text("Qty: \(item.qty)")
                                                 .font(.caption)
-                                                .foregroundColor(.sMutedFG)
+                                                .foregroundStyle(Color.sMutedFG)
                                         }
                                         Spacer()
                                         Text(Money.text(item.total)).moneyLine()
                                             .font(.subheadline.weight(.semibold))
-                                            .foregroundColor(.sForeground)
+                                            .foregroundStyle(Color.sForeground)
                                     }
                                     .padding(14)
                                     .background(Color.sCard)
-                                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5))
-                                    .cornerRadius(10)
+                                    .overlay { RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5) }
+                                    .clipShape(.rect(cornerRadius: 10))
                                 }
                             }
                             .padding(.horizontal, AppSpacing.page)
@@ -128,7 +128,7 @@ struct EstimateDetailView: View {
                         VStack(alignment: .leading, spacing: 0) {
                             Text("Summary")
                                 .font(.subheadline.weight(.medium))
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
                                 .padding(.horizontal, AppSpacing.page)
                                 .padding(.bottom, 10)
                                 .padding(.top, 20)
@@ -145,8 +145,8 @@ struct EstimateDetailView: View {
                                 summaryRow("Total", detail.total, isTotal: true)
                             }
                             .background(Color.sCard)
-                            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5))
-                            .cornerRadius(10)
+                            .overlay { RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5) }
+                            .clipShape(.rect(cornerRadius: 10))
                             .padding(.horizontal, AppSpacing.page)
                             .padding(.bottom, 40)
                         }
@@ -184,7 +184,7 @@ struct EstimateDetailView: View {
                 EditEstimateView(estimateID: estimateID)
             }
         }
-        .onChange(of: showEditEstimate) { isPresented in
+        .onChange(of: showEditEstimate) { _, isPresented in
             if !isPresented {
                 Task { await vm.fetchEstimateDetail(estimateID: estimateID) }
             }
@@ -271,24 +271,24 @@ struct EstimateDetailView: View {
         .font(.subheadline.weight(.semibold))
         .frame(maxWidth: .infinity)
         .padding(.vertical, 14)
-        .foregroundColor(filled ? .sAccentFG : .sForeground)
+        .foregroundStyle(filled ? Color.sAccentFG : Color.sForeground)
         .background(filled ? Color.sPrimary : Color.sCard)
-        .overlay(
+        .overlay {
             RoundedRectangle(cornerRadius: 10)
                 .stroke(filled ? Color.clear : Color.sBorder, lineWidth: 0.5)
-        )
-        .cornerRadius(10)
+        }
+        .clipShape(.rect(cornerRadius: 10))
     }
 
     private func summaryRow(_ label: String, _ value: Double, isTotal: Bool = false) -> some View {
         HStack(spacing: 0) {
             Text(label)
                 .font(isTotal ? .headline : .subheadline)
-                .foregroundColor(.sForeground)
+                .foregroundStyle(Color.sForeground)
             Spacer()
             Text(Money.text(value)).moneyLine()
                 .font(isTotal ? .headline : .subheadline)
-                .foregroundColor(.sForeground)
+                .foregroundStyle(Color.sForeground)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)

@@ -63,13 +63,13 @@ struct ApplyCreditSheet: View {
             Section("Unpaid invoices") {
                 if isLoading {
                     HStack {
-                        ProgressView().tint(.sAccent)
-                        Text("Loading…").font(.subheadline).foregroundColor(.sMutedFG)
+                        ProgressView().tint(Color.sAccent)
+                        Text("Loading…").font(.subheadline).foregroundStyle(Color.sMutedFG)
                     }
                 } else if invoices.isEmpty {
                     Text("Nothing of theirs is unpaid. The credit can be refunded instead.")
                         .font(.subheadline)
-                        .foregroundColor(.sMutedFG)
+                        .foregroundStyle(Color.sMutedFG)
                 } else {
                     ForEach(invoices) { invoice in
                         Button {
@@ -80,15 +80,15 @@ struct ApplyCreditSheet: View {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(invoice.invoiceNumber)
                                         .font(.body.weight(.medium))
-                                        .foregroundColor(.sForeground)
+                                        .foregroundStyle(Color.sForeground)
                                     Text("\(Money.text(invoice.remainingAmount)) owing")
                                         .font(.footnote)
-                                        .foregroundColor(.sMutedFG)
+                                        .foregroundStyle(Color.sMutedFG)
                                 }
                                 Spacer()
                                 if selected?.id == invoice.id {
                                     Image(systemName: "checkmark")
-                                        .foregroundColor(.sAccent)
+                                        .foregroundStyle(Color.sAccent)
                                 }
                             }
                         }
@@ -105,10 +105,10 @@ struct ApplyCreditSheet: View {
                 } footer: {
                     if amountIsUnreadable {
                         Text("Enter the amount in rupees — 1500, or 1500.50.")
-                            .foregroundColor(.sDestructive)
+                            .foregroundStyle(Color.sDestructive)
                     } else if amountValue > cap + 0.004 {
                         Text("That's more than this invoice can take.")
-                            .foregroundColor(.sDestructive)
+                            .foregroundStyle(Color.sDestructive)
                     } else {
                         // Said plainly, because a credit note is not money moving and
                         // people reasonably expect it to behave like a payment.
@@ -121,7 +121,7 @@ struct ApplyCreditSheet: View {
                 Section {
                     Text(errorMessage)
                         .font(.subheadline)
-                        .foregroundColor(.sDestructive)
+                        .foregroundStyle(Color.sDestructive)
                 }
             }
         }
@@ -226,10 +226,10 @@ struct RefundCreditSheet: View {
             } footer: {
                 if amountIsUnreadable {
                     Text("Enter the amount in rupees — 1500, or 1500.50.")
-                        .foregroundColor(.sDestructive)
+                        .foregroundStyle(Color.sDestructive)
                 } else if let value = typedAmount, value > creditNote.balance + 0.004 {
                     Text("That's more than this credit note has left.")
-                        .foregroundColor(.sDestructive)
+                        .foregroundStyle(Color.sDestructive)
                 } else {
                     Text("Money going back to \(creditNote.client_name). Cash refunds come out of the drawer and show on that day's closing.")
                 }
@@ -239,7 +239,7 @@ struct RefundCreditSheet: View {
                 Section {
                     Text(errorMessage)
                         .font(.subheadline)
-                        .foregroundColor(.sDestructive)
+                        .foregroundStyle(Color.sDestructive)
                 }
             }
         }

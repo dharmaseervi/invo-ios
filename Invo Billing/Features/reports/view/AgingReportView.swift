@@ -9,7 +9,7 @@ struct AgingReportView: View {
         Group {
             if vm.isLoading && vm.report == nil {
                 ProgressView()
-                    .tint(.sAccent)
+                    .tint(Color.sAccent)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let report = vm.report, report.clients.isEmpty {
                 emptyState
@@ -100,7 +100,7 @@ enum AgingBuckets {
     /// One stat per bucket, coloured by age only when it holds money.
     static func stats(_ values: [Double]) -> [AdaptiveStatRow.Stat] {
         zip(labels, zip(values, colors)).map { label, pair in
-            .init(label: label, value: Money.text(pair.0), color: pair.0 > 0 ? pair.1 : .sMutedFG)
+            .init(label: label, value: Money.text(pair.0), color: pair.0 > 0 ? pair.1 : Color.sMutedFG)
         }
     }
 }
@@ -120,7 +120,7 @@ struct AgingBucketRow: View {
     /// The oldest bucket with money in it — used to color the trailing total, so the
     /// number itself signals urgency even before you look at the bar.
     private var worstColor: Color {
-        segments.last?.1 ?? .sForeground
+        segments.last?.1 ?? Color.sForeground
     }
 
     var body: some View {

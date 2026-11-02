@@ -9,7 +9,7 @@ struct SupplierAgingReportView: View {
         Group {
             if vm.isLoading && vm.report == nil {
                 ProgressView()
-                    .tint(.sAccent)
+                    .tint(Color.sAccent)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let report = vm.report, !report.suppliers.isEmpty {
                 List {

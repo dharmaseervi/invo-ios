@@ -82,33 +82,33 @@ struct PrintLabelScreen: View {
                     .frame(maxWidth: 280)
                     .padding(16)
                     .background(Color.white)
-                    .cornerRadius(10)
-                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5))
+                    .clipShape(.rect(cornerRadius: 10))
+                    .overlay { RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5) }
                     .shadow(color: .black.opacity(0.08), radius: 12, y: 6)
             } else {
                 RoundedRectangle(cornerRadius: 10)
                     .fill(Color.sMuted)
                     .frame(height: 160)
-                    .overlay(
+                    .overlay {
                         Text("Preview unavailable")
                             .font(.subheadline)
-                            .foregroundColor(.sMutedFG)
-                    )
+                            .foregroundStyle(Color.sMutedFG)
+                    }
             }
 
             Text("\(selectedSize.subtitle) label · \(codeType.rawValue)")
                 .font(.footnote)
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
 
             Text(includedSummary)
                 .font(.caption)
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
                 .multilineTextAlignment(.center)
 
             if let warning = dataWarning {
                 Text(warning)
                     .font(.caption)
-                    .foregroundColor(.sWarning)
+                    .foregroundStyle(Color.sWarning)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, AppSpacing.page)
             }
@@ -154,7 +154,7 @@ struct PrintLabelScreen: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Code type")
                 .font(.subheadline.weight(.medium))
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
 
             HStack(spacing: 8) {
                 ForEach(LabelCodeType.allCases, id: \.self) { type in
@@ -168,15 +168,15 @@ struct PrintLabelScreen: View {
                             Text(type.rawValue)
                                 .font(.subheadline.weight(.medium))
                         }
-                        .foregroundColor(isSelected ? .sAccentFG : .sForeground)
+                        .foregroundStyle(isSelected ? Color.sAccentFG : Color.sForeground)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
                         .background(isSelected ? Color.sAccent : Color.sCard)
-                        .overlay(
+                        .overlay {
                             RoundedRectangle(cornerRadius: 10)
                                 .stroke(isSelected ? Color.clear : Color.sBorder, lineWidth: 0.5)
-                        )
-                        .cornerRadius(10)
+                        }
+                        .clipShape(.rect(cornerRadius: 10))
                     }
                 }
             }
@@ -188,7 +188,7 @@ struct PrintLabelScreen: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Label size")
                 .font(.subheadline.weight(.medium))
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
                 ForEach(LabelSize.allCases, id: \.self) { size in
@@ -201,17 +201,17 @@ struct PrintLabelScreen: View {
                                 .font(.subheadline.weight(.medium))
                             Text(size.subtitle)
                                 .font(.caption)
-                                .foregroundColor(isSelected ? .sAccentFG.opacity(0.8) : .sMutedFG)
+                                .foregroundStyle(isSelected ? Color.sAccentFG.opacity(0.8) : Color.sMutedFG)
                         }
-                        .foregroundColor(isSelected ? .sAccentFG : .sForeground)
+                        .foregroundStyle(isSelected ? Color.sAccentFG : Color.sForeground)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
                         .background(isSelected ? Color.sAccent : Color.sCard)
-                        .overlay(
+                        .overlay {
                             RoundedRectangle(cornerRadius: 10)
                                 .stroke(isSelected ? Color.clear : Color.sBorder, lineWidth: 0.5)
-                        )
-                        .cornerRadius(10)
+                        }
+                        .clipShape(.rect(cornerRadius: 10))
                     }
                 }
             }
@@ -223,7 +223,7 @@ struct PrintLabelScreen: View {
         HStack {
             Text("Copies")
                 .font(.subheadline.weight(.medium))
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
 
             Spacer()
 
@@ -233,15 +233,15 @@ struct PrintLabelScreen: View {
                 }
                 Text("\(quantity)")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundColor(.sForeground)
+                    .foregroundStyle(Color.sForeground)
                     .frame(minWidth: 36)
                 stepperButton(systemImage: "plus") {
                     if quantity < 50 { quantity += 1 }
                 }
             }
             .background(Color.sCard)
-            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.sBorder, lineWidth: 0.5))
-            .cornerRadius(8)
+            .overlay { RoundedRectangle(cornerRadius: 8).stroke(Color.sBorder, lineWidth: 0.5) }
+            .clipShape(.rect(cornerRadius: 8))
         }
     }
 
@@ -249,7 +249,7 @@ struct PrintLabelScreen: View {
         Button(action: action) {
             Image(systemName: systemImage)
                 .font(.footnote.weight(.semibold))
-                .foregroundColor(.sForeground)
+                .foregroundStyle(Color.sForeground)
                 .frame(width: 32, height: 32)
         }
     }
@@ -268,12 +268,12 @@ struct PrintLabelScreen: View {
                         Text("Share")
                     }
                     .font(.subheadline.weight(.medium))
-                    .foregroundColor(.sForeground)
+                    .foregroundStyle(Color.sForeground)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
                     .background(Color.sCard)
-                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5))
-                    .cornerRadius(10)
+                    .overlay { RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5) }
+                    .clipShape(.rect(cornerRadius: 10))
                 }
 
                 Button {
@@ -281,18 +281,18 @@ struct PrintLabelScreen: View {
                 } label: {
                     HStack(spacing: 6) {
                         if isPrinting {
-                            ProgressView().tint(.sAccentFG)
+                            ProgressView().tint(Color.sAccentFG)
                         } else {
                             Image(systemName: "printer.fill")
                             Text("Print\(quantity > 1 ? " ×\(quantity)" : "")")
                         }
                     }
                     .font(.subheadline.weight(.semibold))
-                    .foregroundColor(.sAccentFG)
+                    .foregroundStyle(Color.sAccentFG)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
                     .background(Color.sPrimary)
-                    .cornerRadius(10)
+                    .clipShape(.rect(cornerRadius: 10))
                 }
                 .disabled(isPrinting)
             }

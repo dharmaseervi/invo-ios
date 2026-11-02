@@ -15,14 +15,14 @@ struct InvoiceDetailsSection: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Details")
                 .font(.subheadline.weight(.medium))
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
 
             VStack(spacing: 0) {
                 if let invoiceNumber {
                     row(label: "Invoice number") {
                         Text(invoiceNumber)
                             .font(.subheadline.weight(.medium))
-                            .foregroundColor(.sForeground)
+                            .foregroundStyle(Color.sForeground)
                     }
                     divider
                 }
@@ -34,7 +34,7 @@ struct InvoiceDetailsSection: View {
                             Text("Credit Invoice").tag("CREDIT INVOICE")
                         }
                         .pickerStyle(.menu)
-                        .tint(.sAccent)
+                        .tint(Color.sAccent)
                     }
                     divider
                 }
@@ -42,14 +42,14 @@ struct InvoiceDetailsSection: View {
                 row(label: "Invoice date") {
                     DatePicker("Invoice date", selection: $invoiceDate, displayedComponents: .date)
                         .labelsHidden()
-                        .tint(.sAccent)
+                        .tint(Color.sAccent)
                 }
                 divider
 
                 row(label: "Due date") {
                     DatePicker("Due date", selection: $dueDate, in: invoiceDate..., displayedComponents: .date)
                         .labelsHidden()
-                        .tint(.sAccent)
+                        .tint(Color.sAccent)
                 }
 
                 if daysUntilDue > 0 {
@@ -61,7 +61,7 @@ struct InvoiceDetailsSection: View {
                             .font(.footnote)
                         Spacer()
                     }
-                    .foregroundColor(.sMutedFG)
+                    .foregroundStyle(Color.sMutedFG)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
                 } else if daysUntilDue < 0 {
@@ -73,14 +73,14 @@ struct InvoiceDetailsSection: View {
                             .font(.footnote)
                         Spacer()
                     }
-                    .foregroundColor(.sDestructive)
+                    .foregroundStyle(Color.sDestructive)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
                 }
             }
             .background(Color.sCard)
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
-            .cornerRadius(12)
+            .overlay { RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5) }
+            .clipShape(.rect(cornerRadius: 12))
         }
     }
 
@@ -92,7 +92,7 @@ struct InvoiceDetailsSection: View {
         AdaptiveFormRow {
             Text(label)
                 .font(.body)
-                .foregroundColor(.sForeground)
+                .foregroundStyle(Color.sForeground)
             Spacer()
             content()
         }

@@ -21,13 +21,13 @@ struct PurchaseLedgerView: View {
         List {
             if vm.isLoading {
                 AdaptiveFormRow {
-                    ProgressView().tint(.sAccent)
-                    Text("Loading suppliers…").foregroundColor(.sMutedFG)
+                    ProgressView().tint(Color.sAccent)
+                    Text("Loading suppliers…").foregroundStyle(Color.sMutedFG)
                 }
             } else if let error = vm.loadError {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Couldn't load suppliers").font(.headline)
-                    Text(error).foregroundColor(.sMutedFG)
+                    Text(error).foregroundStyle(Color.sMutedFG)
                     Button("Try again") { Task { await reload() } }
                 }
                 .padding(.vertical, 12)
@@ -37,7 +37,7 @@ struct PurchaseLedgerView: View {
                          ? "No suppliers yet" : "No matching suppliers")
                         .font(.headline)
                     Text("Search by supplier name or phone number. Add suppliers and record bills in Purchases.")
-                        .foregroundColor(.sMutedFG)
+                        .foregroundStyle(Color.sMutedFG)
                     NavigationLink("Open purchases") { PurchasesView() }
                 }
                 .padding(.vertical, 12)
@@ -64,12 +64,12 @@ struct PurchaseLedgerView: View {
                 }
 
                 if vm.isLoadingMore {
-                    ProgressView().tint(.sAccent)
+                    ProgressView().tint(Color.sAccent)
                         .frame(maxWidth: .infinity)
                 } else if let error = vm.pageError {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Couldn't load more suppliers").font(.headline)
-                        Text(error).foregroundColor(.sMutedFG)
+                        Text(error).foregroundStyle(Color.sMutedFG)
                         Button("Try again") { Task { await vm.loadMore(retry: true) } }
                     }
                 } else if vm.hasMore {

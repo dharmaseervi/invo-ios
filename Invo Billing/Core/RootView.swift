@@ -54,7 +54,7 @@ struct RootView: View {
         .onAppear {
             session.loadTokenFromKeychain()
         }
-        .onChange(of: scenePhase) { phase in
+        .onChange(of: scenePhase) { _, phase in
             if phase == .background { session.lock() }
             if phase == .active { Task { await session.refreshOnActivation() } }
         }

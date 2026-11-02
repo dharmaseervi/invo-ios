@@ -14,10 +14,10 @@ struct ChallanDetailView: View {
             Group {
                 if vm.isLoadingDetail && detail == nil {
                     VStack(spacing: 12) {
-                        ProgressView().tint(.sAccent)
+                        ProgressView().tint(Color.sAccent)
                         Text("Loading...")
                             .font(.subheadline)
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let detail {
@@ -62,25 +62,25 @@ struct ChallanDetailView: View {
     @ViewBuilder
     private func headerCard(detail: ChallanDetailResponse) -> some View {
         let isDispatched = detail.status == .dispatched
-        let statusColor: Color = isDispatched ? .sSuccess : .sNeutral
+        let statusColor: Color = isDispatched ? Color.sSuccess : Color.sNeutral
 
         VStack(alignment: .leading, spacing: 14) {
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(detail.challan_number)
                         .font(.subheadline.weight(.bold))
-                        .foregroundColor(.sForeground)
+                        .foregroundStyle(Color.sForeground)
                     Text(detail.client.name)
                         .font(.subheadline)
-                        .foregroundColor(.sMutedFG)
+                        .foregroundStyle(Color.sMutedFG)
                 }
                 Spacer()
                 Text(detail.status.rawValue.capitalized)
                     .font(.caption.weight(.medium))
-                    .foregroundColor(statusColor)
+                    .foregroundStyle(statusColor)
                     .padding(.horizontal, 9)
                     .padding(.vertical, 4)
-                    .background(Capsule().fill(statusColor.opacity(0.1)))
+                    .background(statusColor.opacity(0.1), in: Capsule())
             }
 
             Rectangle().fill(Color.sBorder).frame(height: 0.5)
@@ -95,8 +95,8 @@ struct ChallanDetailView: View {
         }
         .padding(16)
         .background(Color.sCard)
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
-        .cornerRadius(12)
+        .overlay { RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5) }
+        .clipShape(.rect(cornerRadius: 12))
     }
 
     @ViewBuilder
@@ -104,7 +104,7 @@ struct ChallanDetailView: View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Items")
                 .font(.subheadline.weight(.medium))
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
                 .padding(.horizontal, AppSpacing.page)
                 .padding(.vertical, 12)
 
@@ -115,17 +115,17 @@ struct ChallanDetailView: View {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(item.item_name ?? "Item #\(item.item_id)")
                             .font(.subheadline.weight(.medium))
-                            .foregroundColor(.sForeground)
+                            .foregroundStyle(Color.sForeground)
                         if let desc = item.description, !desc.isEmpty {
                             Text(desc)
                                 .font(.caption)
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
                         }
                     }
                     Spacer()
                     Text("Qty: \(item.qty)")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundColor(.sForeground)
+                        .foregroundStyle(Color.sForeground)
                 }
                 .padding(.horizontal, AppSpacing.page)
                 .padding(.vertical, 12)
@@ -133,8 +133,8 @@ struct ChallanDetailView: View {
             }
         }
         .background(Color.sCard)
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
-        .cornerRadius(12)
+        .overlay { RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5) }
+        .clipShape(.rect(cornerRadius: 12))
     }
 
     @ViewBuilder
@@ -143,17 +143,17 @@ struct ChallanDetailView: View {
             HStack {
                 Spacer()
                 if vm.isLoading {
-                    ProgressView().tint(.sAccentFG)
+                    ProgressView().tint(Color.sAccentFG)
                 } else {
                     Label("Mark as Dispatched", systemImage: "shippingbox.fill")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundColor(.sAccentFG)
+                        .foregroundStyle(Color.sAccentFG)
                 }
                 Spacer()
             }
             .padding(.vertical, 14)
             .background(Color.sPrimary)
-            .cornerRadius(10)
+            .clipShape(.rect(cornerRadius: 10))
         }
         .disabled(!vm.canDispatch(id: id))
     }
@@ -162,11 +162,11 @@ struct ChallanDetailView: View {
         HStack(alignment: .firstTextBaseline) {
             Text(label)
                 .font(.footnote)
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
                 .frame(width: 70, alignment: .leading)
             Text(value)
                 .font(.subheadline)
-                .foregroundColor(.sForeground)
+                .foregroundStyle(Color.sForeground)
         }
     }
 }

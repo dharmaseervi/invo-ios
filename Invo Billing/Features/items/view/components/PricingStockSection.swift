@@ -19,7 +19,7 @@ struct PricingStockSection: View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Pricing & inventory")
                 .font(.subheadline.weight(.medium))
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
                 .padding(.horizontal, AppSpacing.page)
 
             VStack(spacing: 12) {
@@ -37,7 +37,7 @@ struct PricingStockSection: View {
                         if let cost = Double(vm.costPrice), cost > 0 {
                             Text("Label code: \(CostPriceCoder.encode(cost))")
                                 .font(.caption)
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
                         }
                     }
 
@@ -89,7 +89,7 @@ struct TaxRatePicker: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Tax rate (GST %)")
                 .font(.subheadline.weight(.medium))
-                .foregroundColor(.sForeground)
+                .foregroundStyle(Color.sForeground)
 
             Menu {
                 ForEach(options, id: \.self) { rate in
@@ -107,22 +107,22 @@ struct TaxRatePicker: View {
                 HStack {
                     Text(taxRate.isEmpty ? "Select" : "\(taxRate)%")
                         .font(.body)
-                        .foregroundColor(.sForeground)
+                        .foregroundStyle(Color.sForeground)
 
                     Spacer()
 
                     Image(systemName: "chevron.down")
                         .font(.caption.weight(.medium))
-                        .foregroundColor(.sMutedFG)
+                        .foregroundStyle(Color.sMutedFG)
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
                 .background(Color.sCard)
-                .overlay(
+                .overlay {
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(Color.sInput, lineWidth: 0.5)
-                )
-                .cornerRadius(8)
+                }
+                .clipShape(.rect(cornerRadius: 8))
             }
         }
     }
@@ -143,11 +143,11 @@ struct FormField: View {
             HStack {
                 Text(title)
                     .font(.subheadline.weight(.medium))
-                    .foregroundColor(.sForeground)
+                    .foregroundStyle(Color.sForeground)
                 if error != nil {
                     Image(systemName: "exclamationmark.circle")
                         .font(.footnote)
-                        .foregroundColor(.sDestructive)
+                        .foregroundStyle(Color.sDestructive)
                 }
             }
 
@@ -155,22 +155,22 @@ struct FormField: View {
                 .accessibilityLabel(title)
                 .keyboardType(keyboardType)
                 .font(.body)
-                .foregroundColor(.sForeground)
-                .tint(.sAccent)
+                .foregroundStyle(Color.sForeground)
+                .tint(Color.sAccent)
                 .autocorrectionDisabled()
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
                 .background(Color.sCard)
-                .overlay(
+                .overlay {
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(error != nil ? Color.sDestructive.opacity(0.5) : Color.sInput, lineWidth: 0.5)
-                )
-                .cornerRadius(8)
+                }
+                .clipShape(.rect(cornerRadius: 8))
 
             if let error = error {
                 Text(error)
                     .font(.caption)
-                    .foregroundColor(.sDestructive)
+                    .foregroundStyle(Color.sDestructive)
             }
         }
     }
@@ -188,23 +188,23 @@ struct FormFieldHalf: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(.subheadline.weight(.medium))
-                .foregroundColor(.sForeground)
+                .foregroundStyle(Color.sForeground)
 
             TextField(title, text: $text, prompt: Text(placeholder))
                 .accessibilityLabel(title)
                 .keyboardType(keyboardType)
                 .font(.body)
-                .foregroundColor(.sForeground)
-                .tint(.sAccent)
+                .foregroundStyle(Color.sForeground)
+                .tint(Color.sAccent)
                 .autocorrectionDisabled()
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
                 .background(Color.sCard)
-                .overlay(
+                .overlay {
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(Color.sInput, lineWidth: 0.5)
-                )
-                .cornerRadius(8)
+                }
+                .clipShape(.rect(cornerRadius: 8))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

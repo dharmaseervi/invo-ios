@@ -18,6 +18,15 @@ struct CreditNoteListView: View {
         case adjustment = "ADJUSTMENT"
         case discount = "DISCOUNT"
 
+        var label: String {
+            switch self {
+            case .all:        return "All"
+            case .return:     return "Returns"
+            case .adjustment: return "Adjustments"
+            case .discount:   return "Discounts"
+            }
+        }
+
         var icon: String {
             switch self {
             case .all: return "square.stack"
@@ -70,10 +79,17 @@ struct CreditNoteListView: View {
             // it on each keystroke.
             if vm.isLoading && !hasLoadedOnce {
                 ProgressView()
-                    .tint(.sAccent)
+                    .tint(Color.sAccent)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 List {
+                    // 1. Summary card — matches invoice screen order
+                    if !filteredNotes.isEmpty || !searchText.isEmpty {
+                        cnSummaryCard
+                            .listHeaderRow()
+                    }
+
+                    // 2. Filter chips
                     cnFilterPills
                         .padding(.top, 4)
                         .padding(.bottom, 8)
@@ -81,18 +97,12 @@ struct CreditNoteListView: View {
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
 
+                    // 3. Rows or empty state
                     if filteredNotes.isEmpty {
                         cnEmptyView
                             .listRowBackground(Color.clear)
                             .listRowSeparator(.hidden)
                     } else {
-                        cnSummaryCard
-                            .padding(.horizontal, AppSpacing.page)
-                            .padding(.bottom, 4)
-                            .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
-
                         ForEach(filteredNotes) { cn in
                             NavigationLink {
                                 CreditNoteDetailView(creditNoteID: cn.id)
@@ -101,13 +111,11 @@ struct CreditNoteListView: View {
                             }
                             .standardListRow()
                             .listRowSeparator(.hidden, edges: cn.id == filteredNotes.first?.id ? .top : [])
-                            // Per row, a few from the end: keyed on the count it fired again on
-                            // every change to the list, which is both eager and repetitive.
                             .task { await vm.loadMoreIfNeeded(currentItem: cn) }
                         }
 
                         if vm.isLoadingMore {
-                            HStack { Spacer(); ProgressView().tint(.sAccent); Spacer() }
+                            HStack { Spacer(); ProgressView().tint(Color.sAccent); Spacer() }
                                 .padding(.vertical, 12)
                                 .listRowSeparator(.hidden)
                         } else if vm.loadMoreFailed {
@@ -161,7 +169,7 @@ struct CreditNoteListView: View {
         .onAppear {
             Task { await reload() }
         }
-        .onChange(of: SessionManager.shared.selectedCompanyId) { _ in
+        .onChange(of: SessionManager.shared.selectedCompanyId) {
             Task {
                 vm.creditNotes = []
                 await reload()
@@ -179,7 +187,7 @@ struct CreditNoteListView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: AppSpacing.inline) {
                 ForEach(CNFilterType.allCases, id: \.self) { filter in
-                    AppFilterChip(title: "\(filter.rawValue.capitalized) \(countFor(filter))",
+                    AppFilterChip(title: "\(filter.label) \(countFor(filter))",
                                   isSelected: selectedFilter == filter) {
                         selectedFilter = filter
                     }
@@ -205,12 +213,7 @@ struct CreditNoteListView: View {
         // credit notes reads as fact, and it is not.
         SummaryCard(
             title: "Total credited",
-            value: vm.summaryFailed ? "—" : Money.text(totalAmount),
-            stats: [
-                .init(label: "Returns", value: vm.summaryFailed ? "—" : "\(returnCount)"),
-                .init(label: "Adjustments", value: vm.summaryFailed ? "—" : "\(adjustmentCount)"),
-                .init(label: "Discounts", value: vm.summaryFailed ? "—" : "\(discountCount)")
-            ]
+            value: vm.summaryFailed ? "—" : Money.text(totalAmount)
         ) {
             if vm.summaryFailed {
                 Button("Retry") { Task { await reload() } }
@@ -234,7 +237,7 @@ struct CreditNoteListView: View {
             if isUnfiltered {
                 Button("Create credit note") { showCreate = true }
                     .buttonStyle(.borderedProminent)
-                    .tint(.sAccent)
+                    .tint(Color.sAccent)
             }
         }
         .padding(.vertical, 40)
@@ -248,11 +251,11 @@ struct CNRowView: View {
     var typeConfig: (icon: String, color: Color, label: String) {
         switch cn.type.lowercased() {
         case "return":
-            return ("cube.box", .sAccent, "Item return")
+            return ("cube.box", Color.sAccent, "Item return")
         case "discount":
-            return ("percent", .sSuccess, "Discount")
+            return ("percent", Color.sSuccess, "Discount")
         default:  // adjustment
-            return ("indianrupeesign.circle", .sWarning, "Adjustment")
+            return ("indianrupeesign.circle", Color.sWarning, "Adjustment")
         }
     }
 

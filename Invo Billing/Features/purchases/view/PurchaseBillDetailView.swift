@@ -15,16 +15,16 @@ struct PurchaseBillDetailView: View {
             Color.sBackground.ignoresSafeArea()
 
             if isLoading {
-                ProgressView().tint(.sAccent)
+                ProgressView().tint(Color.sAccent)
             } else if let error = errorMessage {
                 VStack(spacing: 10) {
                     Text(error)
                         .font(.subheadline)
-                        .foregroundColor(.sMutedFG)
+                        .foregroundStyle(Color.sMutedFG)
                         .multilineTextAlignment(.center)
                     Button("Try again") { Task { await load() } }
                         .font(.subheadline.weight(.medium))
-                        .foregroundColor(.sAccent)
+                        .foregroundStyle(Color.sAccent)
                 }
                 .padding(.horizontal, 32)
             } else if let d = detail {
@@ -94,10 +94,10 @@ struct PurchaseBillDetailView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(d.supplier_name)
                         .font(.subheadline.weight(.bold))
-                        .foregroundColor(.sForeground)
+                        .foregroundStyle(Color.sForeground)
                     Text("Bill \(d.bill_number)")
                         .font(.subheadline)
-                        .foregroundColor(.sMutedFG)
+                        .foregroundStyle(Color.sMutedFG)
                 }
                 Spacer()
                 statusPill
@@ -113,37 +113,37 @@ struct PurchaseBillDetailView: View {
                 HStack {
                     Text("Total")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundColor(.sForeground)
+                        .foregroundStyle(Color.sForeground)
                     Spacer()
                     Text(Money.text(d.total)).moneyLine()
                         .font(.subheadline.weight(.bold))
-                        .foregroundColor(.sForeground)
+                        .foregroundStyle(Color.sForeground)
                 }
                 if d.paid_amount > 0 { row("Paid", Money.text(d.paid_amount)) }
                 if d.remaining_amount > 0 {
                     HStack {
                         Text("Still owing")
                             .font(.subheadline)
-                            .foregroundColor(.sForeground)
+                            .foregroundStyle(Color.sForeground)
                         Spacer()
                         Text(Money.text(d.remaining_amount)).moneyLine()
                             .font(.subheadline.weight(.semibold))
-                            .foregroundColor(bill.isOverdue ? .sDestructive : .sMutedFG)
+                            .foregroundStyle(bill.isOverdue ? Color.sDestructive : Color.sMutedFG)
                     }
                 }
             }
         }
         .padding(AppSpacing.card)
         .background(Color.sCard)
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.sBorder, lineWidth: 0.5))
-        .cornerRadius(16)
+        .overlay { RoundedRectangle(cornerRadius: 16).stroke(Color.sBorder, lineWidth: 0.5) }
+        .clipShape(.rect(cornerRadius: 16))
     }
 
     private func itemsSection(_ d: PurchaseBillDetail) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Items")
                 .font(.subheadline.weight(.medium))
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
 
             VStack(spacing: 8) {
                 ForEach(d.items) { line in
@@ -151,20 +151,20 @@ struct PurchaseBillDetailView: View {
                         HStack(alignment: .firstTextBaseline) {
                             Text(line.item_name)
                                 .font(.subheadline.weight(.medium))
-                                .foregroundColor(.sForeground)
+                                .foregroundStyle(Color.sForeground)
                             Spacer()
                             Text(Money.text(line.total)).moneyLine()
                                 .font(.subheadline.weight(.semibold))
-                                .foregroundColor(.sForeground)
+                                .foregroundStyle(Color.sForeground)
                         }
                         HStack {
                             Text("\(line.qty) × \(Money.text(line.rate))")
                                 .font(.footnote)
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
                             if line.tax_rate > 0 {
                                 Text("· \(line.tax_rate, specifier: "%.0f")% GST")
                                     .font(.footnote)
-                                    .foregroundColor(.sMutedFG)
+                                    .foregroundStyle(Color.sMutedFG)
                             }
                             Spacer()
                         }
@@ -177,8 +177,8 @@ struct PurchaseBillDetailView: View {
             }
             .padding(14)
             .background(Color.sCard)
-            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.sBorder, lineWidth: 0.5))
-            .cornerRadius(14)
+            .overlay { RoundedRectangle(cornerRadius: 14).stroke(Color.sBorder, lineWidth: 0.5) }
+            .clipShape(.rect(cornerRadius: 14))
         }
     }
 
@@ -186,15 +186,15 @@ struct PurchaseBillDetailView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Notes")
                 .font(.subheadline.weight(.medium))
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
             Text(notes)
                 .font(.subheadline)
-                .foregroundColor(.sForeground)
+                .foregroundStyle(Color.sForeground)
                 .padding(14)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(Color.sCard)
-                .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.sBorder, lineWidth: 0.5))
-                .cornerRadius(14)
+                .overlay { RoundedRectangle(cornerRadius: 14).stroke(Color.sBorder, lineWidth: 0.5) }
+                .clipShape(.rect(cornerRadius: 14))
         }
     }
 
@@ -204,30 +204,30 @@ struct PurchaseBillDetailView: View {
         HStack {
             Text(label)
                 .font(.subheadline)
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
             Spacer()
             Text(value)
                 .font(.subheadline)
-                .foregroundColor(.sForeground)
+                .foregroundStyle(Color.sForeground)
         }
     }
 
     private var statusPill: some View {
         let (label, colour): (String, Color) = {
-            if bill.isOverdue  { return ("Overdue", .sDestructive) }
+            if bill.isOverdue  { return ("Overdue", Color.sDestructive) }
             switch bill.status {
-            case "cancelled":   return ("Cancelled", .sMutedFG)
-            case "paid":        return ("Paid", .sSuccess)
-            case "partial":     return ("Part paid", .sAccent)
-            default:            return ("Unpaid", .sMutedFG)
+            case "cancelled":   return ("Cancelled", Color.sMutedFG)
+            case "paid":        return ("Paid", Color.sSuccess)
+            case "partial":     return ("Part paid", Color.sAccent)
+            default:            return ("Unpaid", Color.sMutedFG)
             }
         }()
         return Text(label)
             .font(.caption.weight(.medium))
-            .foregroundColor(colour)
+            .foregroundStyle(colour)
             .padding(.horizontal, 8).padding(.vertical, 3)
             .background(colour.opacity(0.12))
-            .cornerRadius(6)
+            .clipShape(.rect(cornerRadius: 6))
     }
 
     // MARK: - Actions
@@ -249,6 +249,8 @@ struct PurchaseBillDetailView: View {
         do {
             try await PurchasesService().cancelBill(companyID: companyID, billID: id)
             await load()
-        } catch {}
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 }

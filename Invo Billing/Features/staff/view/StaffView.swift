@@ -16,7 +16,7 @@ struct StaffView: View {
         Group {
             if vm.isLoading && vm.members.isEmpty {
                 ProgressView()
-                    .tint(.sAccent)
+                    .tint(Color.sAccent)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 List {
@@ -153,15 +153,15 @@ struct StaffView: View {
 
     private func rolePill(_ member: StaffMember) -> some View {
         let colour: Color = member.isOwner
-            ? .sSuccess
-            : (member.memberRole == .manager ? .sAccent : .sMutedFG)
+            ? Color.sSuccess
+            : (member.memberRole == .manager ? Color.sAccent : Color.sMutedFG)
         return Text(member.memberRole.label)
             .font(.caption.weight(.medium))
-            .foregroundColor(colour)
+            .foregroundStyle(colour)
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
             .background(colour.opacity(0.12))
-            .cornerRadius(6)
+            .clipShape(.rect(cornerRadius: 6))
     }
 
     private var emptyState: some View {
@@ -172,7 +172,7 @@ struct StaffView: View {
         } actions: {
             Button("Add someone") { showAdd = true }
                 .buttonStyle(.borderedProminent)
-                .tint(.sAccent)
+                .tint(Color.sAccent)
         }
         .padding(.vertical, 16)
     }
@@ -221,7 +221,7 @@ struct AddStaffSheet: View {
                     Text("At least 8 characters. Tell it to them — they can change it later.")
                 } else if password.count < 8 {
                     Text("At least 8 characters.")
-                        .foregroundColor(.sDestructive)
+                        .foregroundStyle(Color.sDestructive)
                 }
             }
 
@@ -237,7 +237,7 @@ struct AddStaffSheet: View {
 
                 Text(role.explanation)
                     .font(.footnote)
-                    .foregroundColor(.sMutedFG)
+                    .foregroundStyle(Color.sMutedFG)
             } header: {
                 Text("What they can do")
             }

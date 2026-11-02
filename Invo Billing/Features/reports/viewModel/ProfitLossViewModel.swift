@@ -61,8 +61,7 @@ final class ProfitLossViewModel: ObservableObject {
             loadedPeriod = period
         } catch {
             guard request == loadID, companyID == SessionManager.shared.selectedCompanyId, period == selectedPeriod else { return }
-            errorMessage = "Couldn't load the report. Tap Retry to try again."
-            showAlert = true
+            errorMessage = "Couldn't load the report."
         }
     }
 

@@ -21,7 +21,7 @@ struct ItemsSection: View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Items")
                 .font(.subheadline.weight(.medium))
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
                 .padding(.horizontal, AppSpacing.page)
                 .padding(.bottom, 10)
 
@@ -29,21 +29,21 @@ struct ItemsSection: View {
                 VStack(spacing: 12) {
                     Image(systemName: "box.2")
                         .font(.largeTitle)
-                        .foregroundColor(.sMutedFG)
+                        .foregroundStyle(Color.sMutedFG)
                     VStack(spacing: 4) {
                         Text("No items added")
                             .font(.subheadline.weight(.semibold))
-                            .foregroundColor(.sForeground)
+                            .foregroundStyle(Color.sForeground)
                         Text("Add items to create your invoice")
                             .font(.footnote)
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                     }
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 28)
                 .background(Color.sCard)
-                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5))
-                .cornerRadius(10)
+                .overlay { RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5) }
+                .clipShape(.rect(cornerRadius: 10))
                 .padding(.horizontal, AppSpacing.page)
                 .padding(.bottom, 16)
             } else {
@@ -51,11 +51,11 @@ struct ItemsSection: View {
                     HStack {
                         Text("Total items")
                             .font(.footnote)
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                         Spacer()
                         Text("\(totalItems)")
                             .font(.subheadline)
-                            .foregroundColor(.sForeground)
+                            .foregroundStyle(Color.sForeground)
                     }
 
                     Rectangle().fill(Color.sBorder).frame(height: 0.5)
@@ -63,18 +63,18 @@ struct ItemsSection: View {
                     HStack {
                         Text("Total amount")
                             .font(.footnote)
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                         Spacer()
                         Text(Money.text(totalAmount)).moneyLine()
                             .font(.subheadline)
-                            .foregroundColor(.sForeground)
+                            .foregroundStyle(Color.sForeground)
                     }
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 12)
                 .background(Color.sCard)
-                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5))
-                .cornerRadius(10)
+                .overlay { RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5) }
+                .clipShape(.rect(cornerRadius: 10))
                 .padding(.horizontal, AppSpacing.page)
                 .padding(.bottom, 16)
 
@@ -108,10 +108,10 @@ struct ItemsSection: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
-                    .foregroundColor(.sForeground)
+                    .foregroundStyle(Color.sForeground)
                     .background(Color.sCard)
-                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5))
-                    .cornerRadius(10)
+                    .overlay { RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5) }
+                    .clipShape(.rect(cornerRadius: 10))
                 }
 
                 Button(action: { showScanner = true }) {
@@ -123,10 +123,10 @@ struct ItemsSection: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
-                    .foregroundColor(.sForeground)
+                    .foregroundStyle(Color.sForeground)
                     .background(Color.sCard)
-                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5))
-                    .cornerRadius(10)
+                    .overlay { RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5) }
+                    .clipShape(.rect(cornerRadius: 10))
                 }
             }
             .padding(.horizontal, AppSpacing.page)
@@ -173,33 +173,33 @@ struct ItemRowZara: View {
         AdaptiveFormRow {
             Text(String(item.item.name.prefix(1)).uppercased())
                 .font(.footnote.weight(.semibold))
-                .foregroundColor(.sAccentFG)
+                .foregroundStyle(Color.sAccentFG)
                 .frame(width: 40, height: 40)
                 .background(Color.sAccent)
-                .cornerRadius(8)
+                .clipShape(.rect(cornerRadius: 8))
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(item.item.name)
                     .font(.subheadline.weight(.medium))
-                    .foregroundColor(.sForeground)
+                    .foregroundStyle(Color.sForeground)
                     .lineLimit(textSize.isAccessibilitySize ? nil : 2)
 
                 AdaptiveFormRow {
                     Text("Qty: \(item.qty)")
                         .font(.caption)
-                        .foregroundColor(.sMutedFG)
+                        .foregroundStyle(Color.sMutedFG)
                     Text("•")
-                        .foregroundColor(.sMutedFG)
+                        .foregroundStyle(Color.sMutedFG)
                     Text(Money.text(item.rate)).moneyLine()
                         .font(.caption)
-                        .foregroundColor(.sMutedFG)
+                        .foregroundStyle(Color.sMutedFG)
 
                     if item.discount > 0 {
                         Text("•")
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                         Text("Disc: \(Money.text(item.discount))")
                             .font(.caption)
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                     }
                 }
             }
@@ -209,20 +209,20 @@ struct ItemRowZara: View {
             VStack(alignment: .trailing, spacing: 8) {
                 Text(Money.text(item.total)).moneyLine()
                     .font(.subheadline.weight(.semibold))
-                    .foregroundColor(.sForeground)
+                    .foregroundStyle(Color.sForeground)
 
                 HStack(spacing: 14) {
                     Button(action: onEdit) {
                         Image(systemName: "pencil")
                             .font(.footnote)
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                     }
                     .frame(minWidth: 44, minHeight: 44)
                     .accessibilityLabel("Edit \(item.item.name)")
                     Button(action: onDelete) {
                         Image(systemName: "trash")
                             .font(.footnote)
-                            .foregroundColor(.sDestructive)
+                            .foregroundStyle(Color.sDestructive)
                     }
                     .frame(minWidth: 44, minHeight: 44)
                     .accessibilityLabel("Remove \(item.item.name)")
@@ -231,8 +231,8 @@ struct ItemRowZara: View {
         }
         .padding(12)
         .background(Color.sCard)
-        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5))
-        .cornerRadius(10)
+        .overlay { RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5) }
+        .clipShape(.rect(cornerRadius: 10))
     }
 }
 
@@ -278,25 +278,25 @@ struct EditItemSheetZara: View {
                                 VStack(alignment: .leading, spacing: 10) {
                                     Text("Item")
                                         .font(.subheadline.weight(.medium))
-                                        .foregroundColor(.sMutedFG)
+                                        .foregroundStyle(Color.sMutedFG)
 
                                     HStack(spacing: 12) {
                                         Text(String(currentItem.item.name.prefix(1)).uppercased())
                                             .font(.footnote.weight(.semibold))
-                                            .foregroundColor(.sAccentFG)
+                                            .foregroundStyle(Color.sAccentFG)
                                             .frame(width: 44, height: 44)
                                             .background(Color.sAccent)
-                                            .cornerRadius(10)
+                                            .clipShape(.rect(cornerRadius: 10))
 
                                         VStack(alignment: .leading, spacing: 3) {
                                             Text(currentItem.item.name)
                                                 .font(.subheadline.weight(.medium))
-                                                .foregroundColor(.sForeground)
+                                                .foregroundStyle(Color.sForeground)
 
                                             if let desc = currentItem.item.description {
                                                 Text(desc)
                                                     .font(.footnote)
-                                                    .foregroundColor(.sMutedFG)
+                                                    .foregroundStyle(Color.sMutedFG)
                                                     .lineLimit(1)
                                             }
                                         }
@@ -304,21 +304,21 @@ struct EditItemSheetZara: View {
                                     }
                                     .padding(12)
                                     .background(Color.sCard)
-                                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5))
-                                    .cornerRadius(10)
+                                    .overlay { RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5) }
+                                    .clipShape(.rect(cornerRadius: 10))
                                 }
 
                                 // Quantity
                                 VStack(alignment: .leading, spacing: 10) {
                                     Text("Quantity")
                                         .font(.subheadline.weight(.medium))
-                                        .foregroundColor(.sMutedFG)
+                                        .foregroundStyle(Color.sMutedFG)
 
                                     HStack(spacing: 12) {
                                         Button(action: { if qty > 1 { qty -= 1 } }) {
                                             Image(systemName: "minus.circle")
                                                 .font(.title3)
-                                                .foregroundColor(.sMutedFG)
+                                                .foregroundStyle(Color.sMutedFG)
                                         }
 
                                         .frame(minWidth: 44, minHeight: 44)
@@ -328,12 +328,12 @@ struct EditItemSheetZara: View {
                                             .multilineTextAlignment(.center)
                                             .keyboardType(.numberPad)
                                             .frame(maxWidth: .infinity)
-                                            .foregroundColor(.sForeground)
+                                            .foregroundStyle(Color.sForeground)
 
                                         Button(action: { qty += 1 }) {
                                             Image(systemName: "plus.circle")
                                                 .font(.title3)
-                                                .foregroundColor(.sMutedFG)
+                                                .foregroundStyle(Color.sMutedFG)
                                         }
                                         .frame(minWidth: 44, minHeight: 44)
                                         .accessibilityLabel("Increase quantity")
@@ -341,63 +341,63 @@ struct EditItemSheetZara: View {
                                     .padding(.horizontal, 14)
                                     .padding(.vertical, 12)
                                     .background(Color.sCard)
-                                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5))
-                                    .cornerRadius(10)
+                                    .overlay { RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5) }
+                                    .clipShape(.rect(cornerRadius: 10))
                                 }
 
                                 // Rate
                                 VStack(alignment: .leading, spacing: 10) {
                                     Text("Unit price")
                                         .font(.subheadline.weight(.medium))
-                                        .foregroundColor(.sMutedFG)
+                                        .foregroundStyle(Color.sMutedFG)
 
                                     HStack(spacing: 8) {
                                         Text("₹")
                                             .font(.subheadline)
-                                            .foregroundColor(.sMutedFG)
+                                            .foregroundStyle(Color.sMutedFG)
 
                                         TextField("0.00", value: $rate, format: .number)
                                             .font(.subheadline)
                                             .keyboardType(.decimalPad)
                                             .frame(maxWidth: .infinity)
-                                            .foregroundColor(.sForeground)
+                                            .foregroundStyle(Color.sForeground)
                                     }
                                     .padding(.horizontal, 14)
                                     .padding(.vertical, 12)
                                     .background(Color.sCard)
-                                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5))
-                                    .cornerRadius(10)
+                                    .overlay { RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5) }
+                                    .clipShape(.rect(cornerRadius: 10))
                                 }
 
                                 // Discount
                                 VStack(alignment: .leading, spacing: 10) {
                                     Text("Discount")
                                         .font(.subheadline.weight(.medium))
-                                        .foregroundColor(.sMutedFG)
+                                        .foregroundStyle(Color.sMutedFG)
 
                                     HStack(spacing: 8) {
                                         Text("₹")
                                             .font(.subheadline)
-                                            .foregroundColor(.sMutedFG)
+                                            .foregroundStyle(Color.sMutedFG)
 
                                         TextField("0.00", value: $discount, format: .number)
                                             .font(.subheadline)
                                             .keyboardType(.decimalPad)
                                             .frame(maxWidth: .infinity)
-                                            .foregroundColor(.sForeground)
+                                            .foregroundStyle(Color.sForeground)
                                     }
                                     .padding(.horizontal, 14)
                                     .padding(.vertical, 12)
                                     .background(Color.sCard)
-                                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5))
-                                    .cornerRadius(10)
+                                    .overlay { RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5) }
+                                    .clipShape(.rect(cornerRadius: 10))
                                 }
 
                                 // Tax Rate
                                 VStack(alignment: .leading, spacing: 10) {
                                     Text("Tax rate")
                                         .font(.subheadline.weight(.medium))
-                                        .foregroundColor(.sMutedFG)
+                                        .foregroundStyle(Color.sMutedFG)
 
                                     Picker("Tax", selection: $taxRate) {
                                         Text("0%").tag(0.0)
@@ -414,7 +414,7 @@ struct EditItemSheetZara: View {
                                 VStack(alignment: .leading, spacing: 10) {
                                     Text("Summary")
                                         .font(.subheadline.weight(.medium))
-                                        .foregroundColor(.sMutedFG)
+                                        .foregroundStyle(Color.sMutedFG)
 
                                     VStack(spacing: 0) {
                                         SummaryLineZara(label: "Subtotal", value: subtotal)
@@ -429,8 +429,8 @@ struct EditItemSheetZara: View {
                                         SummaryLineZara(label: "Total", value: total, isTotal: true)
                                     }
                                     .background(Color.sCard)
-                                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5))
-                                    .cornerRadius(10)
+                                    .overlay { RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5) }
+                                    .clipShape(.rect(cornerRadius: 10))
                                 }
                                 .padding(.bottom, 100)
                             }
@@ -465,11 +465,11 @@ struct EditItemSheetZara: View {
                                     Text("Save changes")
                                         .font(.subheadline.weight(.semibold))
                                 }
-                                .foregroundColor(.sAccentFG)
+                                .foregroundStyle(Color.sAccentFG)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 14)
                                 .background(isValid ? Color.sPrimary : Color.sPrimary.opacity(0.4))
-                                .cornerRadius(10)
+                                .clipShape(.rect(cornerRadius: 10))
                             }
                             .disabled(!isValid)
 
@@ -482,10 +482,10 @@ struct EditItemSheetZara: View {
                                     .font(.subheadline.weight(.medium))
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 14)
-                                    .foregroundColor(.sForeground)
+                                    .foregroundStyle(Color.sForeground)
                                     .background(Color.sCard)
-                                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5))
-                                    .cornerRadius(10)
+                                    .overlay { RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5) }
+                                    .clipShape(.rect(cornerRadius: 10))
                             }
                         }
                         .padding(.horizontal, AppSpacing.page)
@@ -526,13 +526,13 @@ struct SummaryLineZara: View {
         HStack(spacing: 0) {
             Text(label)
                 .font(isTotal ? .headline : .subheadline)
-                .foregroundColor(.sForeground)
+                .foregroundStyle(Color.sForeground)
 
             Spacer()
 
             Text(Money.text(value)).moneyLine()
                 .font(isTotal ? .headline : .subheadline)
-                .foregroundColor(.sForeground)
+                .foregroundStyle(Color.sForeground)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)

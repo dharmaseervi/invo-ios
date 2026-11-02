@@ -15,8 +15,8 @@ struct ClientView: View {
         NavigationStack {
             contentArea
                 .navigationTitle("Clients")
-                .searchable(text: $vm.searchText, prompt: "Search name or email")
-                .onChange(of: vm.searchText) { _ in
+                .searchable(text: $vm.searchText, prompt: "Search clients")
+                .onChange(of: vm.searchText) {
                     searchTask?.cancel()
                     searchTask = Task {
                         try? await Task.sleep(nanoseconds: 300_000_000)
@@ -28,7 +28,7 @@ struct ClientView: View {
                 .navigationDestination(isPresented: $debugDetail) {
                     if let first = filteredClients.first { ClientDetailedView(client: first) }
                 }
-                .onChange(of: filteredClients.count) { _ in
+                .onChange(of: filteredClients.count) {
                     if UserDefaults.standard.string(forKey: "startScreen") == "clientdetail",
                        !filteredClients.isEmpty { debugDetail = true }
                 }
@@ -42,7 +42,7 @@ struct ClientView: View {
                     }
                 }
                 .task { await vm.loadClients() }
-                .onChange(of: SessionManager.shared.selectedCompanyId) { _ in
+                .onChange(of: SessionManager.shared.selectedCompanyId) {
                     Task { await vm.loadClients() }
                 }
         }
@@ -52,33 +52,44 @@ struct ClientView: View {
     private var contentArea: some View {
         if vm.isLoading && vm.clients.isEmpty {
             VStack(spacing: 12) {
-                ProgressView().tint(.sAccent)
+                ProgressView().tint(Color.sAccent)
                 Text("Loading clients...")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let error = vm.errorMessage {
-            VStack(spacing: 10) {
-                Image(systemName: "exclamationmark.triangle")
-                    .font(.title)
-                    .foregroundStyle(Color.sDestructive)
-                Text(error)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                Button {
-                    Task { await vm.loadClients() }
-                } label: {
-                    Text("Retry")
+            GeometryReader { proxy in
+                ScrollView {
+                    VStack(spacing: 10) {
+                        Image(systemName: "exclamationmark.triangle")
+                            .font(.title2)
+                            .foregroundStyle(Color.sDestructive)
+                        Text("Couldn't load clients")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.primary)
+                        Text(error)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 16)
+                        Button("Try again") {
+                            Task { await vm.loadClients() }
+                        }
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(Color.sAccent)
+                        .padding(.top, 4)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: proxy.size.height)
+                    .padding(24)
                 }
+                .refreshable { await vm.loadClients() }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(24)
         } else {
             List {
+                let quickSaleClients = filteredClients.filter { $0.isQuickSaleAccount }
+                let regularClients   = filteredClients.filter { !$0.isQuickSaleAccount }
+
                 if filteredClients.isEmpty {
                     VStack(spacing: 16) {
                         Image(systemName: "person.crop.circle.badge.plus")
@@ -99,11 +110,11 @@ struct ClientView: View {
                             NavigationLink(destination: ClientFormView()) {
                                 Text("Add client")
                                     .font(.subheadline.weight(.semibold))
-                                    .foregroundColor(.sAccentFG)
+                                    .foregroundStyle(Color.sAccentFG)
                                     .padding(.horizontal, AppSpacing.page)
                                     .padding(.vertical, 10)
                                     .background(Color.sPrimary)
-                                    .cornerRadius(8)
+                                    .clipShape(.rect(cornerRadius: 8))
                             }
                             .padding(.top, 4)
                         }
@@ -114,40 +125,58 @@ struct ClientView: View {
                     .listRowBackground(Color.clear)
                     .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
                 } else {
-                    ForEach(filteredClients) { client in
-                        NavigationLink {
-                            ClientDetailedView(client: client)
-                        } label: {
-                            ClientListRowView(client: client)
-                        }
-                        .standardListRow()
-                        .listRowSeparator(.hidden, edges: client.id == filteredClients.first?.id ? .top : [])
-                        .task {
-                            if client.id == vm.clients.suffix(5).first?.id {
-                                await vm.loadMoreClients()
+                    if !quickSaleClients.isEmpty {
+                        Section("Quick-sale accounts") {
+                            ForEach(quickSaleClients) { client in
+                                NavigationLink {
+                                    ClientDetailedView(client: client)
+                                } label: {
+                                    ClientListRowView(client: client)
+                                }
+                                .standardListRow()
+                                .listRowSeparator(.hidden, edges: client.id == quickSaleClients.first?.id ? .top : [])
                             }
                         }
                     }
 
-                    if vm.isLoadingMoreClients {
-                        HStack { Spacer(); ProgressView().tint(.sAccent); Spacer() }
-                            .padding(.vertical, 12)
-                            .listRowSeparator(.hidden)
-                            .listRowBackground(Color.clear)
-                    } else if vm.loadMoreClientsFailed {
-                        VStack(spacing: 6) {
-                            Text("Couldn't load more customers.")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                            Button("Try again") {
-                                Task { await vm.retryLoadMoreClients() }
+                    if !regularClients.isEmpty {
+                        Section {
+                            ForEach(regularClients) { client in
+                                NavigationLink {
+                                    ClientDetailedView(client: client)
+                                } label: {
+                                    ClientListRowView(client: client)
+                                }
+                                .standardListRow()
+                                .listRowSeparator(.hidden, edges: client.id == regularClients.first?.id && quickSaleClients.isEmpty ? .top : [])
+                                .task {
+                                    if client.id == vm.clients.suffix(5).first?.id {
+                                        await vm.loadMoreClients()
+                                    }
+                                }
                             }
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(Color.sAccent)
+
+                            if vm.isLoadingMoreClients {
+                                HStack { Spacer(); ProgressView().tint(Color.sAccent); Spacer() }
+                                    .padding(.vertical, 12)
+                                    .listRowSeparator(.hidden)
+                                    .listRowBackground(Color.clear)
+                            } else if vm.loadMoreClientsFailed {
+                                VStack(spacing: 6) {
+                                    Text("Couldn't load more customers.")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                    Button("Try again") {
+                                        Task { await vm.retryLoadMoreClients() }
+                                    }
+                                    .font(.subheadline.weight(.medium))
+                                    .foregroundStyle(Color.sAccent)
+                                }
+                                .padding(.vertical, 12)
+                                .listRowSeparator(.hidden)
+                                .listRowBackground(Color.clear)
+                            }
                         }
-                        .padding(.vertical, 12)
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
                     }
                 }
             }
@@ -157,7 +186,7 @@ struct ClientView: View {
             .overlay(alignment: .top) {
                 if vm.isLoading && !vm.clients.isEmpty {
                     ProgressView()
-                        .tint(.sAccent)
+                        .tint(Color.sAccent)
                         .padding(8)
                         .background(.ultraThinMaterial, in: Capsule())
                         .transition(.opacity)
@@ -173,27 +202,24 @@ struct ClientListRowView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            MinimalAvatarView(name: client.name)
+            if let account = client.quickSaleAccount {
+                Image(systemName: account.icon)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.sAccent)
+                    .frame(width: 40, height: 40)
+                    .background(Color.sAccentMuted, in: Circle())
+                    .accessibilityHidden(true)
+            } else {
+                MinimalAvatarView(name: client.name)
+            }
 
             VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 6) {
-                    Text(client.name)
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.primary)
+                Text(client.name)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.primary)
 
-                    if client.isQuickSaleAccount {
-                        Text("Ledger")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(Color.sAccent)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.sAccentMuted)
-                            .cornerRadius(4)
-                    }
-                }
-
-                if !contactLine.isEmpty {
-                    Text(contactLine)
+                if !client.phone.isEmpty {
+                    Text(client.phone)
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -203,10 +229,6 @@ struct ClientListRowView: View {
             Spacer(minLength: 0)
         }
         .alignmentGuide(.listRowSeparatorLeading) { _ in 52 }
-    }
-
-    private var contactLine: String {
-        [client.email, client.phone].filter { !$0.isEmpty }.joined(separator: " · ")
     }
 }
 
@@ -237,7 +259,7 @@ struct MinimalAvatarView: View {
                 .frame(width: size * scaledBase / 40, height: size * scaledBase / 40)
             Text(initials)
                 .font(.subheadline.weight(.semibold))
-                .foregroundColor(.sAccent)
+                .foregroundStyle(Color.sAccent)
         }
     }
 }

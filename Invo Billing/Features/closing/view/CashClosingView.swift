@@ -40,7 +40,7 @@ struct CashClosingView: View {
         Group {
             if vm.isLoading && vm.today == nil {
                 ProgressView()
-                    .tint(.sAccent)
+                    .tint(Color.sAccent)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 Form {
@@ -65,7 +65,7 @@ struct CashClosingView: View {
         .navigationTitle("Cash closing")
         .navigationBarTitleDisplayMode(.inline)
         .task { await vm.load(date: date) }
-        .onChange(of: date) { _ in
+        .onChange(of: date) {
             counted = ""
             note = ""
             openingOverride = ""
@@ -85,7 +85,7 @@ struct CashClosingView: View {
     private var expectedSection: some View {
         Section {
             VStack(alignment: .leading, spacing: 1) {
-                Text("Should be in the drawer")
+                Text("Expected cash")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 if vm.loadFailed {
@@ -111,7 +111,7 @@ struct CashClosingView: View {
             .padding(.vertical, 2)
 
             if vm.today != nil {
-                breakdownRow("In the drawer this morning", openingValue, isOut: false)
+                breakdownRow("Opening cash", openingValue, isOut: false)
                 ForEach(vm.today?.cashIn ?? []) { line in
                     breakdownRow(line.label, line.amount, isOut: false, count: line.count)
                 }
@@ -121,14 +121,14 @@ struct CashClosingView: View {
             }
 
             if showOpeningField {
-                HStack {
-                    Text("₹").foregroundStyle(.secondary)
-                    TextField("What was in it this morning", text: $openingOverride)
+                LabeledContent("Opening cash (₹)") {
+                    TextField("0.00", text: $openingOverride)
                         .keyboardType(.decimalPad)
+                        .multilineTextAlignment(.trailing)
                 }
             }
 
-            Button(showOpeningField ? "Use yesterday's figure" : "The float was different") {
+            Button(showOpeningField ? "Use original figure" : "Edit opening cash") {
                 if showOpeningField { openingOverride = "" }
                 showOpeningField.toggle()
             }
@@ -159,16 +159,19 @@ struct CashClosingView: View {
 
     private var countSection: some View {
         Section {
-            HStack {
-                Text("₹").foregroundStyle(.secondary)
+            LabeledContent("Cash counted (₹)") {
                 TextField(
-                    vm.today?.closed == true
-                        ? Money.text(vm.today?.counted_cash ?? 0)
-                        : "What is actually in it",
-                    text: $counted
+                    "",
+                    text: $counted,
+                    prompt: Text(
+                        vm.today?.closed == true
+                            ? Money.text(vm.today?.counted_cash ?? 0)
+                            : "0.00"
+                    )
                 )
                 .keyboardType(.decimalPad)
                 .focused($countFocused)
+                .multilineTextAlignment(.trailing)
             }
 
             TextField("Note (optional)", text: $note)
@@ -188,12 +191,12 @@ struct CashClosingView: View {
                     }
                 }
             } label: {
-                Text(vm.today?.closed == true ? "Save the new count" : "Close the day")
+                Text(vm.today?.closed == true ? "Save the new count" : "Save cash closing")
                     .font(.subheadline.weight(.semibold))
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
-            .tint(.sAccent)
+            .tint(Color.sAccent)
             .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
             // Waits for the day's own figures. Counted against a stale or missing
             // expectation, a closing records a difference that was never real.
@@ -214,6 +217,9 @@ struct CashClosingView: View {
                         Text(today.note)
                     }
                 }
+            } else if vm.isReady(for: date) {
+                Text("Enter the cash you counted to continue")
+                    .foregroundStyle(.secondary)
             }
         }
     }
@@ -239,12 +245,12 @@ struct CashClosingView: View {
     private func differenceText(_ difference: Double) -> String {
         if difference < -0.004 { return "\(Money.text(abs(difference))) short" }
         if difference > 0.004 { return "\(Money.text(difference)) over" }
-        return "Tallies exactly"
+        return "Matched"
     }
 
     private func differenceColour(_ difference: Double) -> Color {
-        if difference < -0.004 { return .sDestructive }
-        if difference > 0.004 { return .sAccent }
-        return .sSuccess
+        if difference < -0.004 { return Color.sDestructive }
+        if difference > 0.004 { return Color.sAccent }
+        return Color.sSuccess
     }
 }

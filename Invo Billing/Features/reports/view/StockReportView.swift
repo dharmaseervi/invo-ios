@@ -5,14 +5,14 @@ struct StockReportView: View {
     @State private var shareURL: URL?
     @State private var showBreakdown = true
 
-    private let lowStockColor: Color = .sWarning
-    private let profitColor: Color = .sSuccess
+    private let lowStockColor: Color = Color.sWarning
+    private let profitColor: Color = Color.sSuccess
 
     var body: some View {
         Group {
             if vm.isLoading && vm.report == nil {
                 ProgressView()
-                    .tint(.sAccent)
+                    .tint(Color.sAccent)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let report = vm.report, report.total_items == 0 {
                 emptyState
@@ -89,14 +89,14 @@ struct StockReportView: View {
         HStack(alignment: .firstTextBaseline, spacing: 10) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.footnote)
-                .foregroundColor(lowStockColor)
+                .foregroundStyle(lowStockColor)
             VStack(alignment: .leading, spacing: 2) {
                 Text(message)
                     .font(.subheadline.weight(.medium))
-                    .foregroundColor(.sForeground)
+                    .foregroundStyle(Color.sForeground)
                 Text("Showing the last figures that loaded. Pull down to try again.")
                     .font(.footnote)
-                    .foregroundColor(.sMutedFG)
+                    .foregroundStyle(Color.sMutedFG)
             }
             Spacer(minLength: 0)
         }
@@ -109,31 +109,62 @@ struct StockReportView: View {
 
     private var summaryCard: some View {
         let totals = vm.visibleTotals
+        let margin = totals.potentialProfit
 
         return SummaryCard(
             title: "Stock value (at cost)",
-            value: currency(totals.costValue),
-            stats: [
-                .init(label: "Retail value", value: currency(totals.retailValue)),
-                .init(label: "Potential profit", value: currency(totals.potentialProfit), color: profitColor),
-                .init(
-                    label: "Need attention",
-                    value: "\(totals.lowCount + totals.outCount)",
-                    color: totals.outCount > 0 ? .sDestructive : .sForeground
-                ),
-            ]
+            value: currency(totals.costValue)
         ) {
-            HStack(spacing: 8) {
-                Text("\(totals.itemCount) items · \(totals.units) units · as of \(AppDate.text(fromWire: vm.report?.as_of ?? ""))")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                if vm.isFiltered {
-                    Text("Filtered")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Color.sAccent)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.sAccent.opacity(0.12), in: Capsule())
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text("Retail value")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    Spacer(minLength: 4)
+                    Text(currency(totals.retailValue)).moneyLine()
+                        .font(.footnote.weight(.medium))
+                        .foregroundStyle(.primary)
+                }
+                HStack {
+                    Text(margin >= 0 ? "Est. gross margin" : "Est. gross loss")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    Spacer(minLength: 4)
+                    Text(currency(abs(margin))).moneyLine()
+                        .font(.footnote.weight(.medium))
+                        .foregroundStyle(margin >= 0 ? profitColor : Color.sDestructive)
+                }
+                if totals.costValue < 0 || totals.retailValue < 0 {
+                    Text("Some items have negative stock counts")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                if totals.outCount > 0 || totals.lowCount > 0 {
+                    HStack(spacing: 12) {
+                        if totals.outCount > 0 {
+                            Label("\(totals.outCount) out of stock", systemImage: "exclamationmark.circle.fill")
+                                .foregroundStyle(Color.sDestructive)
+                        }
+                        if totals.lowCount > 0 {
+                            Label("\(totals.lowCount) low stock", systemImage: "exclamationmark.triangle.fill")
+                                .foregroundStyle(lowStockColor)
+                        }
+                    }
+                    .font(.caption.weight(.medium))
+                }
+                HStack(spacing: 8) {
+                    let count = totals.itemCount
+                    Text("\(count) item\(count == 1 ? "" : "s") · \(totals.units) units · as of \(AppDate.text(fromWire: vm.report?.as_of ?? ""))")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    if vm.isFiltered {
+                        Text("Filtered")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Color.sAccent)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.sAccent.opacity(0.12), in: Capsule())
+                    }
                 }
             }
         }
@@ -143,57 +174,71 @@ struct StockReportView: View {
 
     private var filterBar: some View {
         VStack(alignment: .leading, spacing: 10) {
+            // Category picker + stock-status chips + sort in a single scrolling row.
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    chip(title: "All categories", isSelected: vm.selectedCategory == nil) {
-                        vm.selectedCategory = nil
-                    }
-                    ForEach(vm.categories) { category in
-                        chip(
-                            title: "\(category.category_name) (\(category.item_count))",
-                            isSelected: vm.selectedCategory == category.category_name
-                        ) {
-                            vm.selectedCategory = vm.selectedCategory == category.category_name
-                                ? nil
-                                : category.category_name
+                    if !vm.categories.isEmpty {
+                        Menu {
+                            Button("All categories") { vm.selectedCategory = nil }
+                            ForEach(vm.categories) { category in
+                                Button {
+                                    vm.selectedCategory = vm.selectedCategory == category.category_name
+                                        ? nil : category.category_name
+                                } label: {
+                                    if vm.selectedCategory == category.category_name {
+                                        Label(category.category_name, systemImage: "checkmark")
+                                    } else {
+                                        Text(category.category_name)
+                                    }
+                                }
+                            }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Text(vm.selectedCategory ?? "Category")
+                                    .lineLimit(1)
+                                Image(systemName: "chevron.down")
+                                    .font(.caption.weight(.semibold))
+                            }
+                            .font(.subheadline.weight(vm.selectedCategory != nil ? .semibold : .regular))
+                            .foregroundStyle(vm.selectedCategory != nil ? Color.sAccentFG : Color.sForeground)
+                            .padding(.horizontal, AppSpacing.row)
+                            .padding(.vertical, AppSpacing.inline)
+                            .background(
+                                vm.selectedCategory != nil ? Color.sAccent : Color(UIColor.secondarySystemFill),
+                                in: Capsule()
+                            )
+                            .frame(minHeight: AppSpacing.minimumTarget)
                         }
+                        .buttonStyle(.plain)
+                    }
+
+                    ForEach(StockStatusFilter.allCases) { status in
+                        chip(title: status.label, isSelected: vm.statusFilter == status) {
+                            vm.statusFilter = status
+                        }
+                    }
+
+                    Menu {
+                        Picker("Sort", selection: $vm.sortOption) {
+                            ForEach(StockSortOption.allCases) { option in
+                                Text(option.label).tag(option)
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "arrow.up.arrow.down")
+                            Text("Sort")
+                        }
+                        .font(.footnote.weight(.medium))
+                        .foregroundStyle(Color.sForeground)
+                        .lineLimit(1)
+                        .fixedSize()
+                        .padding(.horizontal, 12)
+                        .frame(minHeight: AppSpacing.minimumTarget)
+                        .background(Color(UIColor.secondarySystemFill), in: Capsule())
                     }
                 }
                 .padding(.horizontal, AppSpacing.page)
-            }
-
-            // Scrolls rather than squeezing: at a large text size the fixed row crushed
-            // "In stock" and "Low" into "In…" and "Lo…", and stacked the Sort label into
-            // a vertical column of letters.
-            ScrollView(.horizontal, showsIndicators: false) {
-              HStack(spacing: 8) {
-                ForEach(StockStatusFilter.allCases) { status in
-                    chip(title: status.label, isSelected: vm.statusFilter == status) {
-                        vm.statusFilter = status
-                    }
-                }
-
-                Menu {
-                    Picker("Sort", selection: $vm.sortOption) {
-                        ForEach(StockSortOption.allCases) { option in
-                            Text(option.label).tag(option)
-                        }
-                    }
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "arrow.up.arrow.down")
-                        Text("Sort")
-                    }
-                    .font(.footnote.weight(.medium))
-                    .foregroundColor(.sForeground)
-                    .lineLimit(1)
-                    .fixedSize()
-                    .padding(.horizontal, 12)
-                    .frame(minHeight: AppSpacing.minimumTarget)
-                    .background(Color(UIColor.secondarySystemFill), in: Capsule())
-                }
-              }
-              .padding(.horizontal, AppSpacing.page)
             }
 
             if vm.isFiltered {
@@ -205,7 +250,7 @@ struct StockReportView: View {
                         Text("Clear filters")
                     }
                     .font(.footnote.weight(.medium))
-                    .foregroundColor(.sAccent)
+                    .foregroundStyle(Color.sAccent)
                 }
                 .padding(.horizontal, AppSpacing.page)
             }
@@ -308,7 +353,10 @@ private struct CategoryBreakdownRow: View {
     let lowStockColor: Color
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        let catMargin = category.potential_profit
+        let shareStr = String(format: "%.0f", max(0, category.share_of_value))
+        let countStr = "\(category.item_count) item\(category.item_count == 1 ? "" : "s")"
+        return VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 Text(category.category_name)
                     .font(.subheadline.weight(.medium))
@@ -339,19 +387,20 @@ private struct CategoryBreakdownRow: View {
             .frame(height: 4)
 
             HStack(spacing: 8) {
-                Text("\(category.item_count) items · \(String(format: "%.0f", category.share_of_value))% of value · ")
+                Text("\(countStr) · \(shareStr)% of value · ")
                     .foregroundStyle(.secondary)
-                + Text("profit \(Money.text(category.potential_profit))")
-                    .foregroundStyle(profitColor)
+                + (catMargin >= 0
+                    ? Text("margin \(Money.text(catMargin))").foregroundStyle(profitColor)
+                    : Text("loss \(Money.text(abs(catMargin)))").foregroundStyle(Color.sDestructive))
 
                 Spacer(minLength: 4)
 
                 if category.out_of_stock_count > 0 {
-                    Label("\(category.out_of_stock_count)", systemImage: "exclamationmark.circle.fill")
+                    Label("\(category.out_of_stock_count) out of stock", systemImage: "exclamationmark.circle.fill")
                         .foregroundStyle(Color.sDestructive)
                 }
                 if category.low_stock_count > 0 {
-                    Label("\(category.low_stock_count)", systemImage: "exclamationmark.triangle.fill")
+                    Label("\(category.low_stock_count) low stock", systemImage: "exclamationmark.triangle.fill")
                         .foregroundStyle(lowStockColor)
                 }
             }
@@ -370,9 +419,9 @@ private struct StockReportRow: View {
 
     private var statusColor: Color {
         switch item.stockStatus {
-        case .out: return .sDestructive
+        case .out: return Color.sDestructive
         case .low: return lowStockColor
-        case .inStock: return .sMutedFG
+        case .inStock: return Color.sMutedFG
         }
     }
 
@@ -386,12 +435,12 @@ private struct StockReportRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(item.name)
                     .font(.subheadline.weight(.medium))
-                    .foregroundColor(.sForeground)
+                    .foregroundStyle(Color.sForeground)
                     .lineLimit(1)
 
                 Text(subtitle)
                     .font(.footnote)
-                    .foregroundColor(.sMutedFG)
+                    .foregroundStyle(Color.sMutedFG)
                     .lineLimit(1)
             }
             .alignmentGuide(.listRowSeparatorLeading) { d in d[.leading] }
@@ -401,10 +450,10 @@ private struct StockReportRow: View {
             VStack(alignment: .trailing, spacing: 3) {
                 Text(Money.text(item.stock_value)).moneyLine()
                     .font(.subheadline.weight(.semibold))
-                    .foregroundColor(.sForeground)
+                    .foregroundStyle(Color.sForeground)
                 Text("\(item.quantity)\(item.unit.map { $0.isEmpty ? "" : " \($0)" } ?? "") in stock")
                     .font(.caption)
-                    .foregroundColor(statusColor)
+                    .foregroundStyle(statusColor)
                     .lineLimit(1)
             }
             .frame(minWidth: 88, alignment: .trailing)

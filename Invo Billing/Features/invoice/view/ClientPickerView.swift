@@ -35,7 +35,7 @@ struct ClientPickerView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Quick sale")
                 .font(.caption.weight(.medium))
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
                 .padding(.horizontal, AppSpacing.page)
 
             HStack(spacing: 10) {
@@ -46,7 +46,7 @@ struct ClientPickerView: View {
                         HStack(spacing: 8) {
                             if isProvisioningQuickSale {
                                 ProgressView()
-                                    .tint(.sAccent)
+                                    .tint(Color.sAccent)
                                     .scaleEffect(0.8)
                             } else {
                                 Image(systemName: account.icon)
@@ -55,15 +55,15 @@ struct ClientPickerView: View {
                             Text(account.rawValue)
                                 .font(.subheadline.weight(.medium))
                         }
-                        .foregroundColor(.sAccent)
+                        .foregroundStyle(Color.sAccent)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
                         .background(Color.sAccentMuted)
-                        .overlay(
+                        .overlay {
                             RoundedRectangle(cornerRadius: 10)
                                 .stroke(Color.sAccent.opacity(0.25), lineWidth: 0.5)
-                        )
-                        .cornerRadius(10)
+                        }
+                        .clipShape(.rect(cornerRadius: 10))
                     }
                     .disabled(isProvisioningQuickSale)
                 }
@@ -72,7 +72,7 @@ struct ClientPickerView: View {
 
             Text("No customer details needed — bills straight to the \(QuickSaleAccount.cash.rawValue.lowercased())/\(QuickSaleAccount.upi.rawValue) ledger")
                 .font(.caption)
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
                 .padding(.horizontal, AppSpacing.page)
         }
         .padding(.top, 16)
@@ -95,12 +95,12 @@ struct ClientPickerView: View {
                     HStack(spacing: 10) {
                         Image(systemName: "magnifyingglass")
                             .font(.body)
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
 
                         TextField("Search clients", text: $searchText)
                             .font(.body)
-                            .foregroundColor(.sForeground)
-                            .tint(.sAccent)
+                            .foregroundStyle(Color.sForeground)
+                            .tint(Color.sAccent)
                             .autocorrectionDisabled()
 
                         if !searchText.isEmpty {
@@ -109,18 +109,18 @@ struct ClientPickerView: View {
                             } label: {
                                 Image(systemName: "xmark.circle.fill")
                                     .font(.body)
-                                    .foregroundColor(.sMutedFG)
+                                    .foregroundStyle(Color.sMutedFG)
                             }
                         }
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 10)
                     .background(Color.sCard)
-                    .overlay(
+                    .overlay {
                         RoundedRectangle(cornerRadius: 8)
                             .stroke(Color.sInput, lineWidth: 0.5)
-                    )
-                    .cornerRadius(8)
+                    }
+                    .clipShape(.rect(cornerRadius: 8))
                     .padding(.horizontal, AppSpacing.page)
                     .padding(.vertical, 14)
 
@@ -137,24 +137,24 @@ struct ClientPickerView: View {
 
                                 Image(systemName: "plus")
                                     .font(.body)
-                                    .foregroundColor(.sMutedFG)
+                                    .foregroundStyle(Color.sMutedFG)
                             }
 
                             VStack(alignment: .leading, spacing: 3) {
                                 Text("Add new client")
                                     .font(.subheadline.weight(.medium))
-                                    .foregroundColor(.sForeground)
+                                    .foregroundStyle(Color.sForeground)
 
                                 Text("Create a new client record")
                                     .font(.caption)
-                                    .foregroundColor(.sMutedFG)
+                                    .foregroundStyle(Color.sMutedFG)
                             }
 
                             Spacer()
 
                             Image(systemName: "chevron.right")
                                 .font(.footnote.weight(.semibold))
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
                         }
                         .padding(.horizontal, AppSpacing.page)
                         .padding(.vertical, 12)
@@ -166,37 +166,37 @@ struct ClientPickerView: View {
                     if vm.isLoading {
                         VStack(spacing: 12) {
                             ProgressView()
-                                .tint(.sAccent)
+                                .tint(Color.sAccent)
                             Text("Loading clients...")
                                 .font(.subheadline)
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else if filteredClients.isEmpty {
                         VStack(spacing: 14) {
                             Image(systemName: "person.crop.circle.badge.plus")
                                 .font(.scaled(36))
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
 
                             VStack(spacing: 4) {
                                 Text(searchText.isEmpty ? "No clients yet" : "No clients found")
                                     .font(.subheadline.weight(.semibold))
-                                    .foregroundColor(.sForeground)
+                                    .foregroundStyle(Color.sForeground)
 
                                 Text(searchText.isEmpty ? "Add your first client to get started" : "Try a different search")
                                     .font(.footnote)
-                                    .foregroundColor(.sMutedFG)
+                                    .foregroundStyle(Color.sMutedFG)
                             }
 
                             if searchText.isEmpty {
                                 Button(action: { showAddClient = true }) {
                                     Text("Add client")
                                         .font(.subheadline.weight(.semibold))
-                                        .foregroundColor(.sAccentFG)
+                                        .foregroundStyle(Color.sAccentFG)
                                         .padding(.horizontal, AppSpacing.page)
                                         .padding(.vertical, 10)
                                         .background(Color.sPrimary)
-                                        .cornerRadius(8)
+                                        .clipShape(.rect(cornerRadius: 8))
                                 }
                                 .padding(.top, 4)
                             }
@@ -206,13 +206,13 @@ struct ClientPickerView: View {
                         HStack {
                             Text("Existing clients")
                                 .font(.caption.weight(.medium))
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
 
                             Spacer()
 
                             Text("\(filteredClients.count)")
                                 .font(.caption.weight(.medium))
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
                         }
                         .padding(.horizontal, AppSpacing.page)
                         .padding(.top, 14)
@@ -263,7 +263,7 @@ struct ClientPickerView: View {
                                     showAddClient = false
                                 }
                                 .font(.body)
-                                .foregroundColor(.sForeground)
+                                .foregroundStyle(Color.sForeground)
                             }
                         }
                 }
@@ -289,34 +289,34 @@ struct ClientPickerRow: View {
             HStack(spacing: 14) {
                 Text(String(client.name.prefix(1)).uppercased())
                     .font(.footnote.weight(.semibold))
-                    .foregroundColor(.sAccentFG)
+                    .foregroundStyle(Color.sAccentFG)
                     .frame(width: 44, height: 44)
                     .background(Color.sAccent)
-                    .cornerRadius(10)
+                    .clipShape(.rect(cornerRadius: 10))
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(client.name)
                         .font(.subheadline.weight(.medium))
-                        .foregroundColor(.sForeground)
+                        .foregroundStyle(Color.sForeground)
                         .lineLimit(1)
 
                     HStack(spacing: 6) {
                         if !client.email.isEmpty {
                             Text(client.email)
                                 .font(.caption)
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
                                 .lineLimit(1)
                         }
 
                         if !client.phone.isEmpty && !client.email.isEmpty {
                             Text("•")
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
                         }
 
                         if !client.phone.isEmpty {
                             Text(client.phone)
                                 .font(.caption)
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
                                 .lineLimit(1)
                         }
                     }
@@ -324,7 +324,7 @@ struct ClientPickerRow: View {
                     if !client.city.isEmpty {
                         Text(client.city)
                             .font(.caption)
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                     }
                 }
 
@@ -333,21 +333,21 @@ struct ClientPickerRow: View {
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundColor(.sAccent)
+                        .foregroundStyle(Color.sAccent)
                 } else {
                     Image(systemName: "circle")
                         .font(.body)
-                        .foregroundColor(.sBorder)
+                        .foregroundStyle(Color.sBorder)
                 }
             }
             .padding(.vertical, 10)
             .padding(.horizontal, 14)
             .background(Color.sCard)
-            .overlay(
+            .overlay {
                 RoundedRectangle(cornerRadius: 10)
                     .stroke(isSelected ? Color.sAccent.opacity(0.4) : Color.sBorder, lineWidth: 0.5)
-            )
-            .cornerRadius(10)
+            }
+            .clipShape(.rect(cornerRadius: 10))
         }
     }
 }
@@ -362,9 +362,9 @@ struct AvatarView: View {
 
         Text(first)
             .font(.scaled(size * 0.45, weight: .bold))
-            .foregroundColor(.sAccentFG)
+            .foregroundStyle(Color.sAccentFG)
             .frame(width: size, height: size)
             .background(Color.sAccent)
-            .cornerRadius(8)
+            .clipShape(.rect(cornerRadius: 8))
     }
 }

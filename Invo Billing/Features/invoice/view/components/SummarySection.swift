@@ -23,7 +23,7 @@ struct SummarySection: View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Summary")
                 .font(.subheadline.weight(.medium))
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
                 .padding(.horizontal, AppSpacing.page)
                 .padding(.bottom, 10)
 
@@ -36,17 +36,17 @@ struct SummarySection: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Tax")
                             .font(.subheadline)
-                            .foregroundColor(.sForeground)
+                            .foregroundStyle(Color.sForeground)
                         Text("(\(String(format: "%.1f", taxPercentage))%)")
                             .font(.caption)
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                     }
 
                     Spacer()
 
                     Text(Money.text(tax)).moneyLine()
                         .font(.subheadline)
-                        .foregroundColor(.sForeground)
+                        .foregroundStyle(Color.sForeground)
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 12)
@@ -56,24 +56,24 @@ struct SummarySection: View {
                 AdaptiveFormRow {
                     Text("Discount")
                         .font(.subheadline)
-                        .foregroundColor(.sForeground)
+                        .foregroundStyle(Color.sForeground)
 
                     Spacer()
 
                     HStack(spacing: 2) {
                         Text("₹")
                             .font(.subheadline)
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                         TextField("0.00", text: $discountText)
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
                             .font(.subheadline)
-                            .foregroundColor(.sForeground)
-                            .tint(.sAccent)
+                            .foregroundStyle(Color.sForeground)
+                            .tint(Color.sAccent)
                             .frame(minWidth: 80, idealWidth: 120)
                             .accessibilityLabel("Invoice discount")
                             .focused($discountFocused)
-                            .onChange(of: discountText) { newValue in
+                            .onChange(of: discountText) { _, newValue in
                                 discount = min(max(Double(newValue) ?? 0, 0), subtotal + tax)
                             }
                     }
@@ -83,7 +83,7 @@ struct SummarySection: View {
                 .onAppear {
                     discountText = discount > 0 ? Money.editable(discount) : ""
                 }
-                .onChange(of: discountFocused) { focused in
+                .onChange(of: discountFocused) { _, focused in
                     if !focused {
                         discountText = discount > 0 ? Money.editable(discount) : ""
                     }
@@ -96,10 +96,10 @@ struct SummarySection: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("TDS deduction")
                             .font(.subheadline)
-                            .foregroundColor(.sForeground)
+                            .foregroundStyle(Color.sForeground)
                         Text("Buyer deducts from payment")
                             .font(.caption)
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                     }
                     Spacer()
                     Menu {
@@ -112,17 +112,17 @@ struct SummarySection: View {
                         HStack(spacing: 4) {
                             Text(tdsRate == 0 ? "None" : "\(tdsRate.formatted(.number.precision(.fractionLength(0...1))))%")
                                 .font(.subheadline)
-                                .foregroundColor(tdsRate > 0 ? .sAccent : .sMutedFG)
+                                .foregroundStyle(tdsRate > 0 ? Color.sAccent : Color.sMutedFG)
                             Image(systemName: "chevron.down")
                                 .font(.caption)
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
                         }
                         .frame(minHeight: 44)
                         .accessibilityLabel("TDS rate")
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
                         .background(Color.sMuted)
-                        .cornerRadius(6)
+                        .clipShape(.rect(cornerRadius: 6))
                     }
                 }
                 .padding(.horizontal, 14)
@@ -133,11 +133,11 @@ struct SummarySection: View {
                     AdaptiveFormRow {
                         Text("TDS @ \(tdsRate.formatted(.number.precision(.fractionLength(0...1))))%")
                             .font(.subheadline)
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                         Spacer()
                         Text("- \(Money.text(tdsAmount))").moneyLine()
                             .font(.subheadline)
-                            .foregroundColor(.sDestructive)
+                            .foregroundStyle(Color.sDestructive)
                     }
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
@@ -149,27 +149,27 @@ struct SummarySection: View {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(tdsRate > 0 ? "Expected cash receivable" : "Invoice total")
                             .font(.subheadline.weight(.semibold))
-                            .foregroundColor(.sForeground)
+                            .foregroundStyle(Color.sForeground)
                         Text(tdsRate > 0 ? "If the buyer withholds the expected TDS" : "Payable by the due date")
                             .font(.caption)
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                     }
 
                     Spacer()
 
                     Text(Money.text(tdsRate > 0 ? netReceivable : total)).moneyLine()
                         .font(.subheadline.weight(.semibold))
-                        .foregroundColor(.sForeground)
+                        .foregroundStyle(Color.sForeground)
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 14)
             }
             .background(Color.sCard)
-            .overlay(
+            .overlay {
                 RoundedRectangle(cornerRadius: 10)
                     .stroke(Color.sBorder, lineWidth: 0.5)
-            )
-            .cornerRadius(10)
+            }
+            .clipShape(.rect(cornerRadius: 10))
             .padding(.horizontal, AppSpacing.page)
             .padding(.bottom, 20)
         }
@@ -186,13 +186,13 @@ struct SummaryRowZara: View {
         AdaptiveFormRow {
             Text(label)
                 .font(isTotal ? .headline : .subheadline)
-                .foregroundColor(.sForeground)
+                .foregroundStyle(Color.sForeground)
 
             Spacer()
 
             Text(Money.text(value)).moneyLine()
                 .font(isTotal ? .headline : .subheadline)
-                .foregroundColor(.sForeground)
+                .foregroundStyle(Color.sForeground)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)

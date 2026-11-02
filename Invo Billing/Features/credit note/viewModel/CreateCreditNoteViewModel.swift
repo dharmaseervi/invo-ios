@@ -39,10 +39,10 @@ final class CreateCreditNoteViewModel: ObservableObject {
 
     // MARK: - Init
     init(
-        companyID: Int = SessionManager.shared.selectedCompanyId ?? 0,
+        companyID: Int = 0,
         invoiceID: Int? = nil
     ) {
-        self.companyID = companyID
+        self.companyID = companyID != 0 ? companyID : (SessionManager.shared.selectedCompanyId ?? 0)
         self.invoiceID = invoiceID
     }
 

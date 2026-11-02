@@ -70,22 +70,22 @@ struct SupplierStatementShareView: View {
 
                 if isLoading {
                     Spacer()
-                    ProgressView().tint(.sAccent)
+                    ProgressView().tint(Color.sAccent)
                     Spacer()
                 } else if let errorMessage {
                     Spacer()
                     VStack(spacing: 10) {
                         Image(systemName: "exclamationmark.triangle")
                             .font(.title2)
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                         Text(errorMessage)
                             .font(.subheadline)
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 30)
                         Button("Try again") { fetch() }
                             .font(.subheadline.weight(.medium))
-                            .foregroundColor(.sAccent)
+                            .foregroundStyle(Color.sAccent)
                     }
                     Spacer()
                 } else if let pdfURL {
@@ -108,13 +108,13 @@ struct SupplierStatementShareView: View {
                     }
                 } label: {
                     Image(systemName: "square.and.arrow.up")
-                        .foregroundColor(pdfURL == nil ? .sMutedFG : .sAccent)
+                        .foregroundStyle(pdfURL == nil ? Color.sMutedFG : Color.sAccent)
                 }
                 .disabled(pdfURL == nil)
             }
         }
         .task { fetch() }
-        .onChange(of: period) { _ in fetch() }
+        .onChange(of: period) { fetch() }
     }
 
     private var periodControls: some View {
@@ -132,13 +132,13 @@ struct SupplierStatementShareView: View {
                         .labelsHidden()
                     Text("to")
                         .font(.footnote)
-                        .foregroundColor(.sMutedFG)
+                        .foregroundStyle(Color.sMutedFG)
                     DatePicker("", selection: $customTo, displayedComponents: .date)
                         .labelsHidden()
                     Spacer()
                     Button("Apply") { fetch() }
                         .font(.subheadline.weight(.medium))
-                        .foregroundColor(.sAccent)
+                        .foregroundStyle(Color.sAccent)
                 }
             }
         }

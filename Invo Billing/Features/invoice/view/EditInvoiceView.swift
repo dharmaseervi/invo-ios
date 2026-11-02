@@ -38,37 +38,37 @@ struct EditInvoiceView: View {
                 // Loading State
                 VStack(spacing: 12) {
                     ProgressView()
-                        .tint(.sAccent)
+                        .tint(Color.sAccent)
                     Text("Loading invoice...")
                         .font(.subheadline)
-                        .foregroundColor(.sMutedFG)
+                        .foregroundStyle(Color.sMutedFG)
                 }
             } else if !vm.canEdit && !vm.invoiceStatus.isEmpty {
                 // Non-editable state for non-draft invoices
                 VStack(spacing: 18) {
                     Image(systemName: "lock.fill")
                         .font(.scaled(40))
-                        .foregroundColor(.sMutedFG)
+                        .foregroundStyle(Color.sMutedFG)
 
                     VStack(spacing: 6) {
                         Text("Invoice cannot be edited")
                             .font(.subheadline.weight(.semibold))
-                            .foregroundColor(.sForeground)
+                            .foregroundStyle(Color.sForeground)
 
                         Text("Only draft invoices can be edited.\nThis invoice status is: \(vm.invoiceStatus.uppercased())")
                             .font(.subheadline)
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                             .multilineTextAlignment(.center)
                     }
 
                     Button(action: { cancel() }) {
                         Text("Go back")
                             .font(.subheadline.weight(.semibold))
-                            .foregroundColor(.sAccentFG)
+                            .foregroundStyle(Color.sAccentFG)
                             .padding(.horizontal, 28)
                             .padding(.vertical, 12)
                             .background(Color.sPrimary)
-                            .cornerRadius(10)
+                            .clipShape(.rect(cornerRadius: 10))
                     }
                     .padding(.top, 6)
                 }
@@ -81,24 +81,24 @@ struct EditInvoiceView: View {
                     HStack {
                         Text("Invoice: \(vm.invoiceNumber)")
                             .font(.footnote.weight(.medium))
-                            .foregroundColor(.sAccentFG)
+                            .foregroundStyle(Color.sAccentFG)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
                             .background(Color.sPrimary)
-                            .cornerRadius(6)
+                            .clipShape(.rect(cornerRadius: 6))
 
                         Spacer()
 
                         Text("DRAFT")
                             .font(.caption.weight(.semibold))
                             .tracking(0.5)
-                            .foregroundColor(.sWarning)
+                            .foregroundStyle(Color.sWarning)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 4)
-                            .overlay(
+                            .overlay {
                                 RoundedRectangle(cornerRadius: 6)
                                     .stroke(Color.sWarning, lineWidth: 1)
-                            )
+                            }
                     }
                     .padding(.horizontal, AppSpacing.page)
                     .padding(.vertical, 12)
@@ -118,7 +118,7 @@ struct EditInvoiceView: View {
                             )
                             .padding(.horizontal, AppSpacing.page)
                             .padding(.top, 16)
-                            .onChange(of: vm.selectedClient) { client in
+                            .onChange(of: vm.selectedClient) { _, client in
                                 guard client != nil else { return }
                                 Task { await vm.loadClientAddresses() }
                             }
@@ -158,7 +158,7 @@ struct EditInvoiceView: View {
                                     HStack(spacing: 8) {
                                         if vm.isLoading {
                                             ProgressView()
-                                                .tint(.sAccentFG)
+                                                .tint(Color.sAccentFG)
                                                 .scaleEffect(0.85)
                                         } else {
                                             Image(systemName: "checkmark.circle.fill")
@@ -167,11 +167,11 @@ struct EditInvoiceView: View {
                                                 .font(.subheadline.weight(.semibold))
                                         }
                                     }
-                                    .foregroundColor(.sAccentFG)
+                                    .foregroundStyle(Color.sAccentFG)
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 14)
                                     .background(vm.isValid ? Color.sPrimary : Color.sPrimary.opacity(0.4))
-                                    .cornerRadius(10)
+                                    .clipShape(.rect(cornerRadius: 10))
                                 }
                                 .disabled(vm.isLoading || !vm.isValid)
 
@@ -180,13 +180,13 @@ struct EditInvoiceView: View {
                                         .font(.subheadline.weight(.medium))
                                         .frame(maxWidth: .infinity)
                                         .padding(.vertical, 14)
-                                        .foregroundColor(.sForeground)
+                                        .foregroundStyle(Color.sForeground)
                                         .background(Color.sCard)
-                                        .overlay(
+                                        .overlay {
                                             RoundedRectangle(cornerRadius: 10)
                                                 .stroke(Color.sBorder, lineWidth: 0.5)
-                                        )
-                                        .cornerRadius(10)
+                                        }
+                                        .clipShape(.rect(cornerRadius: 10))
                                 }
                                 .disabled(vm.isLoading)
                             }

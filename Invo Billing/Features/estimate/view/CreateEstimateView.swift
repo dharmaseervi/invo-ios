@@ -26,7 +26,7 @@ struct CreateEstimateView: View {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Customer")
                             .font(.subheadline.weight(.medium))
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
 
                         Button { showClientPicker = true } label: {
                             HStack(spacing: 12) {
@@ -35,31 +35,31 @@ struct CreateEstimateView: View {
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(client.name)
                                             .font(.subheadline.weight(.medium))
-                                            .foregroundColor(.sForeground)
+                                            .foregroundStyle(Color.sForeground)
                                         if !client.email.isEmpty {
                                             Text(client.email)
                                                 .font(.footnote)
-                                                .foregroundColor(.sMutedFG)
+                                                .foregroundStyle(Color.sMutedFG)
                                         }
                                     }
                                 } else {
                                     Image(systemName: "person.crop.circle.badge.plus")
                                         .font(.title3)
-                                        .foregroundColor(.sAccent)
+                                        .foregroundStyle(Color.sAccent)
                                     Text("Select client")
                                         .font(.subheadline.weight(.medium))
-                                        .foregroundColor(.sForeground)
+                                        .foregroundStyle(Color.sForeground)
                                 }
                                 Spacer()
                                 Image(systemName: "chevron.right")
                                     .font(.footnote.weight(.semibold))
-                                    .foregroundColor(.sMutedFG)
+                                    .foregroundStyle(Color.sMutedFG)
                             }
                             .padding(14)
                         }
                         .background(Color.sCard)
-                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
-                        .cornerRadius(12)
+                        .overlay { RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5) }
+                        .clipShape(.rect(cornerRadius: 12))
                     }
                     .padding(.horizontal, AppSpacing.page)
 
@@ -67,20 +67,20 @@ struct CreateEstimateView: View {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Details")
                             .font(.subheadline.weight(.medium))
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
 
                         VStack(spacing: 0) {
                             HStack {
                                 Text("Document type")
                                     .font(.body)
-                                    .foregroundColor(.sForeground)
+                                    .foregroundStyle(Color.sForeground)
                                 Spacer()
                                 Picker("", selection: $vm.docType) {
                                     Text("Quotation").tag("")
                                     Text("Proforma Invoice").tag("PROFORMA INVOICE")
                                 }
                                 .pickerStyle(.menu)
-                                .tint(.sAccent)
+                                .tint(Color.sAccent)
                             }
                             .padding(14)
 
@@ -89,11 +89,11 @@ struct CreateEstimateView: View {
                             HStack {
                                 Text("Estimate number")
                                     .font(.body)
-                                    .foregroundColor(.sForeground)
+                                    .foregroundStyle(Color.sForeground)
                                 Spacer()
                                 Text(vm.estimateNumber)
                                     .font(.body)
-                                    .foregroundColor(.sMutedFG)
+                                    .foregroundStyle(Color.sMutedFG)
                             }
                             .padding(14)
 
@@ -109,7 +109,7 @@ struct CreateEstimateView: View {
 
                             Toggle("Set expiry date", isOn: $vm.hasExpiryDate)
                                 .font(.body)
-                                .tint(.sAccent)
+                                .tint(Color.sAccent)
                                 .padding(14)
 
                             if vm.hasExpiryDate {
@@ -122,8 +122,8 @@ struct CreateEstimateView: View {
                             }
                         }
                         .background(Color.sCard)
-                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
-                        .cornerRadius(12)
+                        .overlay { RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5) }
+                        .clipShape(.rect(cornerRadius: 12))
                     }
                     .padding(.horizontal, AppSpacing.page)
 
@@ -153,10 +153,10 @@ struct CreateEstimateView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Total")
                             .font(.caption)
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                         Text(Money.text(vm.total)).moneyLine()
                             .font(.subheadline.weight(.semibold))
-                            .foregroundColor(.sForeground)
+                            .foregroundStyle(Color.sForeground)
                     }
                     Spacer()
                     Button {
@@ -166,17 +166,17 @@ struct CreateEstimateView: View {
                     } label: {
                         HStack(spacing: 8) {
                             if vm.isLoading {
-                                ProgressView().tint(.sAccentFG).scaleEffect(0.85)
+                                ProgressView().tint(Color.sAccentFG).scaleEffect(0.85)
                             } else {
                                 Text("Create estimate")
                                     .font(.subheadline.weight(.semibold))
                             }
                         }
-                        .foregroundColor(.sAccentFG)
+                        .foregroundStyle(Color.sAccentFG)
                         .padding(.horizontal, 22)
                         .padding(.vertical, 13)
                         .background(vm.isValid ? Color.sPrimary : Color.sPrimary.opacity(0.4))
-                        .cornerRadius(10)
+                        .clipShape(.rect(cornerRadius: 10))
                     }
                     .disabled(vm.isLoading || !vm.isValid)
                 }

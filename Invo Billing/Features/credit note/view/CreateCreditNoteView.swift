@@ -39,7 +39,7 @@ struct CreateCreditNoteView: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Credit type")
                                     .font(.subheadline.weight(.medium))
-                                    .foregroundColor(.sMutedFG)
+                                    .foregroundStyle(Color.sMutedFG)
 
                                 Picker("", selection: $vm.creditType) {
                                     ForEach(CreditNoteType.allCases, id: \.self)
@@ -57,7 +57,7 @@ struct CreateCreditNoteView: View {
                             if let number = vm.linkedInvoiceNumber {
                                 Text("Against \(number) — its balance goes down by this credit.")
                                     .font(.subheadline)
-                                    .foregroundColor(.sMutedFG)
+                                    .foregroundStyle(Color.sMutedFG)
                                     .padding(.horizontal, AppSpacing.page)
                                     .padding(.top, 16)
                             }
@@ -73,7 +73,7 @@ struct CreateCreditNoteView: View {
                             )
                             .padding(.horizontal, AppSpacing.page)
                             .padding(.top, 20)
-                            .onChange(of: vm.selectedClient) { client in
+                            .onChange(of: vm.selectedClient) { _, client in
                                 guard client != nil else { return }
                                 Task { await vm.loadClientAddresses() }
                             }
@@ -82,7 +82,7 @@ struct CreateCreditNoteView: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Credit date")
                                     .font(.subheadline.weight(.medium))
-                                    .foregroundColor(.sMutedFG)
+                                    .foregroundStyle(Color.sMutedFG)
 
                                 DatePicker(
                                     "",
@@ -90,7 +90,7 @@ struct CreateCreditNoteView: View {
                                     displayedComponents: .date
                                 )
                                 .datePickerStyle(.compact)
-                                .tint(.sAccent)
+                                .tint(Color.sAccent)
                                 .labelsHidden()
                             }
                             .padding(.horizontal, AppSpacing.page)
@@ -112,22 +112,22 @@ struct CreateCreditNoteView: View {
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text("Credit amount")
                                         .font(.subheadline.weight(.medium))
-                                        .foregroundColor(.sMutedFG)
+                                        .foregroundStyle(Color.sMutedFG)
 
                                     TextField("₹0.00", text: $vm.amount)
                                         .keyboardType(.decimalPad)
                                         .font(.title3.weight(.semibold))
-                                        .foregroundColor(.sForeground)
-                                        .tint(.sAccent)
+                                        .foregroundStyle(Color.sForeground)
+                                        .tint(Color.sAccent)
                                         .multilineTextAlignment(.leading)
                                         .padding(.horizontal, 14)
                                         .padding(.vertical, 14)
                                         .background(Color.sCard)
-                                        .overlay(
+                                        .overlay {
                                             RoundedRectangle(cornerRadius: 8)
                                                 .stroke(Color.sInput, lineWidth: 0.5)
-                                        )
-                                        .cornerRadius(8)
+                                        }
+                                        .clipShape(.rect(cornerRadius: 8))
 
                                 }
                                 .padding(.horizontal, AppSpacing.page)
@@ -150,7 +150,7 @@ struct CreateCreditNoteView: View {
                     HStack(spacing: 8) {
                         if vm.isLoading {
                             ProgressView()
-                                .tint(.sAccentFG)
+                                .tint(Color.sAccentFG)
                                 .scaleEffect(0.85)
                         } else {
                             Text("Save credit note")
@@ -160,8 +160,8 @@ struct CreateCreditNoteView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
                     .background(vm.isValid ? Color.sPrimary : Color.sPrimary.opacity(0.4))
-                    .foregroundColor(.sAccentFG)
-                    .cornerRadius(10)
+                    .foregroundStyle(Color.sAccentFG)
+                    .clipShape(.rect(cornerRadius: 10))
                 }
                 .disabled(!vm.isValid || vm.isLoading)
                 .padding(AppSpacing.card)

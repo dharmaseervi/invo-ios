@@ -63,16 +63,16 @@ struct RecordPaymentView: View {
                     .frame(width: 42, height: 42)
                 Text(initials(for: vm.clientName))
                     .font(.subheadline.weight(.semibold))
-                    .foregroundColor(.sAccent)
+                    .foregroundStyle(Color.sAccent)
             }
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(vm.clientName.isEmpty ? "Client" : vm.clientName)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundColor(.sForeground)
+                    .foregroundStyle(Color.sForeground)
                 Text(vm.invoiceNumber ?? "Applies to outstanding invoices")
                     .font(.footnote)
-                    .foregroundColor(.sMutedFG)
+                    .foregroundStyle(Color.sMutedFG)
             }
 
             Spacer()
@@ -81,17 +81,17 @@ struct RecordPaymentView: View {
                 VStack(alignment: .trailing, spacing: 2) {
                     Text(Money.text(due)).moneyLine()
                         .font(.subheadline.weight(.semibold))
-                        .foregroundColor(.sForeground)
+                        .foregroundStyle(Color.sForeground)
                     Text("Due")
                         .font(.caption)
-                        .foregroundColor(.sMutedFG)
+                        .foregroundStyle(Color.sMutedFG)
                 }
             }
         }
         .padding(14)
         .background(Color.sCard)
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
-        .cornerRadius(12)
+        .overlay { RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5) }
+        .clipShape(.rect(cornerRadius: 12))
     }
 
     private func initials(for name: String) -> String {
@@ -106,17 +106,17 @@ struct RecordPaymentView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Amount")
                 .font(.subheadline.weight(.medium))
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
 
             HStack(spacing: 6) {
                 Text("₹")
                     .font(.title2.weight(.semibold))
-                    .foregroundColor(.sMutedFG)
+                    .foregroundStyle(Color.sMutedFG)
                 TextField("0.00", text: $vm.amount)
                     .keyboardType(.decimalPad)
                     .font(.title2.weight(.semibold))
-                    .foregroundColor(.sForeground)
-                    .tint(.sAccent)
+                    .foregroundStyle(Color.sForeground)
+                    .tint(Color.sAccent)
                     .focused($amountFocused)
             }
 
@@ -139,16 +139,16 @@ struct RecordPaymentView: View {
         } label: {
             Text(label)
                 .font(.footnote.weight(.medium))
-                .foregroundColor(isSelected ? .sAccentFG : .sForeground)
+                .foregroundStyle(isSelected ? Color.sAccentFG : Color.sForeground)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
                 .frame(maxWidth: .infinity)
                 .background(isSelected ? Color.sAccent : Color.sCard)
-                .overlay(
+                .overlay {
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(isSelected ? Color.clear : Color.sBorder, lineWidth: 0.5)
-                )
-                .cornerRadius(8)
+                }
+                .clipShape(.rect(cornerRadius: 8))
         }
     }
 
@@ -156,7 +156,7 @@ struct RecordPaymentView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Payment method")
                 .font(.subheadline.weight(.medium))
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
 
             HStack(spacing: 8) {
                 ForEach(PaymentMethods.allCases, id: \.self) { m in
@@ -177,15 +177,15 @@ struct RecordPaymentView: View {
                 Text(label(for: method))
                     .font(.caption.weight(.medium))
             }
-            .foregroundColor(isSelected ? .sAccentFG : .sForeground)
+            .foregroundStyle(isSelected ? Color.sAccentFG : Color.sForeground)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
             .background(isSelected ? Color.sAccent : Color.sCard)
-            .overlay(
+            .overlay {
                 RoundedRectangle(cornerRadius: 10)
                     .stroke(isSelected ? Color.clear : Color.sBorder, lineWidth: 0.5)
-            )
-            .cornerRadius(10)
+            }
+            .clipShape(.rect(cornerRadius: 10))
         }
     }
 
@@ -212,31 +212,31 @@ struct RecordPaymentView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text("Reference (optional)")
                     .font(.footnote)
-                    .foregroundColor(.sMutedFG)
+                    .foregroundStyle(Color.sMutedFG)
                 TextField("Transaction ID, cheque no...", text: $vm.reference)
                     .font(.body)
-                    .foregroundColor(.sForeground)
-                    .tint(.sAccent)
+                    .foregroundStyle(Color.sForeground)
+                    .tint(Color.sAccent)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 10)
                     .background(Color.sCard)
-                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.sBorder, lineWidth: 0.5))
-                    .cornerRadius(8)
+                    .overlay { RoundedRectangle(cornerRadius: 8).stroke(Color.sBorder, lineWidth: 0.5) }
+                    .clipShape(.rect(cornerRadius: 8))
             }
 
             VStack(alignment: .leading, spacing: 6) {
                 Text("Notes (optional)")
                     .font(.footnote)
-                    .foregroundColor(.sMutedFG)
+                    .foregroundStyle(Color.sMutedFG)
                 TextField("Add a note", text: $vm.notes)
                     .font(.body)
-                    .foregroundColor(.sForeground)
-                    .tint(.sAccent)
+                    .foregroundStyle(Color.sForeground)
+                    .tint(Color.sAccent)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 10)
                     .background(Color.sCard)
-                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.sBorder, lineWidth: 0.5))
-                    .cornerRadius(8)
+                    .overlay { RoundedRectangle(cornerRadius: 8).stroke(Color.sBorder, lineWidth: 0.5) }
+                    .clipShape(.rect(cornerRadius: 8))
             }
         }
     }
@@ -245,18 +245,18 @@ struct RecordPaymentView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Applied to invoices")
                 .font(.subheadline.weight(.medium))
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
 
             VStack(spacing: 0) {
                 ForEach(Array(vm.unpaidInvoices.enumerated()), id: \.element.id) { idx, invoice in
                     HStack {
                         Text(invoice.invoiceNumber)
                             .font(.subheadline)
-                            .foregroundColor(.sForeground)
+                            .foregroundStyle(Color.sForeground)
                         Spacer()
                         Text(Money.text(invoice.remainingAmount)).moneyLine()
                             .font(.subheadline.weight(.medium))
-                            .foregroundColor(.sForeground)
+                            .foregroundStyle(Color.sForeground)
                     }
                     .padding(.vertical, 10)
 
@@ -267,8 +267,8 @@ struct RecordPaymentView: View {
             }
             .padding(14)
             .background(Color.sCard)
-            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5))
-            .cornerRadius(10)
+            .overlay { RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5) }
+            .clipShape(.rect(cornerRadius: 10))
         }
     }
 
@@ -284,7 +284,7 @@ struct RecordPaymentView: View {
             HStack(spacing: 8) {
                 if vm.isLoading {
                     ProgressView()
-                        .tint(.sAccentFG)
+                        .tint(Color.sAccentFG)
                         .scaleEffect(0.85)
                 } else {
                     Text("Save payment")
@@ -294,8 +294,8 @@ struct RecordPaymentView: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
             .background(vm.isValid ? Color.sPrimary : Color.sPrimary.opacity(0.4))
-            .foregroundColor(.sAccentFG)
-            .cornerRadius(10)
+            .foregroundStyle(Color.sAccentFG)
+            .clipShape(.rect(cornerRadius: 10))
         }
         .disabled(!vm.isValid || vm.isLoading)
         .padding(AppSpacing.card)

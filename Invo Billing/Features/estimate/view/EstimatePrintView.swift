@@ -27,12 +27,12 @@ struct EstimatePrintView: View {
                             Text("Back")
                                 .font(.body)
                         }
-                        .foregroundColor(.sForeground)
+                        .foregroundStyle(Color.sForeground)
                     }
                     Spacer()
                     Text("Print estimate")
                         .font(.body.weight(.semibold))
-                        .foregroundColor(.sForeground)
+                        .foregroundStyle(Color.sForeground)
                     Spacer()
                     Menu {
                         Button(action: printEstimate) {
@@ -44,7 +44,7 @@ struct EstimatePrintView: View {
                     } label: {
                         Image(systemName: "square.and.arrow.up")
                             .font(.body.weight(.semibold))
-                            .foregroundColor(pdfURL == nil ? .sMutedFG : .sAccent)
+                            .foregroundStyle(pdfURL == nil ? Color.sMutedFG : Color.sAccent)
                     }
                     .disabled(pdfURL == nil)
                 }
@@ -66,12 +66,12 @@ struct EstimatePrintView: View {
                         Image(systemName: "chevron.right")
                             .font(.caption.weight(.semibold))
                     }
-                    .foregroundColor(.sForeground)
+                    .foregroundStyle(Color.sForeground)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
                     .background(Color.sCard)
-                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.sBorder, lineWidth: 0.5))
-                    .cornerRadius(8)
+                    .overlay { RoundedRectangle(cornerRadius: 8).stroke(Color.sBorder, lineWidth: 0.5) }
+                    .clipShape(.rect(cornerRadius: 8))
                 }
                 .padding(.horizontal, AppSpacing.page)
                 .padding(.top, 12)
@@ -80,24 +80,24 @@ struct EstimatePrintView: View {
                 if isLoading {
                     VStack(spacing: 12) {
                         ProgressView()
-                            .tint(.sAccent)
+                            .tint(Color.sAccent)
                         Text("Preparing document...")
                             .font(.subheadline)
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let errorMessage {
                     VStack(spacing: 10) {
                         Image(systemName: "exclamationmark.triangle")
                             .font(.title)
-                            .foregroundColor(.sDestructive)
+                            .foregroundStyle(Color.sDestructive)
                         Text(errorMessage)
                             .font(.subheadline)
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                             .multilineTextAlignment(.center)
                         Button("Try again") { fetchPDF() }
                             .font(.subheadline.weight(.medium))
-                            .foregroundColor(.sAccent)
+                            .foregroundStyle(Color.sAccent)
                     }
                     .padding(24)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -115,11 +115,11 @@ struct EstimatePrintView: View {
                             Text("Print")
                                 .font(.body.weight(.semibold))
                         }
-                        .foregroundColor(.sAccentFG)
+                        .foregroundStyle(Color.sAccentFG)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
                         .background(pdfURL == nil ? Color.sPrimary.opacity(0.4) : Color.sPrimary)
-                        .cornerRadius(10)
+                        .clipShape(.rect(cornerRadius: 10))
                     }
                     .disabled(pdfURL == nil)
 
@@ -132,10 +132,10 @@ struct EstimatePrintView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
-                        .foregroundColor(.sForeground)
+                        .foregroundStyle(Color.sForeground)
                         .background(Color.sCard)
-                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5))
-                        .cornerRadius(10)
+                        .overlay { RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5) }
+                        .clipShape(.rect(cornerRadius: 10))
                     }
                     .disabled(pdfURL == nil)
                 }

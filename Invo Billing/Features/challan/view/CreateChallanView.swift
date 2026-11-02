@@ -22,7 +22,7 @@ struct CreateChallanView: View {
                         VStack(alignment: .leading, spacing: 10) {
                             Text("Customer")
                                 .font(.subheadline.weight(.medium))
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
 
                             Button { showClientPicker = true } label: {
                                 HStack(spacing: 12) {
@@ -31,26 +31,26 @@ struct CreateChallanView: View {
                                         VStack(alignment: .leading, spacing: 2) {
                                             Text(client.name)
                                                 .font(.subheadline.weight(.medium))
-                                                .foregroundColor(.sForeground)
+                                                .foregroundStyle(Color.sForeground)
                                         }
                                     } else {
                                         Image(systemName: "person.crop.circle.badge.plus")
                                             .font(.title3)
-                                            .foregroundColor(.sAccent)
+                                            .foregroundStyle(Color.sAccent)
                                         Text("Select client")
                                             .font(.subheadline.weight(.medium))
-                                            .foregroundColor(.sForeground)
+                                            .foregroundStyle(Color.sForeground)
                                     }
                                     Spacer()
                                     Image(systemName: "chevron.right")
                                         .font(.footnote.weight(.semibold))
-                                        .foregroundColor(.sMutedFG)
+                                        .foregroundStyle(Color.sMutedFG)
                                 }
                                 .padding(14)
                             }
                             .background(Color.sCard)
-                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
-                            .cornerRadius(12)
+                            .overlay { RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5) }
+                            .clipShape(.rect(cornerRadius: 12))
                         }
                         .padding(.horizontal, AppSpacing.page)
 
@@ -58,16 +58,16 @@ struct CreateChallanView: View {
                         VStack(alignment: .leading, spacing: 10) {
                             Text("Details")
                                 .font(.subheadline.weight(.medium))
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
 
                             VStack(spacing: 0) {
                                 DatePicker(selection: $vm.challanDate, displayedComponents: .date) {
                                     Text("Challan date")
                                         .font(.body)
-                                        .foregroundColor(.sForeground)
+                                        .foregroundStyle(Color.sForeground)
                                 }
                                 .font(.body)
-                                .tint(.sAccent)
+                                .tint(Color.sAccent)
                                 .padding(14)
 
                                 Rectangle().fill(Color.sBorder).frame(height: 0.5)
@@ -75,13 +75,13 @@ struct CreateChallanView: View {
                                 HStack(alignment: .top, spacing: 0) {
                                     Text("Notes")
                                         .font(.body)
-                                        .foregroundColor(.sForeground)
+                                        .foregroundStyle(Color.sForeground)
                                         .padding(.top, 2)
                                     Spacer()
                                     TextField("Optional", text: $vm.notes, axis: .vertical)
                                         .font(.body)
-                                        .foregroundColor(.sForeground)
-                                        .tint(.sAccent)
+                                        .foregroundStyle(Color.sForeground)
+                                        .tint(Color.sAccent)
                                         .multilineTextAlignment(.trailing)
                                         .lineLimit(1...4)
                                         .frame(maxWidth: 220)
@@ -89,8 +89,8 @@ struct CreateChallanView: View {
                                 .padding(14)
                             }
                             .background(Color.sCard)
-                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
-                            .cornerRadius(12)
+                            .overlay { RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5) }
+                            .clipShape(.rect(cornerRadius: 12))
                         }
                         .padding(.horizontal, AppSpacing.page)
 
@@ -98,7 +98,7 @@ struct CreateChallanView: View {
                         VStack(alignment: .leading, spacing: 10) {
                             Text("Items")
                                 .font(.subheadline.weight(.medium))
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
 
                             VStack(spacing: 0) {
                                 if vm.items.isEmpty {
@@ -110,11 +110,11 @@ struct CreateChallanView: View {
                                                     .frame(width: 38, height: 38)
                                                 Image(systemName: "plus")
                                                     .font(.body)
-                                                    .foregroundColor(.sMutedFG)
+                                                    .foregroundStyle(Color.sMutedFG)
                                             }
                                             Text("Add items to dispatch")
                                                 .font(.body)
-                                                .foregroundColor(.sMutedFG)
+                                                .foregroundStyle(Color.sMutedFG)
                                             Spacer()
                                         }
                                         .padding(14)
@@ -125,11 +125,11 @@ struct CreateChallanView: View {
                                             VStack(alignment: .leading, spacing: 4) {
                                                 Text(line.name)
                                                     .font(.subheadline.weight(.medium))
-                                                    .foregroundColor(.sForeground)
+                                                    .foregroundStyle(Color.sForeground)
                                                 TextField("Description (optional)", text: $line.description)
                                                     .font(.footnote)
-                                                    .foregroundColor(.sMutedFG)
-                                                    .tint(.sAccent)
+                                                    .foregroundStyle(Color.sMutedFG)
+                                                    .tint(Color.sAccent)
                                             }
                                             Spacer()
                                             HStack(spacing: 10) {
@@ -138,19 +138,19 @@ struct CreateChallanView: View {
                                                 }) {
                                                     Image(systemName: "minus.circle.fill")
                                                         .font(.title3)
-                                                        .foregroundColor(.sMutedFG)
+                                                        .foregroundStyle(Color.sMutedFG)
                                                 }
                                                 .frame(minWidth: 44, minHeight: 44)
                                                 .accessibilityLabel("Decrease quantity for \(line.name)")
                                                 Text("\(line.qty)")
                                                     .font(.subheadline.weight(.semibold))
-                                                    .foregroundColor(.sForeground)
+                                                    .foregroundStyle(Color.sForeground)
                                                     .frame(minWidth: 28)
                                                     .monospacedDigit()
                                                 Button(action: { line.qty += 1 }) {
                                                     Image(systemName: "plus.circle.fill")
                                                         .font(.title3)
-                                                        .foregroundColor(.sAccent)
+                                                        .foregroundStyle(Color.sAccent)
                                                 }
                                                 .frame(minWidth: 44, minHeight: 44)
                                                 .accessibilityLabel("Increase quantity for \(line.name)")
@@ -174,14 +174,14 @@ struct CreateChallanView: View {
                                             Text("Add another item")
                                                 .font(.body)
                                         }
-                                        .foregroundColor(.sAccent)
+                                        .foregroundStyle(Color.sAccent)
                                         .padding(14)
                                     }
                                 }
                             }
                             .background(Color.sCard)
-                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
-                            .cornerRadius(12)
+                            .overlay { RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5) }
+                            .clipShape(.rect(cornerRadius: 12))
                         }
                         .padding(.horizontal, AppSpacing.page)
 
@@ -207,7 +207,7 @@ struct CreateChallanView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     if vm.isLoading {
-                        ProgressView().tint(.sAccent)
+                        ProgressView().tint(Color.sAccent)
                     } else {
                         Button("Save") {
                             Task {

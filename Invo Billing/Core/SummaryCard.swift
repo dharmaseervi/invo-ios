@@ -5,7 +5,7 @@ import SwiftUI
 struct SummaryCard<Detail: View>: View {
     let title: String
     let value: String
-    var valueColor: Color = .sForeground
+    var valueColor: Color = Color.sForeground
     var stats: [AdaptiveStatRow.Stat] = []
     @ViewBuilder var detail: Detail
 
@@ -29,12 +29,12 @@ struct SummaryCard<Detail: View>: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
-        .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
+        .background(Color.sCard, in: RoundedRectangle(cornerRadius: 16))
     }
 }
 
 extension SummaryCard where Detail == EmptyView {
-    init(title: String, value: String, valueColor: Color = .sForeground, stats: [AdaptiveStatRow.Stat] = []) {
+    init(title: String, value: String, valueColor: Color = Color.sForeground, stats: [AdaptiveStatRow.Stat] = []) {
         self.init(title: title, value: value, valueColor: valueColor, stats: stats) { EmptyView() }
     }
 }

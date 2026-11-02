@@ -19,7 +19,8 @@ struct invoApp: App {
                 .environmentObject(authViewModel)
                 .environmentObject(session)
                 .tint(Color.sAccent)
-                .onChange(of: session.isAuthenticated) { isAuthenticated in
+                .fontDesign(.rounded)
+                .onChange(of: session.isAuthenticated) { _, isAuthenticated in
                     if isAuthenticated {
                         // Not a permission prompt: only re-registers a token when the
                         // person has already agreed. The ask lives in Settings.

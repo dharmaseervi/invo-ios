@@ -17,7 +17,7 @@ struct LedgerListView: View {
                 .listHeaderRow()
 
             if vm.isLoading {
-                HStack { Spacer(); ProgressView().tint(.sAccent); Spacer() }
+                HStack { Spacer(); ProgressView().tint(Color.sAccent); Spacer() }
                     .padding(.vertical, 60)
                     .listRowSeparator(.hidden)
             } else if vm.entries.isEmpty {
@@ -34,7 +34,7 @@ struct LedgerListView: View {
                 // newest page is the one shown first.
                 Group {
                     if vm.isLoadingMore {
-                        HStack { Spacer(); ProgressView().tint(.sAccent); Spacer() }
+                        HStack { Spacer(); ProgressView().tint(Color.sAccent); Spacer() }
                     } else if vm.loadMoreFailed {
                         VStack(spacing: 6) {
                             Text("Couldn't load earlier entries.")
@@ -84,7 +84,7 @@ struct LedgerListView: View {
                     )
                 } label: {
                     Image(systemName: "square.and.arrow.up")
-                        .foregroundColor(.sAccent)
+                        .foregroundStyle(Color.sAccent)
                 }
                 .disabled(vm.entries.isEmpty)
             }
@@ -102,15 +102,15 @@ struct LedgerListView: View {
         SummaryCard(
             title: "Closing balance",
             value: vm.summaryFailed ? "—" : Money.text(vm.closingBalance),
-            valueColor: vm.summaryFailed ? .sMutedFG
-                : (vm.closingBalance > 0 ? .sDestructive : .sSuccess),
+            valueColor: vm.summaryFailed ? Color.sMutedFG
+                : (vm.closingBalance > 0 ? Color.sDestructive : Color.sSuccess),
             stats: [
                 .init(label: "Total debit",
                       value: vm.summaryFailed ? "—" : Money.text(vm.totalDebit),
-                      color: vm.summaryFailed ? .sForeground : .sDestructive),
+                      color: vm.summaryFailed ? Color.sForeground : Color.sDestructive),
                 .init(label: "Total credit",
                       value: vm.summaryFailed ? "—" : Money.text(vm.totalCredit),
-                      color: vm.summaryFailed ? .sForeground : .sSuccess)
+                      color: vm.summaryFailed ? Color.sForeground : Color.sSuccess)
             ]
         ) {
             if vm.summaryFailed {
@@ -149,7 +149,7 @@ struct LedgerRowView: View {
     }
 
     private var amountColor: Color {
-        entry.debit > 0 ? .sDestructive : .sSuccess
+        entry.debit > 0 ? Color.sDestructive : Color.sSuccess
     }
 
     private var subtitle: String {

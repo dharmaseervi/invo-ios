@@ -120,7 +120,7 @@ extension PDFLookView {
                     }
                 }
                 .font(.body)
-                .foregroundColor(.white)
+                .foregroundStyle(.white)
             }
             .accessibilityLabel("Back")
 
@@ -142,7 +142,7 @@ extension PDFLookView {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.subheadline.weight(.semibold))
-                .foregroundColor(.white)
+                .foregroundStyle(.white)
         }
         .accessibilityLabel(label)
     }

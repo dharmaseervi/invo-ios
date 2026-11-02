@@ -28,15 +28,15 @@ struct EmailVerificationView: View {
                                 .frame(width: 44, height: 44)
                             Image(systemName: "envelope.badge.fill")
                                 .font(.title3.weight(.medium))
-                                .foregroundColor(.sAccentFG)
+                                .foregroundStyle(Color.sAccentFG)
                         }
                         VStack(spacing: 4) {
                             Text("Verify your email")
                                 .font(.title3.weight(.semibold))
-                                .foregroundColor(.sForeground)
+                                .foregroundStyle(Color.sForeground)
                             Text("Enter the 6-digit code sent to\n\(viewModel.verificationEmail)")
                                 .font(.subheadline)
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
                                 .multilineTextAlignment(.center)
                         }
                     }
@@ -48,24 +48,24 @@ struct EmailVerificationView: View {
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Verification code")
                                 .font(.subheadline.weight(.medium))
-                                .foregroundColor(.sForeground)
+                                .foregroundStyle(Color.sForeground)
 
                             TextField("000000", text: $viewModel.verificationCode)
                                 .keyboardType(.numberPad)
                                 .font(.title.weight(.bold))
                                 .tracking(14)
                                 .multilineTextAlignment(.center)
-                                .foregroundColor(.sForeground)
-                                .tint(.sAccent)
+                                .foregroundStyle(Color.sForeground)
+                                .tint(Color.sAccent)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 14)
                                 .background(Color.sCard)
-                                .overlay(
+                                .overlay {
                                     RoundedRectangle(cornerRadius: 8)
                                         .stroke(Color.sAccent.opacity(0.4), lineWidth: 1)
-                                )
-                                .cornerRadius(8)
-                                .onChange(of: viewModel.verificationCode) { newValue in
+                                }
+                                .clipShape(.rect(cornerRadius: 8))
+                                .onChange(of: viewModel.verificationCode) { _, newValue in
                                     if newValue.count > 6 {
                                         viewModel.verificationCode = String(newValue.prefix(6))
                                     }
@@ -90,40 +90,40 @@ struct EmailVerificationView: View {
                         HStack(spacing: 8) {
                             Image(systemName: "clock")
                                 .font(.subheadline)
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
                             Text("Code expires in 10 minutes")
                                 .font(.subheadline)
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
                             Spacer()
                         }
                         .padding(12)
                         .background(Color.sMuted)
-                        .overlay(
+                        .overlay {
                             RoundedRectangle(cornerRadius: 8)
                                 .stroke(Color.sBorder, lineWidth: 0.5)
-                        )
-                        .cornerRadius(8)
+                        }
+                        .clipShape(.rect(cornerRadius: 8))
 
                         // Error
                         if let error = viewModel.errorMessage {
                             HStack(spacing: 8) {
                                 Image(systemName: "exclamationmark.circle")
                                     .font(.subheadline)
-                                    .foregroundColor(.sDestructive)
+                                    .foregroundStyle(Color.sDestructive)
                                 Text(error)
                                     .font(.subheadline)
-                                    .foregroundColor(.sDestructive)
+                                    .foregroundStyle(Color.sDestructive)
                                 Spacer()
                             }
                             .padding(12)
-                            .background(
+                            .background {
                                 RoundedRectangle(cornerRadius: 8)
                                     .fill(Color.sDestructive.opacity(0.06))
-                                    .overlay(
+                                    .overlay {
                                         RoundedRectangle(cornerRadius: 8)
                                             .stroke(Color.sDestructive.opacity(0.2), lineWidth: 0.5)
-                                    )
-                            )
+                                    }
+                            }
                         }
 
                         // Verify button
@@ -133,18 +133,18 @@ struct EmailVerificationView: View {
                             HStack {
                                 if viewModel.isLoading {
                                     ProgressView()
-                                        .tint(.sAccentFG)
+                                        .tint(Color.sAccentFG)
                                         .scaleEffect(0.85)
                                 } else {
                                     Text("Verify account")
                                         .font(.body.weight(.semibold))
-                                        .foregroundColor(.sAccentFG)
+                                        .foregroundStyle(Color.sAccentFG)
                                 }
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
                             .background(Color.sPrimary)
-                            .cornerRadius(8)
+                            .clipShape(.rect(cornerRadius: 8))
                         }
                         .disabled(viewModel.isLoading)
 
@@ -154,19 +154,19 @@ struct EmailVerificationView: View {
                         } label: {
                             Text("Resend code")
                                 .font(.subheadline.weight(.medium))
-                                .foregroundColor(.sAccent)
+                                .foregroundStyle(Color.sAccent)
                         }
                         .disabled(viewModel.isLoading)
                     }
                     .padding(AppSpacing.card)
                     .background(Color.sCard)
-                    .overlay(
+                    .overlay {
                         RoundedRectangle(cornerRadius: 12)
                             .stroke(Color.sBorder, lineWidth: 0.5)
-                    )
-                    .cornerRadius(12)
+                    }
+                    .clipShape(.rect(cornerRadius: 12))
                     .shadow(
-                        color: Color(UIColor.label).opacity(0.06),
+                        color: Color.sForeground.opacity(0.06),
                         radius: 20, x: 0, y: 8
                     )
                     .padding(.horizontal, AppSpacing.page)

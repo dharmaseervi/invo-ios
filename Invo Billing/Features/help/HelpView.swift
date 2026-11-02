@@ -38,8 +38,8 @@ struct HelpView: View {
                         }
                         .padding(.horizontal, 14)
                         .background(Color.sCard)
-                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
-                        .cornerRadius(12)
+                        .overlay { RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5) }
+                        .clipShape(.rect(cornerRadius: 12))
                         .padding(.horizontal, AppSpacing.page)
                         .padding(.bottom, 24)
 
@@ -51,8 +51,8 @@ struct HelpView: View {
                         }
                         .padding(.horizontal, 14)
                         .background(Color.sCard)
-                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
-                        .cornerRadius(12)
+                        .overlay { RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5) }
+                        .clipShape(.rect(cornerRadius: 12))
                         .padding(.horizontal, AppSpacing.page)
                     }
                     .padding(.top, 20)
@@ -68,7 +68,7 @@ struct HelpView: View {
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
             .font(.subheadline.weight(.medium))
-            .foregroundColor(.sMutedFG)
+            .foregroundStyle(Color.sMutedFG)
             .padding(.horizontal, AppSpacing.page)
             .padding(.bottom, 10)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -78,13 +78,13 @@ struct HelpView: View {
         HStack {
             Text(title)
                 .font(.body)
-                .foregroundColor(.sForeground)
+                .foregroundStyle(Color.sForeground)
 
             Spacer()
 
             Image(systemName: "chevron.right")
                 .font(.footnote.weight(.semibold))
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
         }
         .padding(.vertical, 12)
     }
@@ -93,7 +93,7 @@ struct HelpView: View {
         HStack {
             Text(title)
                 .font(.body)
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
             Spacer()
         }
         .padding(.vertical, 12)

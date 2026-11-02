@@ -32,7 +32,7 @@ struct ClientDetailedView: View {
 
                         Text(client.name)
                             .font(.title3.weight(.semibold))
-                            .foregroundColor(.sForeground)
+                            .foregroundStyle(Color.sForeground)
                     }
                     .padding(.top, 20)
 
@@ -43,7 +43,7 @@ struct ClientDetailedView: View {
                     VStack(alignment: .leading, spacing: 0) {
                         Text("Contact information")
                             .font(.subheadline.weight(.medium))
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                             .padding(.horizontal, AppSpacing.page)
                             .padding(.top, 14)
                             .padding(.bottom, 10)
@@ -55,8 +55,8 @@ struct ClientDetailedView: View {
                         DetailInfoRow(icon: "phone", title: "Phone", value: client.phone)
                     }
                     .background(Color.sCard)
-                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
-                    .cornerRadius(12)
+                    .overlay { RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5) }
+                    .clipShape(.rect(cornerRadius: 12))
                     }
 
                     // MARK: - Address Section
@@ -64,7 +64,7 @@ struct ClientDetailedView: View {
                     VStack(alignment: .leading, spacing: 0) {
                         Text("Address")
                             .font(.subheadline.weight(.medium))
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                             .padding(.horizontal, AppSpacing.page)
                             .padding(.top, 14)
                             .padding(.bottom, 10)
@@ -82,8 +82,8 @@ struct ClientDetailedView: View {
                         DetailInfoRow(icon: "number", title: "Pincode", value: client.pincode)
                     }
                     .background(Color.sCard)
-                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
-                    .cornerRadius(12)
+                    .overlay { RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5) }
+                    .clipShape(.rect(cornerRadius: 12))
                     }
 
                     // MARK: - Invoices Section
@@ -91,13 +91,13 @@ struct ClientDetailedView: View {
                         HStack {
                             Text("Invoices")
                                 .font(.subheadline.weight(.medium))
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
                             Spacer()
                             NavigationLink("View all") {
                                 InvoiceView(clientID: client.id, clientName: client.name)
                             }
                             .font(.subheadline)
-                            .foregroundColor(.sAccent)
+                            .foregroundStyle(Color.sAccent)
                         }
                         .padding(.horizontal, AppSpacing.page)
                         .padding(.top, 14)
@@ -109,10 +109,10 @@ struct ClientDetailedView: View {
                             VStack(spacing: 8) {
                                 Image(systemName: "doc.text")
                                     .font(.title2)
-                                    .foregroundColor(.sMutedFG)
+                                    .foregroundStyle(Color.sMutedFG)
                                 Text("No invoices yet")
                                     .font(.subheadline)
-                                    .foregroundColor(.sMutedFG)
+                                    .foregroundStyle(Color.sMutedFG)
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 28)
@@ -125,11 +125,11 @@ struct ClientDetailedView: View {
                                     HStack {
                                         Text(invoice.invoice_number)
                                             .font(.subheadline)
-                                            .foregroundColor(.sForeground)
+                                            .foregroundStyle(Color.sForeground)
                                         Spacer()
                                         Text(Money.text(invoice.total)).moneyLine()
                                             .font(.subheadline.weight(.semibold))
-                                            .foregroundColor(.sForeground)
+                                            .foregroundStyle(Color.sForeground)
                                     }
                                     .padding(.horizontal, AppSpacing.page)
                                     .padding(.vertical, 12)
@@ -143,8 +143,8 @@ struct ClientDetailedView: View {
                         }
                     }
                     .background(Color.sCard)
-                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
-                    .cornerRadius(12)
+                    .overlay { RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5) }
+                    .clipShape(.rect(cornerRadius: 12))
 
                     // MARK: - Financial Actions
                     VStack(spacing: 10) {
@@ -157,11 +157,11 @@ struct ClientDetailedView: View {
                                 Text("View ledger")
                                     .font(.subheadline.weight(.semibold))
                             }
-                            .foregroundColor(.sAccentFG)
+                            .foregroundStyle(Color.sAccentFG)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
                             .background(Color.sPrimary)
-                            .cornerRadius(10)
+                            .clipShape(.rect(cornerRadius: 10))
                         }
 
                         NavigationLink {
@@ -180,12 +180,12 @@ struct ClientDetailedView: View {
                                 Text("Record payment")
                                     .font(.subheadline.weight(.semibold))
                             }
-                            .foregroundColor(.sForeground)
+                            .foregroundStyle(Color.sForeground)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
                             .background(Color.sCard)
-                            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5))
-                            .cornerRadius(10)
+                            .overlay { RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5) }
+                            .clipShape(.rect(cornerRadius: 10))
                         }
                     }
                 }
@@ -236,16 +236,16 @@ private struct DetailInfoRow: View {
             HStack(alignment: .center, spacing: 12) {
                 Image(systemName: icon)
                     .font(.subheadline)
-                    .foregroundColor(.sMutedFG)
+                    .foregroundStyle(Color.sMutedFG)
                     .frame(width: 16)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(.caption)
-                        .foregroundColor(.sMutedFG)
+                        .foregroundStyle(Color.sMutedFG)
                     Text(value)
                         .font(.subheadline.weight(.medium))
-                        .foregroundColor(.sForeground)
+                        .foregroundStyle(Color.sForeground)
                         .lineLimit(1)
                 }
                 Spacer()

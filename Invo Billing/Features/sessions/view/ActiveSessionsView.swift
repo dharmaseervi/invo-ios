@@ -13,20 +13,20 @@ struct ActiveSessionsView: View {
         Group {
                 if isLoading {
                     ProgressView()
-                        .tint(.sAccent)
+                        .tint(Color.sAccent)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let errorMessage {
                     VStack(spacing: 12) {
                         Image(systemName: "exclamationmark.triangle")
                             .font(.title)
-                            .foregroundColor(.sDestructive)
+                            .foregroundStyle(Color.sDestructive)
                         Text(errorMessage)
                             .font(.subheadline)
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                             .multilineTextAlignment(.center)
                         Button("Try again") { loadSessions() }
                             .font(.subheadline.weight(.medium))
-                            .foregroundColor(.sAccent)
+                            .foregroundStyle(Color.sAccent)
                     }
                     .padding(24)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -43,7 +43,7 @@ struct ActiveSessionsView: View {
                         showRevokeAllConfirm = true
                     }
                     .font(.subheadline)
-                    .foregroundColor(.sDestructive)
+                    .foregroundStyle(Color.sDestructive)
                 }
             }
         }

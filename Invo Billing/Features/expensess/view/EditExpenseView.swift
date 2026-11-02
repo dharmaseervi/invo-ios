@@ -48,7 +48,7 @@ struct ExpenseEditView: View {
                         VStack(alignment: .leading, spacing: 14) {
                             Text("Expense details")
                                 .font(.subheadline.weight(.medium))
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
 
                             FormFieldView(
                                 label: "Expense name",
@@ -60,27 +60,27 @@ struct ExpenseEditView: View {
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("Amount")
                                     .font(.subheadline.weight(.medium))
-                                    .foregroundColor(.sForeground)
+                                    .foregroundStyle(Color.sForeground)
 
                                 HStack(spacing: 8) {
                                     Text("₹")
                                         .font(.subheadline.weight(.semibold))
-                                        .foregroundColor(.sMutedFG)
+                                        .foregroundStyle(Color.sMutedFG)
 
                                     TextField("0.00", text: $amount)
                                         .font(.body)
-                                        .foregroundColor(.sForeground)
-                                        .tint(.sAccent)
+                                        .foregroundStyle(Color.sForeground)
+                                        .tint(Color.sAccent)
                                         .keyboardType(.decimalPad)
                                 }
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 10)
                                 .background(Color.sCard)
-                                .overlay(
+                                .overlay {
                                     RoundedRectangle(cornerRadius: 8)
                                         .stroke(Color.sInput, lineWidth: 0.5)
-                                )
-                                .cornerRadius(8)
+                                }
+                                .clipShape(.rect(cornerRadius: 8))
                             }
 
                             ExpenseCategoryPicker(selection: $category)
@@ -90,7 +90,7 @@ struct ExpenseEditView: View {
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("Date")
                                     .font(.subheadline.weight(.medium))
-                                    .foregroundColor(.sForeground)
+                                    .foregroundStyle(Color.sForeground)
 
                                 DatePicker(
                                     "",
@@ -98,16 +98,16 @@ struct ExpenseEditView: View {
                                     displayedComponents: .date
                                 )
                                 .datePickerStyle(.compact)
-                                .tint(.sAccent)
+                                .tint(Color.sAccent)
                                 .labelsHidden()
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 8)
                                 .background(Color.sCard)
-                                .overlay(
+                                .overlay {
                                     RoundedRectangle(cornerRadius: 8)
                                         .stroke(Color.sInput, lineWidth: 0.5)
-                                )
-                                .cornerRadius(8)
+                                }
+                                .clipShape(.rect(cornerRadius: 8))
                             }
                         }
 
@@ -115,19 +115,19 @@ struct ExpenseEditView: View {
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Description (optional)")
                                 .font(.subheadline.weight(.medium))
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
 
                             TextEditor(text: $description)
                                 .font(.body)
-                                .foregroundColor(.sForeground)
+                                .foregroundStyle(Color.sForeground)
                                 .frame(minHeight: 100)
                                 .padding(10)
                                 .background(Color.sCard)
-                                .overlay(
+                                .overlay {
                                     RoundedRectangle(cornerRadius: 8)
                                         .stroke(Color.sInput, lineWidth: 0.5)
-                                )
-                                .cornerRadius(8)
+                                }
+                                .clipShape(.rect(cornerRadius: 8))
                                 .scrollContentBackground(.hidden)
                         }
                     }

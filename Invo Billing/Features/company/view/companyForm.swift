@@ -21,7 +21,7 @@ struct companyForm: View {
                         VStack(alignment: .leading, spacing: 14) {
                             Text("Company information")
                                 .font(.subheadline.weight(.medium))
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
 
                             VStack(spacing: 12) {
                                 CompanyFormField(
@@ -56,7 +56,7 @@ struct companyForm: View {
                         VStack(alignment: .leading, spacing: 14) {
                             Text("Address")
                                 .font(.subheadline.weight(.medium))
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
 
                             VStack(spacing: 12) {
                                 CompanyFormFieldMultiline(
@@ -100,7 +100,7 @@ struct companyForm: View {
                                 HStack(spacing: 8) {
                                     if vm.isSaving {
                                         ProgressView()
-                                            .tint(.sAccentFG)
+                                            .tint(Color.sAccentFG)
                                             .scaleEffect(0.85)
                                     } else {
                                         Image(systemName: "checkmark.circle.fill")
@@ -109,11 +109,11 @@ struct companyForm: View {
                                             .font(.subheadline.weight(.semibold))
                                     }
                                 }
-                                .foregroundColor(.sAccentFG)
+                                .foregroundStyle(Color.sAccentFG)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 14)
                                 .background(vm.isValid ? Color.sPrimary : Color.sPrimary.opacity(0.4))
-                                .cornerRadius(10)
+                                .clipShape(.rect(cornerRadius: 10))
                             }
                             .disabled(vm.isSaving || !vm.isValid)
 
@@ -124,13 +124,13 @@ struct companyForm: View {
                                     .font(.subheadline.weight(.medium))
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 14)
-                                    .foregroundColor(.sForeground)
+                                    .foregroundStyle(Color.sForeground)
                                     .background(Color.sCard)
-                                    .overlay(
+                                    .overlay {
                                         RoundedRectangle(cornerRadius: 10)
                                             .stroke(Color.sBorder, lineWidth: 0.5)
-                                    )
-                                    .cornerRadius(10)
+                                    }
+                                    .clipShape(.rect(cornerRadius: 10))
                             }
                             .disabled(vm.isSaving)
                         }
@@ -161,33 +161,33 @@ struct CompanyFormField: View {
             HStack {
                 Text(title)
                     .font(.subheadline.weight(.medium))
-                    .foregroundColor(.sForeground)
+                    .foregroundStyle(Color.sForeground)
                 if error != nil {
                     Image(systemName: "exclamationmark.circle")
                         .font(.footnote)
-                        .foregroundColor(.sDestructive)
+                        .foregroundStyle(Color.sDestructive)
                 }
             }
 
             TextField(placeholder, text: $text)
                 .keyboardType(keyboardType)
                 .font(.body)
-                .foregroundColor(.sForeground)
-                .tint(.sAccent)
+                .foregroundStyle(Color.sForeground)
+                .tint(Color.sAccent)
                 .autocorrectionDisabled()
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
                 .background(Color.sCard)
-                .overlay(
+                .overlay {
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(error != nil ? Color.sDestructive.opacity(0.5) : Color.sInput, lineWidth: 0.5)
-                )
-                .cornerRadius(8)
+                }
+                .clipShape(.rect(cornerRadius: 8))
 
             if let error = error {
                 Text(error)
                     .font(.caption)
-                    .foregroundColor(.sDestructive)
+                    .foregroundStyle(Color.sDestructive)
             }
         }
     }
@@ -204,20 +204,20 @@ struct CompanyFormFieldMultiline: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(.subheadline.weight(.medium))
-                .foregroundColor(.sForeground)
+                .foregroundStyle(Color.sForeground)
 
             TextEditor(text: $text)
                 .font(.body)
-                .foregroundColor(.sForeground)
+                .foregroundStyle(Color.sForeground)
                 .scrollContentBackground(.hidden)
                 .frame(height: 80)
                 .padding(8)
                 .background(Color.sCard)
-                .overlay(
+                .overlay {
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(Color.sInput, lineWidth: 0.5)
-                )
-                .cornerRadius(8)
+                }
+                .clipShape(.rect(cornerRadius: 8))
         }
     }
 }
@@ -234,22 +234,22 @@ struct CompanyFormFieldHalf: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(.subheadline.weight(.medium))
-                .foregroundColor(.sForeground)
+                .foregroundStyle(Color.sForeground)
 
             TextField(placeholder, text: $text)
                 .keyboardType(keyboardType)
                 .font(.body)
-                .foregroundColor(.sForeground)
-                .tint(.sAccent)
+                .foregroundStyle(Color.sForeground)
+                .tint(Color.sAccent)
                 .autocorrectionDisabled()
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
                 .background(Color.sCard)
-                .overlay(
+                .overlay {
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(Color.sInput, lineWidth: 0.5)
-                )
-                .cornerRadius(8)
+                }
+                .clipShape(.rect(cornerRadius: 8))
         }
     }
 }

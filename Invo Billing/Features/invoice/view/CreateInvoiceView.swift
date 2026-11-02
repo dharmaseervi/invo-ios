@@ -50,7 +50,7 @@ struct CreateInvoiceView: View {
                         onEditShipping: { showShippingSheet = true }
                     )
                     .padding(.horizontal, AppSpacing.page)
-                    .onChange(of: vm.selectedClient) { client in
+                    .onChange(of: vm.selectedClient) { _, client in
                         guard client != nil else { return }
                         Task { await vm.loadClientAddresses() }
                     }
@@ -90,10 +90,10 @@ struct CreateInvoiceView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Total")
                             .font(.caption)
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                         Text(Money.text(vm.total)).moneyLine()
                             .font(.subheadline.weight(.semibold))
-                            .foregroundColor(.sForeground)
+                            .foregroundStyle(Color.sForeground)
                     }
                     Spacer()
                     Button(action: {
@@ -113,18 +113,18 @@ struct CreateInvoiceView: View {
                         HStack(spacing: 8) {
                             if vm.isLoading {
                                 ProgressView()
-                                    .tint(.sAccentFG)
+                                    .tint(Color.sAccentFG)
                                     .scaleEffect(0.85)
                             } else {
                                 Text("Create invoice")
                                     .font(.subheadline.weight(.semibold))
                             }
                         }
-                        .foregroundColor(.sAccentFG)
+                        .foregroundStyle(Color.sAccentFG)
                         .padding(.horizontal, 22)
                         .padding(.vertical, 13)
                         .background(vm.isValid ? Color.sPrimary : Color.sPrimary.opacity(0.4))
-                        .cornerRadius(10)
+                        .clipShape(.rect(cornerRadius: 10))
                     }
                     .disabled(vm.isLoading || !vm.isValid)
                 }
@@ -189,14 +189,14 @@ struct CreateInvoiceView: View {
         // Written as it is typed. Cheap — one small file, written atomically — and the
         // moment worth surviving is the one nobody sees coming: the app killed on a
         // low-memory phone, with no chance to save anything on the way out.
-        .onChange(of: vm.selectedClient) { _ in vm.saveDraft() }
-        .onChange(of: vm.items) { _ in vm.saveDraft() }
-        .onChange(of: vm.tdsRate) { _ in vm.saveDraft() }
-        .onChange(of: vm.docType) { _ in vm.saveDraft() }
-        .onChange(of: vm.discount) { _ in vm.saveDraft() }
-        .onChange(of: vm.invoiceDate) { _ in vm.saveDraft() }
-        .onChange(of: vm.dueDate) { _ in vm.saveDraft() }
-        .onChange(of: scenePhase) { phase in
+        .onChange(of: vm.selectedClient) { vm.saveDraft() }
+        .onChange(of: vm.items) { vm.saveDraft() }
+        .onChange(of: vm.tdsRate) { vm.saveDraft() }
+        .onChange(of: vm.docType) { vm.saveDraft() }
+        .onChange(of: vm.discount) { vm.saveDraft() }
+        .onChange(of: vm.invoiceDate) { vm.saveDraft() }
+        .onChange(of: vm.dueDate) { vm.saveDraft() }
+        .onChange(of: scenePhase) { _, phase in
             if phase != .active { vm.saveDraft() }
         }
         .modifier(UnfinishedInvoicePrompt(vm: vm, draft: $pendingDraft, settled: $draftOfferSettled))

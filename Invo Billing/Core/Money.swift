@@ -112,6 +112,9 @@ enum Money {
         return amount
     }
 
+    /// Round to two decimal places (paisa precision) for arithmetic comparisons.
+    static func rounded(_ value: Double) -> Double { (value * 100).rounded() / 100 }
+
     /// One decimal place, but `5.0L` reads better as `5L`.
     private static func trimZero(_ value: Double) -> String {
         let rounded = (value * 10).rounded() / 10

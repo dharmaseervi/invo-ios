@@ -28,7 +28,7 @@ struct ClientFormView: View {
                     VStack(alignment: .leading, spacing: 14) {
                         Text("Contact information")
                             .font(.subheadline.weight(.medium))
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
 
                         VStack(spacing: 12) {
                             ClientField(
@@ -61,7 +61,7 @@ struct ClientFormView: View {
                     VStack(alignment: .leading, spacing: 14) {
                         Text("Address")
                             .font(.subheadline.weight(.medium))
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
 
                         VStack(spacing: 12) {
                             ClientField(
@@ -108,18 +108,18 @@ struct ClientFormView: View {
                             HStack {
                                 if vm.isLoading {
                                     ProgressView()
-                                        .tint(.sAccentFG)
+                                        .tint(Color.sAccentFG)
                                         .scaleEffect(0.85)
                                 } else {
                                     Text("Save client")
                                         .font(.subheadline.weight(.semibold))
-                                        .foregroundColor(.sAccentFG)
+                                        .foregroundStyle(Color.sAccentFG)
                                 }
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
                             .background(vm.name.trimmingCharacters(in: .whitespaces).isEmpty ? Color.sPrimary.opacity(0.4) : Color.sPrimary)
-                            .cornerRadius(10)
+                            .clipShape(.rect(cornerRadius: 10))
                         }
                         .disabled(vm.isLoading)
 
@@ -162,11 +162,11 @@ struct ClientField: View {
             HStack {
                 Text(label)
                     .font(.subheadline.weight(.medium))
-                    .foregroundColor(.sForeground)
+                    .foregroundStyle(Color.sForeground)
                 if error != nil {
                     Image(systemName: "exclamationmark.circle")
                         .font(.footnote)
-                        .foregroundColor(.sDestructive)
+                        .foregroundStyle(Color.sDestructive)
                 }
             }
 
@@ -174,23 +174,23 @@ struct ClientField: View {
                 .accessibilityLabel(label)
                 .keyboardType(keyboard)
                 .font(.body)
-                .foregroundColor(.sForeground)
-                .tint(.sAccent)
+                .foregroundStyle(Color.sForeground)
+                .tint(Color.sAccent)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
                 .background(Color.sCard)
-                .overlay(
+                .overlay {
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(error != nil ? Color.sDestructive.opacity(0.5) : Color.sInput, lineWidth: 0.5)
-                )
-                .cornerRadius(8)
+                }
+                .clipShape(.rect(cornerRadius: 8))
 
             if let error = error {
                 Text(error)
                     .font(.caption)
-                    .foregroundColor(.sDestructive)
+                    .foregroundStyle(Color.sDestructive)
             }
         }
     }

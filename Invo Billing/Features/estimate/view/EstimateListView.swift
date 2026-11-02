@@ -46,7 +46,7 @@ struct EstimateListView: View {
     private var contentArea: some View {
         if vm.isFetchingList && vm.estimates.isEmpty {
             VStack(spacing: 12) {
-                ProgressView().tint(.sAccent)
+                ProgressView().tint(Color.sAccent)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let error = vm.listError, vm.estimates.isEmpty {
@@ -105,11 +105,11 @@ struct EstimateListView: View {
                             Button { showCreateEstimate = true } label: {
                                 Text("Create estimate")
                                     .font(.subheadline.weight(.semibold))
-                                    .foregroundColor(.sAccentFG)
+                                    .foregroundStyle(Color.sAccentFG)
                                     .padding(.horizontal, AppSpacing.page)
                                     .padding(.vertical, 10)
                                     .background(Color.sPrimary)
-                                    .cornerRadius(8)
+                                    .clipShape(.rect(cornerRadius: 8))
                             }
                         }
                         .frame(maxWidth: .infinity)
@@ -131,7 +131,7 @@ struct EstimateListView: View {
                     }
 
                     if vm.isLoadingMore {
-                        HStack { Spacer(); ProgressView().tint(.sAccent); Spacer() }
+                        HStack { Spacer(); ProgressView().tint(Color.sAccent); Spacer() }
                             .padding(.vertical, 12)
                             .listRowSeparator(.hidden)
                             .listRowBackground(Color.clear)
@@ -154,9 +154,9 @@ struct EstimateListView: View {
             .contentMargins(.bottom, 16, for: .scrollContent)
             .refreshable { await vm.fetchEstimates() }
             .overlay(alignment: .top) {
-                if vm.isFetchingList {
+                if vm.isFetchingList && !vm.estimates.isEmpty {
                     ProgressView()
-                        .tint(.sAccent)
+                        .tint(Color.sAccent)
                         .padding(8)
                         .background(.ultraThinMaterial, in: Capsule())
                         .transition(.opacity)
@@ -172,12 +172,12 @@ private struct EstimateRowCard: View {
 
     var statusConfig: (label: String, color: Color) {
         switch estimate.status {
-        case .draft:     return ("Draft", .sNeutral)
-        case .sent:      return ("Sent", .sAccent)
-        case .accepted:  return ("Accepted", .sSuccess)
-        case .rejected:  return ("Rejected", .sDestructive)
-        case .expired:   return ("Expired", .sWarning)
-        case .converted: return ("Converted", .sSuccess)
+        case .draft:     return ("Draft", Color.sNeutral)
+        case .sent:      return ("Sent", Color.sAccent)
+        case .accepted:  return ("Accepted", Color.sSuccess)
+        case .rejected:  return ("Rejected", Color.sDestructive)
+        case .expired:   return ("Expired", Color.sWarning)
+        case .converted: return ("Converted", Color.sSuccess)
         }
     }
 
@@ -224,7 +224,7 @@ private struct EstimateRowCard: View {
                     .foregroundStyle(statusConfig.color)
                     .padding(.horizontal, 7)
                     .padding(.vertical, 2)
-                    .background(Capsule().fill(statusConfig.color.opacity(0.1)))
+                    .background(statusConfig.color.opacity(0.1), in: Capsule())
             }
             .frame(minWidth: 88, alignment: .trailing)
         }

@@ -150,7 +150,7 @@ struct SupplierDetailView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
-        .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
+        .background(Color.sCard, in: RoundedRectangle(cornerRadius: 16))
     }
 
     private func infoRow(icon: String, text: String) -> some View {
@@ -190,7 +190,7 @@ struct SupplierDetailView: View {
         .font(.footnote.weight(.semibold))
         .labelStyle(.titleOnly)
         .controlSize(.regular)
-        .tint(.sAccent)
+        .tint(Color.sAccent)
     }
 
     // MARK: - Bills section
@@ -198,7 +198,7 @@ struct SupplierDetailView: View {
     @ViewBuilder
     private var billsSection: some View {
         if vm.isLoading && vm.bills.isEmpty {
-            HStack { Spacer(); ProgressView().tint(.sAccent); Spacer() }
+            HStack { Spacer(); ProgressView().tint(Color.sAccent); Spacer() }
                 .padding(.vertical, 20)
                 .listRowSeparator(.hidden)
         } else if let error = vm.loadError, vm.bills.isEmpty {
@@ -309,17 +309,17 @@ struct SupplierDetailView: View {
 
     private func statusPill(_ bill: PurchaseBill) -> some View {
         let (label, colour): (String, Color) = {
-            if bill.isOverdue { return ("Overdue", .sDestructive) }
+            if bill.isOverdue { return ("Overdue", Color.sDestructive) }
             switch bill.status {
-            case "cancelled": return ("Cancelled", .sMutedFG)
-            case "paid":      return ("Paid", .sSuccess)
-            case "partial":   return ("Part paid", .sAccent)
-            default:          return ("Unpaid", .sMutedFG)
+            case "cancelled": return ("Cancelled", Color.sMutedFG)
+            case "paid":      return ("Paid", Color.sSuccess)
+            case "partial":   return ("Part paid", Color.sAccent)
+            default:          return ("Unpaid", Color.sMutedFG)
             }
         }()
         return Text(label)
             .font(.caption.weight(.medium))
-            .foregroundColor(colour)
+            .foregroundStyle(colour)
             .padding(.horizontal, 7).padding(.vertical, 2)
             .background(colour.opacity(0.1), in: Capsule())
     }

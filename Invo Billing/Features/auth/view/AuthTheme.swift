@@ -43,7 +43,7 @@ struct AuthHeader: View {
                 if let symbol {
                     Image(systemName: symbol)
                         .font(.title2.weight(.medium))
-                        .foregroundColor(AuthTheme.accent)
+                        .foregroundStyle(AuthTheme.accent)
                         .frame(width: 56, height: 56)
                         .background(AuthTheme.accent.opacity(0.12),
                                     in: RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -60,10 +60,10 @@ struct AuthHeader: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(title)
                     .font(.title.weight(.bold))
-                    .foregroundColor(AuthTheme.foreground)
+                    .foregroundStyle(AuthTheme.foreground)
                 Text(subtitle)
                     .font(.subheadline)
-                    .foregroundColor(AuthTheme.muted)
+                    .foregroundStyle(AuthTheme.muted)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -119,7 +119,7 @@ struct AuthInputRow<Trailing: View>: View {
             if let icon {
                 Image(systemName: icon)
                     .font(.body)
-                    .foregroundColor(AuthTheme.muted)
+                    .foregroundStyle(AuthTheme.muted)
                     .frame(width: 22)
                     .accessibilityHidden(true)
             }
@@ -132,7 +132,7 @@ struct AuthInputRow<Trailing: View>: View {
                 }
             }
             .font(.body)
-            .foregroundColor(AuthTheme.foreground)
+            .foregroundStyle(AuthTheme.foreground)
             .tint(AuthTheme.accent)
             .keyboardType(keyboard)
             .textContentType(contentType)
@@ -167,7 +167,7 @@ struct AuthRevealButton: View {
         Button { isRevealed.toggle() } label: {
             Image(systemName: isRevealed ? "eye.slash" : "eye")
                 .font(.subheadline)
-                .foregroundColor(AuthTheme.muted)
+                .foregroundStyle(AuthTheme.muted)
                 .frame(width: 32, height: 32)
                 .contentShape(Rectangle())
         }
@@ -184,7 +184,7 @@ struct AuthBackButton: View {
         Button(action: action) {
             Image(systemName: "chevron.left")
                 .font(.body.weight(.semibold))
-                .foregroundColor(AuthTheme.foreground)
+                .foregroundStyle(AuthTheme.foreground)
                 .frame(width: 40, height: 40)
                 .background(AuthTheme.field, in: Circle())
         }
@@ -206,14 +206,14 @@ struct AuthCodeField: View {
                     Text(digit(at: i))
                         .font(.title2.weight(.semibold))
                         .monospacedDigit()
-                        .foregroundColor(AuthTheme.foreground)
+                        .foregroundStyle(AuthTheme.foreground)
                         .frame(maxWidth: .infinity)
                         .frame(height: 56)
                         .background(AuthTheme.field, in: RoundedRectangle(cornerRadius: AuthTheme.corner, style: .continuous))
-                        .overlay(
+                        .overlay {
                             RoundedRectangle(cornerRadius: AuthTheme.corner, style: .continuous)
                                 .stroke(isActive(i) ? AuthTheme.accent : .clear, lineWidth: 1.5)
-                        )
+                        }
                 }
             }
             .allowsHitTesting(false)
@@ -225,7 +225,7 @@ struct AuthCodeField: View {
                 .keyboardType(.numberPad)
                 .textContentType(.oneTimeCode)
                 .focused($focused)
-                .foregroundColor(.clear)
+                .foregroundStyle(.clear)
                 .tint(.clear)
                 .frame(maxWidth: .infinity)
                 .frame(height: 56)
@@ -233,7 +233,7 @@ struct AuthCodeField: View {
                 .accessibilityLabel("Verification code")
                 .accessibilityValue(code)
         }
-        .onChange(of: code) { newValue in
+        .onChange(of: code) { _, newValue in
             let cleaned = String(newValue.filter(\.isNumber).prefix(length))
             if cleaned != newValue { code = cleaned }
         }
@@ -259,7 +259,7 @@ struct AuthHint: View {
     var body: some View {
         Label(text, systemImage: icon)
             .font(.footnote)
-            .foregroundColor(AuthTheme.muted)
+            .foregroundStyle(AuthTheme.muted)
     }
 }
 
@@ -284,7 +284,7 @@ struct AuthPrimaryButton: View {
                 if isLoading { ProgressView().tint(.white) }
             }
             .font(.body.weight(.semibold))
-            .foregroundColor(.white)
+            .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
             .frame(height: AuthTheme.controlHeight)
             .background(AuthTheme.accent, in: RoundedRectangle(cornerRadius: AuthTheme.corner, style: .continuous))
@@ -306,7 +306,7 @@ struct AuthSecondaryLabel: View {
             Text(title)
         }
         .font(.body.weight(.medium))
-        .foregroundColor(AuthTheme.accent)
+        .foregroundStyle(AuthTheme.accent)
         .frame(maxWidth: .infinity)
         .frame(height: AuthTheme.controlHeight)
         .background(AuthTheme.accent.opacity(0.1), in: RoundedRectangle(cornerRadius: AuthTheme.corner, style: .continuous))
@@ -323,7 +323,7 @@ struct AuthErrorBanner: View {
             Spacer(minLength: 0)
         }
         .font(.footnote)
-        .foregroundColor(AuthTheme.destructive)
+        .foregroundStyle(AuthTheme.destructive)
         .padding(12)
         .background(AuthTheme.destructive.opacity(0.08), in: RoundedRectangle(cornerRadius: AuthTheme.corner, style: .continuous))
     }

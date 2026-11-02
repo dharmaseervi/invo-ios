@@ -18,16 +18,16 @@ struct FormFieldView: View {
                 .accessibilityLabel(label)
                 .keyboardType(keyboard)
                 .font(.body)
-                .foregroundColor(.sForeground)
-                .tint(.sAccent)
+                .foregroundStyle(Color.sForeground)
+                .tint(Color.sAccent)
                 .padding(.horizontal, 12)
                 .padding(.vertical, AppSpacing.row)
                 .background(Color.sCard)
-                .overlay(
+                .overlay {
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(Color.sInput, lineWidth: 0.5)
-                )
-                .cornerRadius(8)
+                }
+                .clipShape(.rect(cornerRadius: 8))
         }
     }
 }

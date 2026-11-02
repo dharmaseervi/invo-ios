@@ -13,21 +13,21 @@ struct GSTReportView: View {
 
                 if vm.isLoading && vm.report == nil {
                     Spacer()
-                    ProgressView().tint(.sAccent)
+                    ProgressView().tint(Color.sAccent)
                     Spacer()
                 } else if vm.report == nil, let message = vm.errorMessage {
                     Spacer()
                     VStack(spacing: 16) {
                         Image(systemName: "exclamationmark.triangle")
                             .font(.largeTitle)
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                         Text(message)
                             .font(.subheadline)
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                             .multilineTextAlignment(.center)
                         Button("Try again") { Task { await vm.load() } }
                             .buttonStyle(.borderedProminent)
-                            .tint(.sAccent)
+                            .tint(Color.sAccent)
                     }
                     .padding(.horizontal, AppSpacing.page)
                     Spacer()
@@ -87,19 +87,19 @@ struct GSTReportView: View {
             Button { vm.goToPreviousMonth() } label: {
                 Image(systemName: "chevron.left")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundColor(.sForeground)
+                    .foregroundStyle(Color.sForeground)
                     .frame(width: 44, height: 44)
             }
             .accessibilityLabel("Previous month")
             Spacer()
             Text(vm.monthLabel)
                 .font(.subheadline.weight(.semibold))
-                .foregroundColor(.sForeground)
+                .foregroundStyle(Color.sForeground)
             Spacer()
             Button { vm.goToNextMonth() } label: {
                 Image(systemName: "chevron.right")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundColor(.sForeground)
+                    .foregroundStyle(Color.sForeground)
                     .frame(width: 44, height: 44)
             }
             .accessibilityLabel("Next month")
@@ -114,13 +114,13 @@ struct GSTReportView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Taxable value")
                     .font(.subheadline)
-                    .foregroundColor(.sMutedFG)
+                    .foregroundStyle(Color.sMutedFG)
                 Text(Money.text(report.summary.taxable_value)).moneyLine()
                     .font(.title2.weight(.bold))
-                    .foregroundColor(.sForeground)
+                    .foregroundStyle(Color.sForeground)
                 Text("\(report.summary.invoice_count) invoice\(report.summary.invoice_count == 1 ? "" : "s") · \(report.company_state.isEmpty ? "State not set" : report.company_state)")
                     .font(.footnote)
-                    .foregroundColor(.sMutedFG)
+                    .foregroundStyle(Color.sMutedFG)
             }
 
             Rectangle().fill(Color.sBorder).frame(height: 0.5)
@@ -129,13 +129,13 @@ struct GSTReportView: View {
                 .init(label: "CGST", value: Money.text(report.summary.cgst)),
                 .init(label: "SGST", value: Money.text(report.summary.sgst)),
                 .init(label: "IGST", value: Money.text(report.summary.igst)),
-                .init(label: "Total", value: Money.text(report.summary.total), color: .sAccent),
+                .init(label: "Total", value: Money.text(report.summary.total), color: Color.sAccent),
             ])
         }
         .padding(AppSpacing.card)
         .background(Color.sCard)
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.sBorder, lineWidth: 0.5))
-        .cornerRadius(16)
+        .overlay { RoundedRectangle(cornerRadius: 16).stroke(Color.sBorder, lineWidth: 0.5) }
+        .clipShape(.rect(cornerRadius: 16))
         .padding(.horizontal, AppSpacing.page)
     }
 
@@ -145,7 +145,7 @@ struct GSTReportView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("HSN summary")
                 .font(.subheadline.weight(.medium))
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
                 .padding(.horizontal, AppSpacing.page)
 
             VStack(spacing: 0) {
@@ -154,15 +154,15 @@ struct GSTReportView: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(row.hsn_code.isEmpty ? "No HSN" : row.hsn_code)
                                 .font(.subheadline.weight(.medium))
-                                .foregroundColor(.sForeground)
+                                .foregroundStyle(Color.sForeground)
                             Text("\(String(format: "%.0f", row.total_qty)) units · \(String(format: "%.0f", row.tax_rate))% GST")
                                 .font(.caption)
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
                         }
                         Spacer()
                         Text(Money.text(row.total_value)).moneyLine()
                             .font(.subheadline.weight(.semibold))
-                            .foregroundColor(.sForeground)
+                            .foregroundStyle(Color.sForeground)
                     }
                     .padding(.horizontal, 14)
                     .padding(.vertical, 12)
@@ -173,8 +173,8 @@ struct GSTReportView: View {
                 }
             }
             .background(Color.sCard)
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
-            .cornerRadius(12)
+            .overlay { RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5) }
+            .clipShape(.rect(cornerRadius: 12))
             .padding(.horizontal, AppSpacing.page)
         }
     }
@@ -184,7 +184,7 @@ struct GSTReportView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Invoice-wise")
                 .font(.subheadline.weight(.medium))
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
                 .padding(.horizontal, AppSpacing.page)
 
             VStack(spacing: 0) {
@@ -193,19 +193,19 @@ struct GSTReportView: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(row.invoice_number)
                                 .font(.subheadline.weight(.medium))
-                                .foregroundColor(.sForeground)
+                                .foregroundStyle(Color.sForeground)
                             Text(row.client_name)
                                 .font(.caption)
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
                         }
                         Spacer()
                         VStack(alignment: .trailing, spacing: 2) {
                             Text(Money.text(row.total)).moneyLine()
                                 .font(.subheadline.weight(.semibold))
-                                .foregroundColor(.sForeground)
+                                .foregroundStyle(Color.sForeground)
                             Text(row.igst > 0 ? "IGST" : "CGST+SGST")
                                 .font(.caption)
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
                         }
                     }
                     .padding(.horizontal, 14)
@@ -217,8 +217,8 @@ struct GSTReportView: View {
                 }
             }
             .background(Color.sCard)
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
-            .cornerRadius(12)
+            .overlay { RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5) }
+            .clipShape(.rect(cornerRadius: 12))
             .padding(.horizontal, AppSpacing.page)
         }
     }
@@ -229,13 +229,13 @@ struct GSTReportView: View {
             Spacer()
             Image(systemName: "doc.text.magnifyingglass")
                 .font(.largeTitle)
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
             Text("No GST activity in \(vm.monthLabel)")
                 .font(.subheadline.weight(.medium))
-                .foregroundColor(.sForeground)
+                .foregroundStyle(Color.sForeground)
             Text("Issued invoices for this month will show up here")
                 .font(.subheadline)
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

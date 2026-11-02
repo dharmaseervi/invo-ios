@@ -26,22 +26,22 @@ struct BiometricLockView: View {
 
                     Image(systemName: kind.icon)
                         .font(.scaled(46, weight: .medium))
-                        .foregroundColor(AuthTheme.accentBright)
+                        .foregroundStyle(AuthTheme.accentBright)
                 }
 
                 VStack(spacing: 6) {
                     Text("Welcome back")
                         .font(.title2.weight(.bold))
-                        .foregroundColor(AuthTheme.foreground)
+                        .foregroundStyle(AuthTheme.foreground)
                     Text("Use \(kind.label) to continue to Invo Billing")
                         .font(.subheadline)
-                        .foregroundColor(AuthTheme.muted)
+                        .foregroundStyle(AuthTheme.muted)
                 }
 
                 if failed {
                     Text("Couldn't verify — try again")
                         .font(.footnote)
-                        .foregroundColor(AuthTheme.destructive)
+                        .foregroundStyle(AuthTheme.destructive)
                 }
 
                 Spacer()
@@ -58,7 +58,7 @@ struct BiometricLockView: View {
                     } label: {
                         Text("Sign out instead")
                             .font(.subheadline.weight(.medium))
-                            .foregroundColor(AuthTheme.muted)
+                            .foregroundStyle(AuthTheme.muted)
                     }
                 }
                 .padding(.horizontal, AppSpacing.page)

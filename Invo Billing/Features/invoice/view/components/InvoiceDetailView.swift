@@ -22,16 +22,16 @@ struct InvoiceDetailView: View {
     }
 
     private func statusConfig(for detail: InvoiceDetailResponse) -> (label: String, color: Color) {
-        if detail.is_overdue { return ("Overdue", .sDestructive) }
+        if detail.is_overdue { return ("Overdue", Color.sDestructive) }
         switch detail.status {
-        case .paid:      return ("Paid",      .sSuccess)
-        case .pending:   return ("Pending",   .sWarning)
-        case .partial:   return ("Partial",   .sWarning)
-        case .draft:     return ("Draft",     .sNeutral)
+        case .paid:      return ("Paid",      Color.sSuccess)
+        case .pending:   return ("Pending",   Color.sWarning)
+        case .partial:   return ("Partial",   Color.sWarning)
+        case .draft:     return ("Draft",     Color.sNeutral)
         case .issued:    return ("Issued",    Color.sAccent)
-        case .cancelled: return ("Cancelled", .sNeutral)
-        case .sent:      return ("Sent",      .sNeutral)
-        case .overdue:   return ("Overdue",   .sDestructive)
+        case .cancelled: return ("Cancelled", Color.sNeutral)
+        case .sent:      return ("Sent",      Color.sNeutral)
+        case .overdue:   return ("Overdue",   Color.sDestructive)
         }
     }
 
@@ -158,10 +158,10 @@ struct InvoiceDetailView: View {
                 if vm.isFetchingDetail && loadedDetail == nil {
                     VStack(spacing: 12) {
                         ProgressView()
-                            .tint(.sAccent)
+                            .tint(Color.sAccent)
                         Text("Loading details...")
                             .font(.subheadline)
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let detail = loadedDetail {
@@ -181,24 +181,24 @@ struct InvoiceDetailView: View {
                                             .frame(width: 48, height: 48)
                                         Text(initials(for: detail.client.name))
                                             .font(.subheadline.weight(.semibold))
-                                            .foregroundColor(.sAccent)
+                                            .foregroundStyle(Color.sAccent)
                                     }
 
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text(detail.client.name)
                                             .font(.subheadline.weight(.semibold))
-                                            .foregroundColor(.sForeground)
+                                            .foregroundStyle(Color.sForeground)
                                         HStack(spacing: 6) {
                                             Text(detail.invoice_number)
                                                 .font(.subheadline)
-                                                .foregroundColor(.sMutedFG)
+                                                .foregroundStyle(Color.sMutedFG)
                                             if let docType = detail.doc_type, !docType.isEmpty {
                                                 Text(docType.capitalized)
                                                     .font(.caption.weight(.semibold))
-                                                    .foregroundColor(.sAccent)
+                                                    .foregroundStyle(Color.sAccent)
                                                     .padding(.horizontal, 6)
                                                     .padding(.vertical, 2)
-                                                    .background(Capsule().fill(Color.sAccentMuted))
+                                                    .background(Color.sAccentMuted, in: Capsule())
                                             }
                                         }
                                     }
@@ -208,10 +208,10 @@ struct InvoiceDetailView: View {
                                     let config = statusConfig(for: detail)
                                     Text(config.label)
                                         .font(.caption.weight(.medium))
-                                        .foregroundColor(config.color)
+                                        .foregroundStyle(config.color)
                                         .padding(.horizontal, 9)
                                         .padding(.vertical, 4)
-                                        .background(Capsule().fill(config.color.opacity(0.1)))
+                                        .background(config.color.opacity(0.1), in: Capsule())
                                 }
 
                                 Rectangle().fill(Color.sBorder).frame(height: 0.5)
@@ -220,20 +220,20 @@ struct InvoiceDetailView: View {
                                     VStack(alignment: .leading, spacing: 3) {
                                         Text("Invoice total")
                                             .font(.caption)
-                                            .foregroundColor(.sMutedFG)
+                                            .foregroundStyle(Color.sMutedFG)
                                         Text(Money.text(detail.total)).moneyLine()
                                             .font(.title2.weight(.bold))
-                                            .foregroundColor(.sForeground)
+                                            .foregroundStyle(Color.sForeground)
                                     }
                                     Spacer()
                                     if detail.paid_amount > 0 && detail.status != .paid {
                                         VStack(alignment: .trailing, spacing: 3) {
                                             Text("Remaining")
                                                 .font(.caption)
-                                                .foregroundColor(.sMutedFG)
+                                                .foregroundStyle(Color.sMutedFG)
                                             Text(Money.text(detail.remaining_amount)).moneyLine()
                                                 .font(.subheadline.weight(.semibold))
-                                                .foregroundColor(.sWarning)
+                                                .foregroundStyle(Color.sWarning)
                                         }
                                     }
                                 }
@@ -250,13 +250,13 @@ struct InvoiceDetailView: View {
                                     .frame(height: 6)
                                     Text("\(Money.text(detail.paid_amount)) paid so far")
                                         .font(.caption)
-                                        .foregroundColor(.sMutedFG)
+                                        .foregroundStyle(Color.sMutedFG)
                                 }
                             }
                             .padding(AppSpacing.card)
                             .background(Color.sCard)
-                            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.sBorder, lineWidth: 0.5))
-                            .cornerRadius(14)
+                            .overlay { RoundedRectangle(cornerRadius: 14).stroke(Color.sBorder, lineWidth: 0.5) }
+                            .clipShape(.rect(cornerRadius: 14))
                             .padding(.horizontal, AppSpacing.page)
                             .padding(.top, 16)
 
@@ -275,8 +275,8 @@ struct InvoiceDetailView: View {
                                         .frame(maxWidth: .infinity)
                                         .padding(.vertical, 14)
                                         .background(Color.sPrimary)
-                                        .foregroundColor(.sAccentFG)
-                                        .cornerRadius(10)
+                                        .foregroundStyle(Color.sAccentFG)
+                                        .clipShape(.rect(cornerRadius: 10))
                                     }
 
                                     Button {
@@ -291,13 +291,13 @@ struct InvoiceDetailView: View {
                                         .font(.subheadline.weight(.semibold))
                                         .frame(maxWidth: .infinity)
                                         .padding(.vertical, 14)
-                                        .foregroundColor(.sForeground)
+                                        .foregroundStyle(Color.sForeground)
                                         .background(Color.sCard)
-                                        .overlay(
+                                        .overlay {
                                             RoundedRectangle(cornerRadius: 10)
                                                 .stroke(Color.sBorder, lineWidth: 0.5)
-                                        )
-                                        .cornerRadius(10)
+                                        }
+                                        .clipShape(.rect(cornerRadius: 10))
                                     }
 
                                     Button {
@@ -310,12 +310,12 @@ struct InvoiceDetailView: View {
                                         .font(.subheadline.weight(.semibold))
                                         .frame(maxWidth: .infinity)
                                         .padding(.vertical, 14)
-                                        .foregroundColor(.sDestructive)
-                                        .overlay(
+                                        .foregroundStyle(Color.sDestructive)
+                                        .overlay {
                                             RoundedRectangle(cornerRadius: 10)
                                                 .stroke(Color.sDestructive.opacity(0.3), lineWidth: 0.5)
-                                        )
-                                        .cornerRadius(10)
+                                        }
+                                        .clipShape(.rect(cornerRadius: 10))
                                     }
                                 }
 
@@ -332,8 +332,8 @@ struct InvoiceDetailView: View {
                                         .frame(maxWidth: .infinity)
                                         .padding(.vertical, 14)
                                         .background(Color.sPrimary)
-                                        .foregroundColor(.sAccentFG)
-                                        .cornerRadius(10)
+                                        .foregroundStyle(Color.sAccentFG)
+                                        .clipShape(.rect(cornerRadius: 10))
                                     }
                                 }
                             }
@@ -345,7 +345,7 @@ struct InvoiceDetailView: View {
                             VStack(alignment: .leading, spacing: 0) {
                                 Text("Dates")
                                     .font(.subheadline.weight(.medium))
-                                    .foregroundColor(.sMutedFG)
+                                    .foregroundStyle(Color.sMutedFG)
                                     .padding(.horizontal, AppSpacing.page)
                                     .padding(.bottom, 10)
 
@@ -355,8 +355,8 @@ struct InvoiceDetailView: View {
                                     DateInfoCardZara(label: "Due date", value: detail.due_date)
                                 }
                                 .background(Color.sCard)
-                                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5))
-                                .cornerRadius(10)
+                                .overlay { RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5) }
+                                .clipShape(.rect(cornerRadius: 10))
                                 .padding(.horizontal, AppSpacing.page)
                                 .padding(.bottom, 20)
                             }
@@ -365,7 +365,7 @@ struct InvoiceDetailView: View {
                             VStack(alignment: .leading, spacing: 0) {
                                 Text("Line items")
                                     .font(.subheadline.weight(.medium))
-                                    .foregroundColor(.sMutedFG)
+                                    .foregroundStyle(Color.sMutedFG)
                                     .padding(.horizontal, AppSpacing.page)
                                     .padding(.bottom, 10)
 
@@ -385,7 +385,7 @@ struct InvoiceDetailView: View {
                             VStack(alignment: .leading, spacing: 0) {
                                 Text("Summary")
                                     .font(.subheadline.weight(.medium))
-                                    .foregroundColor(.sMutedFG)
+                                    .foregroundStyle(Color.sMutedFG)
                                     .padding(.horizontal, AppSpacing.page)
                                     .padding(.bottom, 10)
 
@@ -426,8 +426,8 @@ struct InvoiceDetailView: View {
                                     }
                                 }
                                 .background(Color.sCard)
-                                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5))
-                                .cornerRadius(10)
+                                .overlay { RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5) }
+                                .clipShape(.rect(cornerRadius: 10))
                                 .padding(.horizontal, AppSpacing.page)
                                 .padding(.bottom, 40)
                             }
@@ -437,17 +437,17 @@ struct InvoiceDetailView: View {
                     VStack(spacing: 12) {
                         Image(systemName: "exclamationmark.triangle")
                             .font(.title)
-                            .foregroundColor(.sDestructive)
+                            .foregroundStyle(Color.sDestructive)
 
                         Text("Error loading invoice")
                             .font(.subheadline.weight(.semibold))
-                            .foregroundColor(.sForeground)
+                            .foregroundStyle(Color.sForeground)
 
                         Button("Retry") { Task { await vm.fetchInvoiceDetail(invoiceID: invoiceID) } }
                             .buttonStyle(.bordered)
                         Text(error)
                             .font(.footnote)
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                             .multilineTextAlignment(.center)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -464,15 +464,15 @@ struct InvoiceDetailView: View {
                     VStack(spacing: 14) {
                         ProgressView()
                             .scaleEffect(1.3)
-                            .tint(.sAccent)
+                            .tint(Color.sAccent)
 
                         Text("Loading details...")
                             .font(.subheadline)
-                            .foregroundColor(.sForeground)
+                            .foregroundStyle(Color.sForeground)
                     }
                     .padding(32)
                     .background(Color.sCard)
-                    .cornerRadius(12)
+                    .clipShape(.rect(cornerRadius: 12))
                 }
             }
         }
@@ -612,7 +612,7 @@ struct InvoiceDetailView: View {
                 .presentationDetents([.medium])
             }
         }
-        .onChange(of: showEditInvoice) { isPresented in
+        .onChange(of: showEditInvoice) { _, isPresented in
             if !isPresented {
                 Task { await vm.fetchInvoiceDetail(invoiceID: invoiceID) }
             }
@@ -680,10 +680,10 @@ struct DateInfoCardZara: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(label)
                 .font(.caption)
-                .foregroundColor(.sMutedFG)
-            Text(value)
+                .foregroundStyle(Color.sMutedFG)
+            Text(AppDate.text(fromWire: value))
                 .font(.subheadline.weight(.medium))
-                .foregroundColor(.sForeground)
+                .foregroundStyle(Color.sForeground)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, AppSpacing.page)
@@ -702,16 +702,16 @@ struct ItemRowCardZara: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(itemName ?? "Item #\(item.item_id)")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundColor(.sForeground)
+                        .foregroundStyle(Color.sForeground)
 
                     HStack(spacing: 8) {
                         Text("Qty: \(item.qty)")
                             .font(.caption)
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                         if let hsn = item.hsn_code, !hsn.isEmpty {
                             Text("HSN: \(hsn)")
                                 .font(.caption)
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
                         }
                     }
                 }
@@ -721,11 +721,11 @@ struct ItemRowCardZara: View {
                 VStack(alignment: .trailing, spacing: 4) {
                     Text(Money.text(item.total)).moneyLine()
                         .font(.subheadline.weight(.semibold))
-                        .foregroundColor(.sForeground)
+                        .foregroundStyle(Color.sForeground)
 
                     Text("\(Money.text(item.rate)) each")
                         .font(.caption)
-                        .foregroundColor(.sMutedFG)
+                        .foregroundStyle(Color.sMutedFG)
                 }
             }
 
@@ -747,19 +747,19 @@ struct ItemRowCardZara: View {
         }
         .padding(14)
         .background(Color.sCard)
-        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5))
-        .cornerRadius(10)
+        .overlay { RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5) }
+        .clipShape(.rect(cornerRadius: 10))
     }
 
     private func summaryRow(label: String, value: Double) -> some View {
         HStack {
             Text(label)
                 .font(.caption)
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
             Spacer()
             Text(Money.text(value)).moneyLine()
                 .font(.caption)
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
         }
     }
 }
@@ -774,13 +774,13 @@ struct SummaryRowItemZara: View {
         HStack(spacing: 0) {
             Text(label)
                 .font(isTotal ? .headline : .subheadline)
-                .foregroundColor(.sForeground)
+                .foregroundStyle(Color.sForeground)
 
             Spacer()
 
             Text(Money.text(value)).moneyLine()
                 .font(isTotal ? .headline : .subheadline)
-                .foregroundColor(.sForeground)
+                .foregroundStyle(Color.sForeground)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)

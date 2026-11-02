@@ -34,8 +34,7 @@ final class SupplierAgingViewModel: ObservableObject {
             loadedCompanyID = companyID
         } catch {
             guard request == loadID, companyID == SessionManager.shared.selectedCompanyId else { return }
-            errorMessage = "Couldn't load the supplier aging report. Tap Retry to try again."
-            showAlert = true
+            errorMessage = "Couldn't load the supplier aging report."
         }
     }
 

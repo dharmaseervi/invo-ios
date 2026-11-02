@@ -80,7 +80,7 @@ final class RecordPaymentViewModel: ObservableObject {
     func loadUnpaidInvoices() async {
         if case let .invoice(invoiceID, _) = context {
             do {
-                let detail = try await invoiceService.fetchInvoiceDetail(id: invoiceID)
+                let detail = try await invoiceService.getInvoiceByID(invoiceID)
                 expectedTDS = max((detail.tds_amount ?? 0) - (detail.tds_withheld ?? 0), 0)
             } catch { /* Withholding can still be entered explicitly; never guess it. */ }
             return
@@ -142,7 +142,7 @@ final class RecordPaymentViewModel: ObservableObject {
             reference: reference.isEmpty ? nil : reference,
             notes: notes.isEmpty ? nil : notes,
             allocations: allocations,
-            payment_date: AppDate.wireDate(paymentDate),
+            payment_date: AppDate.wireString(from: paymentDate),
             tds_amount: withheldValue
         )
         

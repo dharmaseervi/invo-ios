@@ -20,9 +20,7 @@ struct MoreView: View {
     @State private var selectedTemplate = InvoiceTemplatePreference.load()
     @State private var biometricError: String?
     @State private var defaultState = IndianStates.defaultState
-    #if DEBUG
-    @State private var testPushStatus: String?
-    #endif
+
 
     private let biometricKind = BiometricAuthService.availableKind()
 
@@ -42,15 +40,15 @@ struct MoreView: View {
                         HStack(spacing: 14) {
                             Text(String(vm.profile?.email.prefix(1).uppercased() ?? "U"))
                                 .font(.title3.weight(.semibold))
-                                .foregroundColor(.sAccentFG)
+                                .foregroundStyle(Color.sAccentFG)
                                 .frame(width: 48, height: 48)
                                 .background(Color.sAccent, in: RoundedRectangle(cornerRadius: 12))
 
                             VStack(alignment: .leading, spacing: 3) {
-                                Text(vm.profile?.email ?? "Loading…")
+                                Text("Your account")
                                     .font(.subheadline.weight(.medium))
                                     .foregroundStyle(.primary)
-                                Text("View profile")
+                                Text(vm.profile?.email ?? "—")
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
                             }
@@ -62,13 +60,13 @@ struct MoreView: View {
                 // MARK: - Sales
                 Section("Sales") {
                     NavigationLink { EstimateListView() } label: {
-                        MoreViewRow(icon: "doc.badge.clock", label: "Estimates")
+                        MoreViewRow(icon: "doc.badge.clock.fill", label: "Estimates")
                     }
                     NavigationLink { CreditNoteListView() } label: {
                         MoreViewRow(icon: "doc.text.fill", label: "Credit notes")
                     }
                     NavigationLink { ChallanListView() } label: {
-                        MoreViewRow(icon: "shippingbox", label: "Delivery challans")
+                        MoreViewRow(icon: "shippingbox.fill", label: "Delivery challans")
                     }
                 }
 
@@ -94,10 +92,10 @@ struct MoreView: View {
                             MoreViewRow(icon: "banknote.fill", label: "Expenses")
                         }
                         NavigationLink { LedgerView() } label: {
-                            MoreViewRow(icon: "book.fill", label: "Customer ledger")
+                            MoreViewRow(icon: "book.fill", label: "Client ledger")
                         }
                         NavigationLink { CashClosingView() } label: {
-                            MoreViewRow(icon: "indianrupeesign.square", label: "Cash closing")
+                            MoreViewRow(icon: "indianrupeesign.square.fill", label: "Cash closing")
                         }
                     }
                 }
@@ -107,7 +105,7 @@ struct MoreView: View {
                     Section("Inventory") {
                         if session.companyRole.canEditCatalogue {
                             NavigationLink { StocktakeView() } label: {
-                                MoreViewRow(icon: "checklist", label: "Stock count")
+                                MoreViewRow(icon: "list.clipboard.fill", label: "Stock count")
                             }
                         }
                         if session.companyRole.canSeeReports {
@@ -122,13 +120,13 @@ struct MoreView: View {
                 if session.companyRole.canSeeReports {
                     Section("Reports") {
                         NavigationLink { ProfitLossView() } label: {
-                            MoreViewRow(icon: "chart.bar.doc.horizontal", label: "Profit & Loss")
+                            MoreViewRow(icon: "chart.bar.doc.horizontal.fill", label: "Profit & Loss")
                         }
                         NavigationLink { GSTReportView() } label: {
                             MoreViewRow(icon: "doc.text.magnifyingglass", label: "GST reports")
                         }
                         NavigationLink { AgingReportView() } label: {
-                            MoreViewRow(icon: "clock.badge.exclamationmark", label: "Client aging")
+                            MoreViewRow(icon: "clock.badge.exclamationmark.fill", label: "Client aging")
                         }
                         NavigationLink { SupplierAgingReportView() } label: {
                             MoreViewRow(icon: "clock.badge.exclamationmark.fill", label: "Supplier aging")
@@ -201,26 +199,19 @@ struct MoreView: View {
                                 set: { newValue in toggleBiometric(newValue) }
                             ))
                             .labelsHidden()
-                            .tint(.sAccent)
+                            .tint(Color.sAccent)
                         }
                     }
                     NavigationLink { ActiveSessionsView() } label: {
-                        MoreViewRow(icon: "person.2.badge.key", label: "Active sessions")
+                        MoreViewRow(icon: "iphone.circle.fill", label: "Active sessions")
                     }
                 }
 
                 // MARK: - Support
                 Section("Support") {
                     NavigationLink { HelpView() } label: {
-                        MoreViewRowBasic(label: "Help & Support")
+                        MoreViewRow(icon: "questionmark.circle.fill", label: "Help & Support")
                     }
-                    #if DEBUG
-                    Button {
-                        Task { await sendTestPush() }
-                    } label: {
-                        MoreViewRowBasic(label: testPushStatus ?? "Send test notification")
-                    }
-                    #endif
                 }
 
                 // MARK: - Sign Out / Delete
@@ -269,6 +260,7 @@ struct MoreView: View {
 
             }
             .listStyle(.insetGrouped)
+            .contentMargins(.bottom, 16, for: .scrollContent)
             .navigationTitle("More")
             #if DEBUG
             .navigationDestination(isPresented: $debugScreenOpen) {
@@ -383,42 +375,19 @@ struct MoreView: View {
         }
     }
 
-    #if DEBUG
-    private func sendTestPush() async {
-        testPushStatus = "Sending…"
-        guard let url = URL(string: "\(AppEnvironment.baseURL)/push/test") else { return }
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        if let token = KeychainManager.shared.loadToken() {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
-        do {
-            let (_, response) = try await URLSession.shared.data(for: request)
-            if let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) {
-                testPushStatus = "Sent — check server log"
-            } else {
-                testPushStatus = "Failed — check server log"
-            }
-        } catch {
-            testPushStatus = "Request failed: \(error.localizedDescription)"
-        }
-        try? await Task.sleep(nanoseconds: 3_000_000_000)
-        testPushStatus = nil
-    }
-    #endif
 
-    /// Reminders about invoices that have become overdue. Off until asked for.
+    /// Push notification toggle for overdue invoice alerts.
     private var notificationRow: some View {
         HStack {
             Image(systemName: "bell.fill")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .frame(width: 24)
-            Text("Overdue reminders")
+            Text("Overdue notifications")
                 .font(.subheadline)
                 .foregroundStyle(.primary)
             Spacer()
-            Toggle("Overdue reminders", isOn: Binding(
+            Toggle("Overdue notifications", isOn: Binding(
                 get: { notificationsOn },
                 set: { wanted in
                     if wanted {
@@ -436,7 +405,7 @@ struct MoreView: View {
                 }
             ))
             .labelsHidden()
-            .tint(.sAccent)
+            .tint(Color.sAccent)
         }
         .task { await refreshNotificationStatus() }
     }

@@ -60,10 +60,10 @@ struct ReturnToSupplierSheet: View {
             Section {
                 if isLoading {
                     HStack {
-                        ProgressView().tint(.sAccent)
+                        ProgressView().tint(Color.sAccent)
                         Text("Loading the bill…")
                             .font(.subheadline)
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                     }
                 } else {
                     ForEach(lines) { line in
@@ -73,7 +73,7 @@ struct ReturnToSupplierSheet: View {
                             HStack {
                                 Text("\(line.qty) came in at \(Money.text(line.rate))")
                                     .font(.footnote)
-                                    .foregroundColor(.sMutedFG)
+                                    .foregroundStyle(Color.sMutedFG)
                                 Spacer()
                                 TextField("0", text: Binding(
                                     get: { sending[line.item_id] ?? "" },
@@ -86,7 +86,7 @@ struct ReturnToSupplierSheet: View {
                             if (Int(sending[line.item_id] ?? "") ?? 0) > line.qty {
                                 Text("Only \(line.qty) came in on this bill.")
                                     .font(.footnote)
-                                    .foregroundColor(.sDestructive)
+                                    .foregroundStyle(Color.sDestructive)
                             }
                         }
                     }
@@ -105,7 +105,7 @@ struct ReturnToSupplierSheet: View {
                 Section {
                     Text(errorMessage)
                         .font(.subheadline)
-                        .foregroundColor(.sDestructive)
+                        .foregroundStyle(Color.sDestructive)
                 }
             }
         }

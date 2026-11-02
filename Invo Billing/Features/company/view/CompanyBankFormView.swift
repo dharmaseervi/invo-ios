@@ -59,9 +59,9 @@ struct CompanyBankFormView: View {
                             Toggle(isOn: $isDefault) {
                                 Text("Set as default account")
                                     .font(.subheadline)
-                                    .foregroundColor(.sForeground)
+                                    .foregroundStyle(Color.sForeground)
                             }
-                            .tint(.sAccent)
+                            .tint(Color.sAccent)
                         }
 
                         SecureField("Confirm your account password", text: $password)
@@ -71,13 +71,13 @@ struct CompanyBankFormView: View {
                         if let message = vm.errorMessage {
                             Text(message)
                                 .font(.footnote)
-                                .foregroundColor(.sDestructive)
+                                .foregroundStyle(Color.sDestructive)
                         }
 
                         if showError {
                             Text("Please fill in all required fields.")
                                 .font(.footnote)
-                                .foregroundColor(.sDestructive)
+                                .foregroundStyle(Color.sDestructive)
                         }
 
                         Spacer(minLength: 100)
@@ -122,11 +122,11 @@ extension CompanyBankFormView {
                 ZStack {
                     Color.sPrimary
                     if vm.isLoading {
-                        ProgressView().tint(.sAccentFG)
+                        ProgressView().tint(Color.sAccentFG)
                     } else {
                         Text(isEditing ? "Update account" : "Save bank details")
                             .font(.subheadline.weight(.semibold))
-                            .foregroundColor(.sAccentFG)
+                            .foregroundStyle(Color.sAccentFG)
                     }
                 }
                 .frame(minHeight: 60)
@@ -138,7 +138,7 @@ extension CompanyBankFormView {
     private func sectionLabel(_ text: String) -> some View {
         Text(text)
             .font(.subheadline.weight(.medium))
-            .foregroundColor(.sMutedFG)
+            .foregroundStyle(Color.sMutedFG)
     }
 
     private func handleSave() async {

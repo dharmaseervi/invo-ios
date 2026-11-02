@@ -24,7 +24,7 @@ struct PurchasesView: View {
             NavigationLink {
                 PurchaseLedgerView(showSupplierDetails: true)
             } label: {
-                Label("Suppliers and payments", systemImage: "person.2")
+                Label("Purchase ledger", systemImage: "text.book.closed.fill")
             }
             .standardListRow()
 
@@ -34,7 +34,7 @@ struct PurchasesView: View {
                     billFilter("Owed", "owed")
                     billFilter("Overdue", "overdue")
                     billFilter("Paid", "paid")
-                }.padding(.horizontal, AppSpacing.page)
+                }.padding(.horizontal, 20)
             }.listHeaderRow()
 
             if vm.isLoading && vm.bills.isEmpty {
@@ -150,18 +150,39 @@ struct PurchasesView: View {
         AppFilterChip(title: title, isSelected: vm.billFilter == value) { vm.billFilter = value }
     }
 
+    private func billStatusConfig(_ bill: PurchaseBill) -> (label: String, color: Color) {
+        if bill.isCancelled { return ("Cancelled", Color.sNeutral) }
+        if bill.isOverdue   { return ("Overdue",   Color.sDestructive) }
+        if bill.isSettled   { return ("Paid",      Color.sSuccess) }
+        return ("Due", Color.sWarning)
+    }
+
     private func purchaseBillRow(_ bill: PurchaseBill) -> some View {
-        AdaptiveFormRow {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(bill.supplier_name).font(.body.weight(.medium)).foregroundStyle(.primary)
-                Text("\(bill.bill_number) · \(AppDate.shortText(fromWire: bill.bill_date))")
-                    .font(.footnote).foregroundStyle(.secondary)
-            }.frame(maxWidth: .infinity, alignment: .leading)
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Total \(Money.text(bill.total))").font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
-                Text(bill.isCancelled ? "Cancelled" : bill.isSettled ? "Paid" : "Due \(Money.text(bill.remaining_amount))")
-                    .font(.footnote).foregroundStyle(bill.isOverdue ? Color.sDestructive : .secondary)
+        let status = billStatusConfig(bill)
+        return HStack(alignment: .top, spacing: AppSpacing.row) {
+            VStack(alignment: .leading, spacing: AppSpacing.compact) {
+                Text(bill.supplier_name)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.primary)
+                Text("Bill #\(bill.bill_number) · \(AppDate.text(fromWire: bill.bill_date))")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
+            Spacer(minLength: AppSpacing.inline)
+            VStack(alignment: .trailing, spacing: AppSpacing.compact) {
+                Text(Money.text(bill.isSettled ? bill.total : bill.remaining_amount)).moneyLine()
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .monospacedDigit()
+                Text(status.label)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(status.color)
+                    .padding(.horizontal, AppSpacing.inline)
+                    .padding(.vertical, AppSpacing.compact)
+                    .background(status.color.opacity(0.1), in: Capsule())
+            }
+            .frame(minWidth: 88, alignment: .trailing)
         }
     }
 
@@ -186,7 +207,7 @@ struct PurchasesView: View {
         SummaryCard(
             title: "Owed to suppliers",
             value: vm.totalDue.map { Money.text($0) } ?? "—",
-            valueColor: vm.totalDue.map { $0 > 0 ? Color.sDestructive : Color.sSuccess } ?? .sMutedFG
+            valueColor: vm.totalDue.map { $0 > 0 ? Color.sDestructive : Color.sSuccess } ?? Color.sMutedFG
         ) {
             if vm.totalDue != nil && vm.loadFailed {
                 // The figure is real but it is the one from before the failed refresh,
@@ -196,9 +217,15 @@ struct PurchasesView: View {
                     .foregroundStyle(Color.sDestructive)
             } else if vm.totalDue != nil {
                 let owing = vm.suppliers.filter { $0.due > 0 }.count
-                Text("Across \(owing) supplier\(owing == 1 ? "" : "s")")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                if owing == 0 {
+                    Text("No outstanding supplier balances")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("Across \(owing) supplier\(owing == 1 ? "" : "s")")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
             } else if vm.loadFailed {
                 Button("Try again") { Task { await vm.load() } }
                     .font(.footnote.weight(.medium))
@@ -308,7 +335,7 @@ struct PurchasesView: View {
         } actions: {
             Button("Add supplier") { showAddSupplier = true }
                 .buttonStyle(.borderedProminent)
-                .tint(.sAccent)
+                .tint(Color.sAccent)
         }
         .padding(.vertical, 24)
     }

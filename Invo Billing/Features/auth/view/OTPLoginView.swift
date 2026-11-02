@@ -72,7 +72,7 @@ struct OTPLoginView: View {
                                     }
                                 } label: {
                                     Text("Change email")
-                                        .foregroundColor(AuthTheme.muted)
+                                        .foregroundStyle(AuthTheme.muted)
                                 }
 
                                 Button {
@@ -80,7 +80,7 @@ struct OTPLoginView: View {
                                 } label: {
                                     Text("Resend code")
                                         .fontWeight(.semibold)
-                                        .foregroundColor(AuthTheme.accent)
+                                        .foregroundStyle(AuthTheme.accent)
                                 }
                             }
                             .font(.subheadline)

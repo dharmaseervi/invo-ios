@@ -37,7 +37,7 @@ struct SignupView: View {
         if !filled { return AuthTheme.border }
         switch passwordStrength {
         case 0, 1: return AuthTheme.destructive
-        case 2:    return .sWarning
+        case 2:    return Color.sWarning
         default:   return AuthTheme.success
         }
     }
@@ -86,7 +86,7 @@ struct SignupView: View {
                                 } else {
                                     Image(systemName: passwordsMatch ? "checkmark.circle.fill" : "xmark.circle.fill")
                                         .font(.subheadline)
-                                        .foregroundColor(passwordsMatch ? AuthTheme.success : AuthTheme.destructive)
+                                        .foregroundStyle(passwordsMatch ? AuthTheme.success : AuthTheme.destructive)
                                         .frame(width: 32, height: 32)
                                         .accessibilityLabel(passwordsMatch ? "Passwords match" : "Passwords do not match")
                                 }
@@ -104,7 +104,7 @@ struct SignupView: View {
                                 }
                                 Text(strengthLabel)
                                     .font(.caption.weight(.medium))
-                                    .foregroundColor(strengthColor(for: 0))
+                                    .foregroundStyle(strengthColor(for: 0))
                                     .frame(width: 48, alignment: .trailing)
                             }
                             .padding(.horizontal, 4)
@@ -115,7 +115,7 @@ struct SignupView: View {
                         if showMismatch {
                             Text("Passwords don't match")
                                 .font(.caption)
-                                .foregroundColor(AuthTheme.destructive)
+                                .foregroundStyle(AuthTheme.destructive)
                                 .padding(.horizontal, 4)
                         }
                     }
@@ -136,7 +136,7 @@ struct SignupView: View {
 
                         Text("By creating an account you agree to our [Terms of Service](https://invobilling.com/terms) and [Privacy Policy](https://invobilling.com/privacy).")
                             .font(.caption)
-                            .foregroundColor(AuthTheme.muted)
+                            .foregroundStyle(AuthTheme.muted)
                             .tint(AuthTheme.accent)
                             .multilineTextAlignment(.center)
                             .frame(maxWidth: .infinity)
@@ -145,13 +145,13 @@ struct SignupView: View {
 
                     HStack(spacing: 4) {
                         Text("Already have an account?")
-                            .foregroundColor(AuthTheme.muted)
+                            .foregroundStyle(AuthTheme.muted)
                         Button {
                             presentationMode.wrappedValue.dismiss()
                         } label: {
                             Text("Sign in")
                                 .fontWeight(.semibold)
-                                .foregroundColor(AuthTheme.accent)
+                                .foregroundStyle(AuthTheme.accent)
                         }
                     }
                     .font(.subheadline)

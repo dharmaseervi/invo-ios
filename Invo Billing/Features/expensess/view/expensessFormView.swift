@@ -61,7 +61,7 @@ struct ExpenseFormView: View {
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("Date")
                                     .font(.subheadline.weight(.medium))
-                                    .foregroundColor(.sForeground)
+                                    .foregroundStyle(Color.sForeground)
 
                                 DatePicker(
                                     "",
@@ -69,7 +69,7 @@ struct ExpenseFormView: View {
                                     displayedComponents: .date
                                 )
                                 .datePickerStyle(.compact)
-                                .tint(.sAccent)
+                                .tint(Color.sAccent)
                                 .labelsHidden()
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             }
@@ -78,20 +78,20 @@ struct ExpenseFormView: View {
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("Description")
                                     .font(.subheadline.weight(.medium))
-                                    .foregroundColor(.sForeground)
+                                    .foregroundStyle(Color.sForeground)
 
                                 TextEditor(text: $description)
                                     .font(.body)
-                                    .foregroundColor(.sForeground)
+                                    .foregroundStyle(Color.sForeground)
                                     .scrollContentBackground(.hidden)
                                     .frame(height: 100)
                                     .padding(8)
                                     .background(Color.sCard)
-                                    .overlay(
+                                    .overlay {
                                         RoundedRectangle(cornerRadius: 8)
                                             .stroke(Color.sInput, lineWidth: 0.5)
-                                    )
-                                    .cornerRadius(8)
+                                    }
+                                    .clipShape(.rect(cornerRadius: 8))
                             }
                         }
                         .padding(.horizontal, AppSpacing.page)
@@ -120,18 +120,18 @@ struct ExpenseFormView: View {
                         } label: {
                             HStack(spacing: 8) {
                                 if vm.isLoading {
-                                    ProgressView().tint(.sAccentFG)
+                                    ProgressView().tint(Color.sAccentFG)
                                         .scaleEffect(0.85)
                                 } else {
                                     Text("Save expense")
                                         .font(.subheadline.weight(.semibold))
                                 }
                             }
-                            .foregroundColor(.sAccentFG)
+                            .foregroundStyle(Color.sAccentFG)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
                             .background((name.isEmpty || amount.isEmpty) ? Color.sPrimary.opacity(0.4) : Color.sPrimary)
-                            .cornerRadius(10)
+                            .clipShape(.rect(cornerRadius: 10))
                         }
                         .disabled(vm.isLoading || name.isEmpty || amount.isEmpty)
 
@@ -142,13 +142,13 @@ struct ExpenseFormView: View {
                                 .font(.subheadline.weight(.medium))
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 14)
-                                .foregroundColor(.sForeground)
+                                .foregroundStyle(Color.sForeground)
                                 .background(Color.sCard)
-                                .overlay(
+                                .overlay {
                                     RoundedRectangle(cornerRadius: 10)
                                         .stroke(Color.sBorder, lineWidth: 0.5)
-                                )
-                                .cornerRadius(10)
+                                }
+                                .clipShape(.rect(cornerRadius: 10))
                         }
                     }
                     .padding(.horizontal, AppSpacing.page)
@@ -193,7 +193,7 @@ struct ExpenseCategoryPicker: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Category")
                 .font(.subheadline.weight(.medium))
-                .foregroundColor(.sForeground)
+                .foregroundStyle(Color.sForeground)
 
             Menu {
                 Button { selection = "" } label: {
@@ -208,17 +208,17 @@ struct ExpenseCategoryPicker: View {
                 HStack {
                     Text(selection.isEmpty ? "Uncategorised" : selection)
                         .font(.body)
-                        .foregroundColor(selection.isEmpty ? .sMutedFG : .sForeground)
+                        .foregroundStyle(selection.isEmpty ? Color.sMutedFG : Color.sForeground)
                     Spacer()
                     Image(systemName: "chevron.up.chevron.down")
                         .font(.footnote)
-                        .foregroundColor(.sMutedFG)
+                        .foregroundStyle(Color.sMutedFG)
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
                 .background(Color.sCard)
-                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.sInput, lineWidth: 0.5))
-                .cornerRadius(8)
+                .overlay { RoundedRectangle(cornerRadius: 8).stroke(Color.sInput, lineWidth: 0.5) }
+                .clipShape(.rect(cornerRadius: 8))
             }
         }
     }
@@ -232,7 +232,7 @@ struct ExpensePaymentMethodPicker: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Paid by")
                 .font(.subheadline.weight(.medium))
-                .foregroundColor(.sForeground)
+                .foregroundStyle(Color.sForeground)
 
             Menu {
                 Button { selection = "" } label: {
@@ -251,22 +251,22 @@ struct ExpensePaymentMethodPicker: View {
                 HStack {
                     Text(selection.isEmpty ? "Not recorded" : selection)
                         .font(.body)
-                        .foregroundColor(selection.isEmpty ? .sMutedFG : .sForeground)
+                        .foregroundStyle(selection.isEmpty ? Color.sMutedFG : Color.sForeground)
                     Spacer()
                     Image(systemName: "chevron.up.chevron.down")
                         .font(.footnote)
-                        .foregroundColor(.sMutedFG)
+                        .foregroundStyle(Color.sMutedFG)
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
                 .background(Color.sCard)
-                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.sInput, lineWidth: 0.5))
-                .cornerRadius(8)
+                .overlay { RoundedRectangle(cornerRadius: 8).stroke(Color.sInput, lineWidth: 0.5) }
+                .clipShape(.rect(cornerRadius: 8))
             }
 
             Text("Choose Cash if this expense was paid from the drawer.")
                 .font(.footnote)
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
         }
     }
 }

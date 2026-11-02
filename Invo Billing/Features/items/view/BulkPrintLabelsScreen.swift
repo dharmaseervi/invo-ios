@@ -69,7 +69,7 @@ struct BulkPrintLabelsScreen: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Items")
                 .font(.subheadline.weight(.medium))
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
 
             VStack(spacing: 8) {
                 ForEach(items) { item in
@@ -77,11 +77,11 @@ struct BulkPrintLabelsScreen: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(item.name)
                                 .font(.subheadline.weight(.medium))
-                                .foregroundColor(.sForeground)
+                                .foregroundStyle(Color.sForeground)
 
                             Text(Money.text(item.price)).moneyLine()
                                 .font(.caption)
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
                         }
 
                         Spacer()
@@ -97,8 +97,8 @@ struct BulkPrintLabelsScreen: View {
                     }
                     .padding(12)
                     .background(Color.sCard)
-                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5))
-                    .cornerRadius(10)
+                    .overlay { RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5) }
+                    .clipShape(.rect(cornerRadius: 10))
                 }
             }
         }
@@ -109,7 +109,7 @@ struct BulkPrintLabelsScreen: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Code type")
                 .font(.subheadline.weight(.medium))
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
 
             HStack(spacing: 8) {
                 ForEach(LabelCodeType.allCases, id: \.self) { type in
@@ -123,15 +123,15 @@ struct BulkPrintLabelsScreen: View {
                             Text(type.rawValue)
                                 .font(.subheadline.weight(.medium))
                         }
-                        .foregroundColor(isSelected ? .sAccentFG : .sForeground)
+                        .foregroundStyle(isSelected ? Color.sAccentFG : Color.sForeground)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
                         .background(isSelected ? Color.sAccent : Color.sCard)
-                        .overlay(
+                        .overlay {
                             RoundedRectangle(cornerRadius: 10)
                                 .stroke(isSelected ? Color.clear : Color.sBorder, lineWidth: 0.5)
-                        )
-                        .cornerRadius(10)
+                        }
+                        .clipShape(.rect(cornerRadius: 10))
                     }
                 }
             }
@@ -143,7 +143,7 @@ struct BulkPrintLabelsScreen: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Label size")
                 .font(.subheadline.weight(.medium))
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
                 ForEach(LabelSize.allCases, id: \.self) { size in
@@ -156,17 +156,17 @@ struct BulkPrintLabelsScreen: View {
                                 .font(.subheadline.weight(.medium))
                             Text(size.subtitle)
                                 .font(.caption)
-                                .foregroundColor(isSelected ? .sAccentFG.opacity(0.8) : .sMutedFG)
+                                .foregroundStyle(isSelected ? Color.sAccentFG.opacity(0.8) : Color.sMutedFG)
                         }
-                        .foregroundColor(isSelected ? .sAccentFG : .sForeground)
+                        .foregroundStyle(isSelected ? Color.sAccentFG : Color.sForeground)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
                         .background(isSelected ? Color.sAccent : Color.sCard)
-                        .overlay(
+                        .overlay {
                             RoundedRectangle(cornerRadius: 10)
                                 .stroke(isSelected ? Color.clear : Color.sBorder, lineWidth: 0.5)
-                        )
-                        .cornerRadius(10)
+                        }
+                        .clipShape(.rect(cornerRadius: 10))
                     }
                 }
             }
@@ -183,18 +183,18 @@ struct BulkPrintLabelsScreen: View {
             } label: {
                 HStack(spacing: 8) {
                     if isPrinting {
-                        ProgressView().tint(.sAccentFG)
+                        ProgressView().tint(Color.sAccentFG)
                     } else {
                         Image(systemName: "printer.fill")
                         Text("Print \(totalLabelCount) label\(totalLabelCount == 1 ? "" : "s")")
                     }
                 }
                 .font(.body.weight(.semibold))
-                .foregroundColor(.sAccentFG)
+                .foregroundStyle(Color.sAccentFG)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
                 .background(Color.sPrimary)
-                .cornerRadius(10)
+                .clipShape(.rect(cornerRadius: 10))
             }
             .disabled(isPrinting)
             .padding(.horizontal, AppSpacing.page)

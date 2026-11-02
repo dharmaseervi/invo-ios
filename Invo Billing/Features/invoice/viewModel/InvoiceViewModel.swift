@@ -18,6 +18,7 @@ class InvoiceViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var showAlert = false
     @Published var errorMessage: String?
+    @Published var listError: String?
     @Published var showSuccessAlert = false
     @Published var successMessage = ""
 
@@ -406,6 +407,7 @@ class InvoiceViewModel: ObservableObject {
             invoiceOffset = response.data.count
             hasMoreInvoices = response.data.count >= limit
             loadMoreFailed = false
+            listError = nil
             // A summary that failed is cleared rather than left behind: keeping the
             // previous one put one search's totals above another search's rows.
             summary = newSummary ?? .empty
@@ -420,11 +422,11 @@ class InvoiceViewModel: ObservableObject {
                 summary = await summaryResult ?? .empty
                 return
             }
-            showError(error.localizedDescription)
+            listError = error.localizedDescription
         } catch {
             guard request == listRequestID else { return }
             isFetchingList = false
-            showError(error.localizedDescription)
+            listError = error.localizedDescription
         }
     }
 

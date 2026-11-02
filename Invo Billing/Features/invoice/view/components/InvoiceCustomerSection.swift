@@ -18,7 +18,7 @@ struct InvoiceCustomerSection: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Customer")
                 .font(.subheadline.weight(.medium))
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
 
             VStack(spacing: 0) {
                 // Client row
@@ -28,36 +28,36 @@ struct InvoiceCustomerSection: View {
                             if let quickSale = client.quickSaleAccount {
                                 Image(systemName: quickSale.icon)
                                     .font(.subheadline.weight(.semibold))
-                                    .foregroundColor(.sAccentFG)
+                                    .foregroundStyle(Color.sAccentFG)
                                     .frame(width: 40, height: 40)
                                     .background(Color.sAccent)
-                                    .cornerRadius(10)
+                                    .clipShape(.rect(cornerRadius: 10))
 
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text("\(client.name) sale")
                                         .font(.subheadline.weight(.semibold))
-                                        .foregroundColor(.sForeground)
+                                        .foregroundStyle(Color.sForeground)
                                     Text("No customer details needed")
                                         .font(.footnote)
-                                        .foregroundColor(.sMutedFG)
+                                        .foregroundStyle(Color.sMutedFG)
                                 }
                             } else {
                             Text(String(client.name.prefix(1)).uppercased())
                                 .font(.subheadline.weight(.semibold))
-                                .foregroundColor(.sAccentFG)
+                                .foregroundStyle(Color.sAccentFG)
                                 .frame(width: 40, height: 40)
                                 .background(Color.sAccent)
-                                .cornerRadius(10)
+                                .clipShape(.rect(cornerRadius: 10))
 
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(client.name)
                                     .font(.subheadline.weight(.semibold))
-                                    .foregroundColor(.sForeground)
+                                    .foregroundStyle(Color.sForeground)
                                 let secondary = client.email.isEmpty ? client.phone : client.email
                                 if !secondary.isEmpty {
                                     Text(secondary)
                                         .font(.footnote)
-                                        .foregroundColor(.sMutedFG)
+                                        .foregroundStyle(Color.sMutedFG)
                                         .lineLimit(1)
                                 }
                             }
@@ -65,18 +65,18 @@ struct InvoiceCustomerSection: View {
                         } else {
                             Image(systemName: "person.crop.circle.badge.plus")
                                 .font(.title3)
-                                .foregroundColor(.sAccent)
+                                .foregroundStyle(Color.sAccent)
                                 .frame(width: 40, height: 40)
                                 .background(Color.sAccentMuted)
-                                .cornerRadius(10)
+                                .clipShape(.rect(cornerRadius: 10))
 
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Select client")
                                     .font(.subheadline.weight(.medium))
-                                    .foregroundColor(.sForeground)
+                                    .foregroundStyle(Color.sForeground)
                                 Text("Choose who this invoice is for")
                                     .font(.footnote)
-                                    .foregroundColor(.sMutedFG)
+                                    .foregroundStyle(Color.sMutedFG)
                             }
                         }
 
@@ -84,10 +84,10 @@ struct InvoiceCustomerSection: View {
 
                         Text(selectedClient == nil ? "" : "Change")
                             .font(.subheadline.weight(.medium))
-                            .foregroundColor(.sAccent)
+                            .foregroundStyle(Color.sAccent)
                         Image(systemName: "chevron.right")
                             .font(.footnote.weight(.semibold))
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                     }
                     .padding(14)
                     .contentShape(Rectangle())
@@ -111,16 +111,16 @@ struct InvoiceCustomerSection: View {
                         HStack {
                             Text("Ship to")
                                 .font(.footnote.weight(.medium))
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
                             Spacer()
                             Toggle(isOn: $isShippingSameAsBilling) {
                                 Text("Same as billing")
                                     .font(.footnote)
-                                    .foregroundColor(.sMutedFG)
+                                    .foregroundStyle(Color.sMutedFG)
                             }
                             .toggleStyle(.switch)
                             .controlSize(.mini)
-                            .tint(.sAccent)
+                            .tint(Color.sAccent)
                             .fixedSize()
                         }
                         .padding(.horizontal, 14)
@@ -139,8 +139,8 @@ struct InvoiceCustomerSection: View {
                 }
             }
             .background(Color.sCard)
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
-            .cornerRadius(12)
+            .overlay { RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5) }
+            .clipShape(.rect(cornerRadius: 12))
         }
     }
 
@@ -155,7 +155,7 @@ struct InvoiceCustomerSection: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(.footnote.weight(.medium))
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
             addressBody(address: address, emptyText: emptyText, action: action)
         }
         .padding(.horizontal, 14)
@@ -172,31 +172,31 @@ struct InvoiceCustomerSection: View {
                 if address.isEmpty {
                     Image(systemName: "plus.circle")
                         .font(.body)
-                        .foregroundColor(.sAccent)
+                        .foregroundStyle(Color.sAccent)
                     Text(emptyText)
                         .font(.subheadline.weight(.medium))
-                        .foregroundColor(.sAccent)
+                        .foregroundStyle(Color.sAccent)
                 } else {
                     VStack(alignment: .leading, spacing: 2) {
                         if !address.name.isEmpty {
                             Text(address.name)
                                 .font(.subheadline.weight(.medium))
-                                .foregroundColor(.sForeground)
+                                .foregroundStyle(Color.sForeground)
                         }
                         Text(formatted(address))
                             .font(.subheadline)
-                            .foregroundColor(.sForeground)
+                            .foregroundStyle(Color.sForeground)
                             .lineLimit(2)
                         if !address.gstNumber.isEmpty {
                             Text("GSTIN \(address.gstNumber)")
                                 .font(.caption)
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
                         }
                     }
                     Spacer()
                     Text("Edit")
                         .font(.subheadline.weight(.medium))
-                        .foregroundColor(.sAccent)
+                        .foregroundStyle(Color.sAccent)
                 }
             }
             .padding(.horizontal, 14)

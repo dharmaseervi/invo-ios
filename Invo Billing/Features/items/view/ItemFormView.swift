@@ -37,15 +37,15 @@ struct ItemFormView: View {
                                     Text("Record stock received")
                                         .font(.subheadline.weight(.medium))
                                 }
-                                .foregroundColor(.sAccent)
+                                .foregroundStyle(Color.sAccent)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 12)
                                 .background(Color.sAccentMuted)
-                                .overlay(
+                                .overlay {
                                     RoundedRectangle(cornerRadius: 10)
                                         .stroke(Color.sAccent.opacity(0.25), lineWidth: 0.5)
-                                )
-                                .cornerRadius(10)
+                                }
+                                .clipShape(.rect(cornerRadius: 10))
                             }
                             .padding(.horizontal, AppSpacing.page)
                             .padding(.top, 16)
@@ -70,7 +70,7 @@ struct ItemFormView: View {
                         HStack(spacing: 8) {
                             if vm.isLoading {
                                 ProgressView()
-                                    .tint(.sAccentFG)
+                                    .tint(Color.sAccentFG)
                                     .scaleEffect(0.85)
                             } else {
                                 Image(systemName: "checkmark.circle.fill")
@@ -79,11 +79,11 @@ struct ItemFormView: View {
                                     .font(.subheadline.weight(.semibold))
                             }
                         }
-                        .foregroundColor(.sAccentFG)
+                        .foregroundStyle(Color.sAccentFG)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
                         .background(vm.isValid ? Color.sPrimary : Color.sPrimary.opacity(0.4))
-                        .cornerRadius(10)
+                        .clipShape(.rect(cornerRadius: 10))
                     }
                     .disabled(vm.isLoading || !vm.isValid)
 

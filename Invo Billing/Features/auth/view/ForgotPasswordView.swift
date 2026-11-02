@@ -66,7 +66,7 @@ struct ForgotPasswordView: View {
                                     } else {
                                         Image(systemName: passwordsMatch ? "checkmark.circle.fill" : "xmark.circle.fill")
                                             .font(.subheadline)
-                                            .foregroundColor(passwordsMatch ? AuthTheme.success : AuthTheme.destructive)
+                                            .foregroundStyle(passwordsMatch ? AuthTheme.success : AuthTheme.destructive)
                                             .frame(width: 32, height: 32)
                                             .accessibilityLabel(passwordsMatch ? "Passwords match" : "Passwords do not match")
                                     }
@@ -76,7 +76,7 @@ struct ForgotPasswordView: View {
                             if showMismatch {
                                 Text("Passwords don't match")
                                     .font(.caption)
-                                    .foregroundColor(AuthTheme.destructive)
+                                    .foregroundStyle(AuthTheme.destructive)
                                     .padding(.horizontal, 4)
                             }
                         }
@@ -127,7 +127,7 @@ struct ForgotPasswordView: View {
                                     }
                                 } label: {
                                     Text("Change email")
-                                        .foregroundColor(AuthTheme.muted)
+                                        .foregroundStyle(AuthTheme.muted)
                                 }
 
                                 Button {
@@ -135,7 +135,7 @@ struct ForgotPasswordView: View {
                                 } label: {
                                     Text("Resend code")
                                         .fontWeight(.semibold)
-                                        .foregroundColor(AuthTheme.accent)
+                                        .foregroundStyle(AuthTheme.accent)
                                 }
                             }
                             .font(.subheadline)

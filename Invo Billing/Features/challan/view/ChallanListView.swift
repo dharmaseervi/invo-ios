@@ -38,14 +38,21 @@ struct ChallanListView: View {
     private var contentArea: some View {
         if vm.isLoadingList && vm.challans.isEmpty {
             VStack(spacing: 12) {
-                ProgressView().tint(.sAccent)
+                ProgressView().tint(Color.sAccent)
                 Text("Loading challans...")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if vm.challans.isEmpty, let message = vm.listError {
-            ReportStatusView(message: message, hasData: false) { await vm.loadChallans() }
+            List {
+                ReportStatusView(message: message, hasData: false) { await vm.loadChallans() }
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
+            }
+            .listStyle(.plain)
+            .refreshable { await vm.loadChallans() }
         } else if vm.challans.isEmpty && !vm.searchText.isEmpty {
             ContentUnavailableView.search(text: vm.searchText)
         } else if vm.challans.isEmpty {
@@ -63,11 +70,11 @@ struct ChallanListView: View {
                 Button(action: { showCreate = true }) {
                     Text("New Challan")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundColor(.sAccentFG)
+                        .foregroundStyle(Color.sAccentFG)
                         .padding(.horizontal, AppSpacing.page)
                         .padding(.vertical, 10)
                         .background(Color.sPrimary)
-                        .cornerRadius(8)
+                        .clipShape(.rect(cornerRadius: 8))
                 }
                 .padding(.top, 4)
             }
@@ -108,7 +115,7 @@ private struct ChallanRow: View {
     let challan: ChallanResponse
 
     private var statusColor: Color {
-        challan.status == .dispatched ? .sSuccess : .sNeutral
+        challan.status == .dispatched ? Color.sSuccess : Color.sNeutral
     }
 
     var body: some View {
@@ -141,7 +148,7 @@ private struct ChallanRow: View {
                     .foregroundStyle(statusColor)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
-                    .background(Capsule().fill(statusColor.opacity(0.1)))
+                    .background(statusColor.opacity(0.1), in: Capsule())
                 Text(AppDate.text(fromWire: String(challan.challan_date.prefix(10))))
                     .font(.caption)
                     .foregroundStyle(.secondary)

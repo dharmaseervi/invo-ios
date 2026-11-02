@@ -30,10 +30,10 @@ struct ImportItemsView: View {
                 resultView(result)
             } else if vm.isReading {
                 VStack(spacing: 12) {
-                    ProgressView().tint(.sAccent)
+                    ProgressView().tint(Color.sAccent)
                     Text("Reading \(vm.fileName ?? "your file")…")
                         .font(.subheadline)
-                        .foregroundColor(.sMutedFG)
+                        .foregroundStyle(Color.sMutedFG)
                 }
             } else if vm.preview == nil {
                 chooseFileView
@@ -90,15 +90,15 @@ struct ImportItemsView: View {
 
             Image(systemName: "tablecells")
                 .font(.scaled(40))
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
 
             VStack(spacing: 8) {
                 Text("Import your product list")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundColor(.sForeground)
+                    .foregroundStyle(Color.sForeground)
                 Text("Choose an Excel file or a CSV — straight from Excel, Google Sheets or your old billing app. The columns can be named anything, and you can correct any the app reads wrongly.")
                     .font(.subheadline)
-                    .foregroundColor(.sMutedFG)
+                    .foregroundStyle(Color.sMutedFG)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
             }
@@ -108,17 +108,17 @@ struct ImportItemsView: View {
             } label: {
                 Text("Choose file")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
                     .background(Color.sAccent)
-                    .cornerRadius(12)
+                    .clipShape(.rect(cornerRadius: 12))
             }
             .padding(.horizontal, 32)
 
             Text("Nothing is saved until you have seen what's in the file.")
                 .font(.footnote)
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
 
             Spacer()
         }
@@ -153,17 +153,17 @@ struct ImportItemsView: View {
             HStack {
                 Text(vm.fileName ?? "Your file")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundColor(.sForeground)
+                    .foregroundStyle(Color.sForeground)
                     .lineLimit(1)
                 Spacer()
                 Button("Change") { showFilePicker = true }
                     .font(.subheadline.weight(.medium))
-                    .foregroundColor(.sAccent)
+                    .foregroundStyle(Color.sAccent)
             }
 
             Text("\(vm.summary.total) rows · \(vm.summary.valid) can be imported\(vm.summary.invalid > 0 ? " · \(vm.summary.invalid) need fixing" : "")")
                 .font(.footnote)
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
 
             // What the app made of their columns. Worth showing plainly: if "Rate" was
             // read as the selling price when it was the purchase price, this is where
@@ -176,7 +176,7 @@ struct ImportItemsView: View {
                     HStack {
                         Text(header)
                             .font(.footnote)
-                            .foregroundColor(.sForeground)
+                            .foregroundStyle(Color.sForeground)
                             .lineLimit(1)
                         Spacer()
                         Menu {
@@ -198,7 +198,7 @@ struct ImportItemsView: View {
                                 Image(systemName: "chevron.up.chevron.down")
                                     .font(.caption)
                             }
-                            .foregroundColor(.sAccent)
+                            .foregroundStyle(Color.sAccent)
                         }
                     }
                     .padding(.vertical, 6)
@@ -213,48 +213,48 @@ struct ImportItemsView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
         .background(Color.sCard)
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.sBorder, lineWidth: 0.5))
-        .cornerRadius(14)
+        .overlay { RoundedRectangle(cornerRadius: 14).stroke(Color.sBorder, lineWidth: 0.5) }
+        .clipShape(.rect(cornerRadius: 14))
     }
 
     private var missingCard: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Can't import this file")
                 .font(.subheadline.weight(.semibold))
-                .foregroundColor(.sDestructive)
+                .foregroundStyle(Color.sDestructive)
             Text("No column was found for: \(vm.missing.map(\.label).joined(separator: ", ")). Every product needs at least a name and a selling price.")
                 .font(.footnote)
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
         .background(Color.sDestructive.opacity(0.08))
-        .cornerRadius(14)
+        .clipShape(.rect(cornerRadius: 14))
     }
 
     private var duplicatesCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("\(vm.duplicateRows.count) already in your products")
                 .font(.subheadline.weight(.semibold))
-                .foregroundColor(.sForeground)
+                .foregroundStyle(Color.sForeground)
             Text("These are skipped unless you say otherwise. Updating replaces the price, stock and other details with what's in the file.")
                 .font(.footnote)
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
 
             HStack(spacing: 10) {
                 Button("Skip all") { vm.setAllDuplicates(.skip) }
                     .font(.subheadline.weight(.medium))
-                    .foregroundColor(.sAccent)
+                    .foregroundStyle(Color.sAccent)
                 Button("Update all") { vm.setAllDuplicates(.update) }
                     .font(.subheadline.weight(.medium))
-                    .foregroundColor(.sAccent)
+                    .foregroundStyle(Color.sAccent)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
         .background(Color.sCard)
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.sBorder, lineWidth: 0.5))
-        .cornerRadius(14)
+        .overlay { RoundedRectangle(cornerRadius: 14).stroke(Color.sBorder, lineWidth: 0.5) }
+        .clipShape(.rect(cornerRadius: 14))
     }
 
     private func rowCard(_ row: ImportRow) -> some View {
@@ -262,31 +262,31 @@ struct ImportItemsView: View {
             HStack(alignment: .firstTextBaseline) {
                 Text(row.item.name.isEmpty ? "(no name)" : row.item.name)
                     .font(.subheadline.weight(.medium))
-                    .foregroundColor(.sForeground)
+                    .foregroundStyle(Color.sForeground)
                 Spacer()
                 Text("Line \(row.line)")
                     .font(.caption)
-                    .foregroundColor(.sMutedFG)
+                    .foregroundStyle(Color.sMutedFG)
             }
 
             Text(detailLine(row.item))
                 .font(.footnote)
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
 
             ForEach(row.problems, id: \.self) { problem in
                 Label(problem, systemImage: "exclamationmark.triangle.fill")
                     .font(.footnote)
-                    .foregroundColor(.sDestructive)
+                    .foregroundStyle(Color.sDestructive)
             }
             ForEach(row.notes, id: \.self) { note in
                 Text(note)
                     .font(.footnote)
-                    .foregroundColor(.sMutedFG)
+                    .foregroundStyle(Color.sMutedFG)
             }
             if let reason = vm.failures[row.line] {
                 Label(reason, systemImage: "xmark.octagon.fill")
                     .font(.footnote)
-                    .foregroundColor(.sDestructive)
+                    .foregroundStyle(Color.sDestructive)
             }
 
             if let duplicate = row.duplicate, row.canImport {
@@ -296,11 +296,11 @@ struct ImportItemsView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
         .background(Color.sCard)
-        .overlay(
+        .overlay {
             RoundedRectangle(cornerRadius: 14)
                 .stroke(row.canImport ? Color.sBorder : Color.sDestructive.opacity(0.5), lineWidth: 0.5)
-        )
-        .cornerRadius(14)
+        }
+        .clipShape(.rect(cornerRadius: 14))
         .opacity(row.canImport ? 1 : 0.75)
     }
 
@@ -312,7 +312,7 @@ struct ImportItemsView: View {
                  ? "You already have this SKU — \(Money.text(duplicate.price)), \(duplicate.quantity) in stock"
                  : "Same name as an existing product — \(Money.text(duplicate.price)), \(duplicate.quantity) in stock")
                 .font(.caption)
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
 
             Picker("", selection: Binding(
                 get: { vm.choice(for: row) },
@@ -338,7 +338,7 @@ struct ImportItemsView: View {
             if vm.chosenCount > 0 {
                 Text(barSummary)
                     .font(.footnote)
-                    .foregroundColor(.sMutedFG)
+                    .foregroundStyle(Color.sMutedFG)
             }
 
             Button {
@@ -352,11 +352,11 @@ struct ImportItemsView: View {
                             .font(.subheadline.weight(.semibold))
                     }
                 }
-                .foregroundColor(.white)
+                .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
                 .background(vm.canImport ? Color.sAccent : Color.sMutedFG.opacity(0.4))
-                .cornerRadius(12)
+                .clipShape(.rect(cornerRadius: 12))
             }
             .disabled(!vm.canImport)
         }
@@ -381,15 +381,15 @@ struct ImportItemsView: View {
 
             Image(systemName: "checkmark.circle.fill")
                 .font(.scaled(44))
-                .foregroundColor(.sSuccess)
+                .foregroundStyle(Color.sSuccess)
 
             VStack(spacing: 6) {
                 Text("Imported")
                     .font(.title3.weight(.semibold))
-                    .foregroundColor(.sForeground)
+                    .foregroundStyle(Color.sForeground)
                 Text(resultLine(result))
                     .font(.subheadline)
-                    .foregroundColor(.sMutedFG)
+                    .foregroundStyle(Color.sMutedFG)
                     .multilineTextAlignment(.center)
             }
 
@@ -399,7 +399,7 @@ struct ImportItemsView: View {
                 } label: {
                     Text("Import another file")
                         .font(.subheadline.weight(.medium))
-                        .foregroundColor(.sAccent)
+                        .foregroundStyle(Color.sAccent)
                 }
 
                 Button {
@@ -408,11 +408,11 @@ struct ImportItemsView: View {
                 } label: {
                     Text("Done")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
                         .background(Color.sAccent)
-                        .cornerRadius(12)
+                        .clipShape(.rect(cornerRadius: 12))
                 }
             }
             .padding(.horizontal, 32)

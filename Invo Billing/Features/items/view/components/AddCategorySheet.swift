@@ -37,7 +37,7 @@ struct AddCategorySheet: View {
 
                 if let error = errorMessage {
                     Text(error)
-                        .foregroundColor(.sDestructive)
+                        .foregroundStyle(Color.sDestructive)
                 }
 
                 Button {
@@ -45,10 +45,10 @@ struct AddCategorySheet: View {
                 } label: {
                     if isLoading {
                         ProgressView()
-                            .tint(.sAccent)
+                            .tint(Color.sAccent)
                     } else {
                         Text("Save Category")
-                            .foregroundColor(.sAccent)
+                            .foregroundStyle(Color.sAccent)
                     }
                 }
                 .disabled(newCategory.isEmpty || isLoading)

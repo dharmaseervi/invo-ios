@@ -26,75 +26,75 @@ struct SendEmailSheet: View {
                         HStack(spacing: 10) {
                             Image(systemName: "paperclip")
                                 .font(.subheadline)
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
                             Text(isReminder
                                  ? "A payment reminder with the invoice PDF attached will be sent"
                                  : "The invoice PDF will be attached automatically")
                                 .font(.subheadline)
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
                             Spacer()
                         }
                         .padding(12)
                         .background(Color.sMuted)
-                        .overlay(
+                        .overlay {
                             RoundedRectangle(cornerRadius: 8)
                                 .stroke(Color.sBorder, lineWidth: 0.5)
-                        )
-                        .cornerRadius(8)
+                        }
+                        .clipShape(.rect(cornerRadius: 8))
                         
                         // Name field
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Recipient name")
                                 .font(.subheadline.weight(.medium))
-                                .foregroundColor(.sForeground)
+                                .foregroundStyle(Color.sForeground)
                             
                             TextField("John Doe", text: $toName)
                                 .font(.body)
-                                .foregroundColor(.sForeground)
-                                .tint(.sAccent)
+                                .foregroundStyle(Color.sForeground)
+                                .tint(Color.sAccent)
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 10)
                                 .background(Color.sCard)
-                                .overlay(
+                                .overlay {
                                     RoundedRectangle(cornerRadius: 8)
                                         .stroke(Color.sInput, lineWidth: 0.5)
-                                )
-                                .cornerRadius(8)
+                                }
+                                .clipShape(.rect(cornerRadius: 8))
                         }
                         
                         // Email field
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Email address")
                                 .font(.subheadline.weight(.medium))
-                                .foregroundColor(.sForeground)
+                                .foregroundStyle(Color.sForeground)
                             
                             HStack {
                                 TextField("client@example.com", text: $toEmail)
                                     .font(.body)
-                                    .foregroundColor(.sForeground)
+                                    .foregroundStyle(Color.sForeground)
                                     .keyboardType(.emailAddress)
                                     .textInputAutocapitalization(.never)
                                     .autocorrectionDisabled()
-                                    .tint(.sAccent)
+                                    .tint(Color.sAccent)
                                 
                                 if !toEmail.isEmpty {
                                     Image(systemName: emailValid
                                           ? "checkmark.circle.fill"
                                           : "xmark.circle.fill")
                                     .font(.body)
-                                    .foregroundColor(emailValid
-                                                     ? .sSuccess
-                                                     : .sDestructive)
+                                    .foregroundStyle(emailValid
+                                                     ? Color.sSuccess
+                                                     : Color.sDestructive)
                                 }
                             }
                             .padding(.horizontal, 12)
                             .padding(.vertical, 10)
                             .background(Color.sCard)
-                            .overlay(
+                            .overlay {
                                 RoundedRectangle(cornerRadius: 8)
                                     .stroke(Color.sInput, lineWidth: 0.5)
-                            )
-                            .cornerRadius(8)
+                            }
+                            .clipShape(.rect(cornerRadius: 8))
                         }
                     }
                     .padding(.horizontal, AppSpacing.page)
@@ -124,18 +124,18 @@ struct SendEmailSheet: View {
                             HStack(spacing: 8) {
                                 if vm.isSendingEmail {
                                     ProgressView()
-                                        .tint(.sAccentFG)
+                                        .tint(Color.sAccentFG)
                                         .scaleEffect(0.8)
                                     Text("Sending...")
                                         .font(.subheadline.weight(.medium))
-                                        .foregroundColor(.sAccentFG)
+                                        .foregroundStyle(Color.sAccentFG)
                                 } else {
                                     Image(systemName: "paperplane")
                                         .font(.subheadline)
-                                        .foregroundColor(.sAccentFG)
+                                        .foregroundStyle(Color.sAccentFG)
                                     Text(isReminder ? "Send reminder" : "Send invoice")
                                         .font(.subheadline.weight(.medium))
-                                        .foregroundColor(.sAccentFG)
+                                        .foregroundStyle(Color.sAccentFG)
                                 }
                             }
                             .frame(maxWidth: .infinity)
@@ -143,7 +143,7 @@ struct SendEmailSheet: View {
                             .background(isValid && !vm.isSendingEmail
                                         ? Color.sPrimary
                                         : Color.sMuted)
-                            .cornerRadius(8)
+                            .clipShape(.rect(cornerRadius: 8))
                         }
                         .disabled(!isValid || vm.isSendingEmail)
                     }

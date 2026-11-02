@@ -139,7 +139,7 @@ struct AppFilterChip: View {
                 .padding(.horizontal, AppSpacing.row)
                 .padding(.vertical, AppSpacing.inline)
                 .background(isSelected ? Color.sAccentMuted : Color(uiColor: .secondarySystemFill), in: Capsule())
-                .overlay(Capsule().strokeBorder(isSelected ? Color.sAccent.opacity(0.4) : .clear, lineWidth: 1))
+                .overlay { Capsule().strokeBorder(isSelected ? Color.sAccent.opacity(0.4) : .clear, lineWidth: 1) }
                 .frame(minHeight: AppSpacing.minimumTarget)
                 .contentShape(Rectangle())
         }

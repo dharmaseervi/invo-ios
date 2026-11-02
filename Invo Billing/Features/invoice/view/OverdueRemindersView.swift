@@ -25,7 +25,7 @@ struct OverdueRemindersView: View {
         Group {
             if vm.isLoading && vm.groups.isEmpty {
                 ProgressView()
-                    .tint(.sAccent)
+                    .tint(Color.sAccent)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if vm.loadFailed && vm.groups.isEmpty {
                 // Not the "all paid" state: a failed fetch says nothing about what is owed.
@@ -36,7 +36,7 @@ struct OverdueRemindersView: View {
                 } actions: {
                     Button("Try again") { Task { await vm.load() } }
                         .buttonStyle(.borderedProminent)
-                        .tint(.sAccent)
+                        .tint(Color.sAccent)
                 }
             } else if vm.groups.isEmpty {
                 ContentUnavailableView(
@@ -86,7 +86,7 @@ struct OverdueRemindersView: View {
         SummaryCard(
             title: "Total overdue",
             value: Money.text(vm.totalOverdue),
-            valueColor: .sDestructive
+            valueColor: Color.sDestructive
         ) {
             Text("\(vm.groups.count) client\(vm.groups.count == 1 ? "" : "s") overdue")
                 .font(.footnote)
@@ -113,7 +113,7 @@ struct OverdueRemindersView: View {
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(.sAccent)
+                    .tint(Color.sAccent)
                     .disabled(vm.reachableCount == 0)
                 }
             }

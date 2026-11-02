@@ -39,9 +39,9 @@ struct ExpenseView: View {
                     if UserDefaults.standard.string(forKey: "startScreen") == "expenseform" { debugExpenseForm = true }
                 }
                 #endif
-                .navigationBarTitleDisplayMode(.large)
+                .navigationBarTitleDisplayMode(.inline)
                 .searchable(text: $vm.searchText, prompt: "Search expenses")
-                .onChange(of: vm.searchText) { _ in
+                .onChange(of: vm.searchText) {
                     searchTask?.cancel()
                     searchTask = Task {
                         try? await Task.sleep(nanoseconds: 300_000_000)
@@ -58,7 +58,7 @@ struct ExpenseView: View {
                                 Image(systemName: hasActiveFilter
                                       ? "line.3.horizontal.decrease.circle.fill"
                                       : "line.3.horizontal.decrease.circle")
-                                    .foregroundStyle(hasActiveFilter ? Color.sAccent : .secondary)
+                                    .foregroundStyle(hasActiveFilter ? Color.sAccent : Color.primary)
                             }
                             NavigationLink {
                                 ExpenseFormView()
@@ -96,7 +96,7 @@ struct ExpenseView: View {
     private var contentArea: some View {
         if vm.isLoading && vm.expenses.isEmpty {
             VStack(spacing: 12) {
-                ProgressView().tint(.sAccent)
+                ProgressView().tint(Color.sAccent)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
@@ -138,11 +138,11 @@ struct ExpenseView: View {
                             } label: {
                                 Text("Add expense")
                                     .font(.subheadline.weight(.semibold))
-                                    .foregroundColor(.sAccentFG)
+                                    .foregroundStyle(Color.sAccentFG)
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 14)
                                     .background(Color.sPrimary)
-                                    .cornerRadius(10)
+                                    .clipShape(.rect(cornerRadius: 10))
                             }
                             .padding(.top, 4)
                         }
@@ -173,7 +173,7 @@ struct ExpenseView: View {
                     }
 
                     if vm.isLoadingMore {
-                        HStack { Spacer(); ProgressView().tint(.sAccent); Spacer() }
+                        HStack { Spacer(); ProgressView().tint(Color.sAccent); Spacer() }
                             .padding(.vertical, 12)
                             .listRowSeparator(.hidden)
                             .listRowBackground(Color.clear)
@@ -197,16 +197,47 @@ struct ExpenseView: View {
         }
     }
 
+    private func scopeDate(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.dateFormat = "d MMM yyyy"
+        f.locale = Locale(identifier: "en_IN")
+        f.calendar = Calendar(identifier: .gregorian)
+        return f.string(from: date)
+    }
+
+    private var scopeLabel: String {
+        switch (vm.filterFrom, vm.filterTo) {
+        case (let from?, let to?): return "\(scopeDate(from)) – \(scopeDate(to))"
+        case (let from?, nil):     return "From \(scopeDate(from))"
+        case (nil, let to?):       return "To \(scopeDate(to))"
+        default:                   return "All time"
+        }
+    }
+
     private var overviewSection: some View {
         SummaryCard(
             title: "Total spent",
-            value: vm.summaryFailed ? "—" : Money.text(totalAmount),
-            stats: [
-                .init(label: "Expenses", value: vm.summaryFailed ? "—" : "\(vm.summary.count)"),
-                .init(label: "Average", value: vm.summaryFailed ? "—" : Money.text(averageAmount)),
-                .init(label: "Latest", value: vm.expenses.first.map { AppDate.shortText(fromWire: $0.date) } ?? "—")
-            ]
-        )
+            value: vm.summaryFailed ? "—" : Money.text(totalAmount)
+        ) {
+            if vm.summaryFailed {
+                Button("Retry") { Task { await vm.fetchExpenses() } }
+                    .font(.footnote)
+                    .tint(Color.sAccent)
+            } else {
+                HStack(spacing: AppSpacing.compact) {
+                    let count = vm.summary.count
+                    Text(count == 1 ? "1 expense" : "\(count) expenses")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    Text("·")
+                        .font(.footnote)
+                        .foregroundStyle(.tertiary)
+                    Text(scopeLabel)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
     }
 
     private var filterChipsRow: some View {
@@ -255,9 +286,9 @@ struct ExpenseView: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 5)
-        .background(Color(UIColor.secondarySystemGroupedBackground))
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(UIColor.separator), lineWidth: 0.5))
-        .cornerRadius(14)
+        .background(Color.sCard)
+        .overlay { RoundedRectangle(cornerRadius: 14).stroke(Color.sBorder, lineWidth: 0.5) }
+        .clipShape(.rect(cornerRadius: 14))
     }
 
     private func chipDate(_ date: Date) -> String {
@@ -300,24 +331,24 @@ struct ExpenseFilterSheet: View {
                         }
                     }
                     .pickerStyle(.menu)
-                    .tint(.sAccent)
+                    .tint(Color.sAccent)
                 }
 
                 Section("Date range") {
                     Toggle("From", isOn: $fromEnabled)
-                        .tint(.sAccent)
+                        .tint(Color.sAccent)
                     if fromEnabled {
                         DatePicker("", selection: $localFrom, displayedComponents: .date)
                             .datePickerStyle(.compact)
-                            .tint(.sAccent)
+                            .tint(Color.sAccent)
                             .labelsHidden()
                     }
                     Toggle("To", isOn: $toEnabled)
-                        .tint(.sAccent)
+                        .tint(Color.sAccent)
                     if toEnabled {
                         DatePicker("", selection: $localTo, displayedComponents: .date)
                             .datePickerStyle(.compact)
-                            .tint(.sAccent)
+                            .tint(Color.sAccent)
                             .labelsHidden()
                     }
                 }
@@ -367,7 +398,7 @@ struct ExpenseRowContent: View {
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
                             .background(Color.sAccent.opacity(0.1))
-                            .cornerRadius(4)
+                            .clipShape(.rect(cornerRadius: 4))
                     }
                 }
             }
@@ -408,21 +439,21 @@ struct ExpenseRowWithActions: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(expense.name)
                     .font(.subheadline.weight(.medium))
-                    .foregroundColor(.sForeground)
+                    .foregroundStyle(Color.sForeground)
                     .lineLimit(1)
 
                 HStack(spacing: 6) {
                     Text(formatDate(expense.date))
                         .font(.caption)
-                        .foregroundColor(.sMutedFG)
+                        .foregroundStyle(Color.sMutedFG)
                     if let cat = expense.category, !cat.isEmpty {
                         Text(cat)
                             .font(.caption.weight(.medium))
-                            .foregroundColor(.sAccent)
+                            .foregroundStyle(Color.sAccent)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
                             .background(Color.sAccent.opacity(0.1))
-                            .cornerRadius(4)
+                            .clipShape(.rect(cornerRadius: 4))
                     }
                 }
             }
@@ -432,12 +463,12 @@ struct ExpenseRowWithActions: View {
             VStack(alignment: .trailing, spacing: 4) {
                 Text(Money.text(expense.amount)).moneyLine()
                     .font(.subheadline.weight(.semibold))
-                    .foregroundColor(.sForeground)
+                    .foregroundStyle(Color.sForeground)
 
                 if let description = expense.description, !description.isEmpty {
                     Text(description)
                         .font(.caption)
-                        .foregroundColor(.sMutedFG)
+                        .foregroundStyle(Color.sMutedFG)
                         .lineLimit(1)
                 }
             }
@@ -450,17 +481,17 @@ struct ExpenseRowWithActions: View {
             } label: {
                 Image(systemName: "ellipsis")
                     .rotationEffect(.degrees(90))
-                    .foregroundColor(.sMutedFG)
+                    .foregroundStyle(Color.sMutedFG)
                     .frame(width: 28, height: 28)
             }
         }
         .padding(14)
         .background(Color.sCard)
-        .overlay(
+        .overlay {
             RoundedRectangle(cornerRadius: 10)
                 .stroke(Color.sBorder, lineWidth: 0.5)
-        )
-        .cornerRadius(10)
+        }
+        .clipShape(.rect(cornerRadius: 10))
     }
 
     private func formatDate(_ raw: String) -> String {
@@ -476,15 +507,15 @@ struct EmptyExpenseView: View {
 
             Image(systemName: "tray")
                 .font(.scaled(40))
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
 
             Text("No expenses")
                 .font(.subheadline.weight(.semibold))
-                .foregroundColor(.sForeground)
+                .foregroundStyle(Color.sForeground)
 
             Text("Add your first expense to get started")
                 .font(.subheadline)
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
                 .multilineTextAlignment(.center)
 
             NavigationLink {
@@ -492,11 +523,11 @@ struct EmptyExpenseView: View {
             } label: {
                 Text("Add expense")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundColor(.sAccentFG)
+                    .foregroundStyle(Color.sAccentFG)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
                     .background(Color.sPrimary)
-                    .cornerRadius(10)
+                    .clipShape(.rect(cornerRadius: 10))
             }
             .padding(.top, 4)
 

@@ -180,7 +180,6 @@ final class StockReportViewModel: ObservableObject {
             let message = readableMessage(for: error)
             if report == nil {
                 errorMessage = message
-                showAlert = true
             } else {
                 refreshFailure = message
             }

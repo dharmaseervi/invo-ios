@@ -164,6 +164,31 @@ struct InvoiceView: View {
     private var contentArea: some View {
         if isFirstLoad {
             loadingView
+        } else if let error = vm.listError, vm.invoices.isEmpty {
+            GeometryReader { proxy in
+                ScrollView {
+                    VStack(spacing: 10) {
+                        Image(systemName: "exclamationmark.triangle")
+                            .font(.title2)
+                            .foregroundStyle(Color.sDestructive)
+                        Text("Couldn't load invoices")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.primary)
+                        Text(error)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 32)
+                        Button("Try again") { Task { await vm.fetchInvoices(companyID: SessionManager.shared.selectedCompanyId) } }
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(Color.sAccent)
+                            .padding(.top, 4)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: proxy.size.height)
+                    .padding(24)
+                }
+                .refreshable { await vm.fetchInvoices(companyID: SessionManager.shared.selectedCompanyId) }
+            }
         } else {
             List {
                 // Summary card scrolls with the list
@@ -183,7 +208,7 @@ struct InvoiceView: View {
 
                 // Invoice rows
                 if vm.isFetchingList && vm.invoices.isEmpty {
-                    HStack { Spacer(); ProgressView().tint(.sAccent); Spacer() }
+                    HStack { Spacer(); ProgressView().tint(Color.sAccent); Spacer() }
                         .padding(.vertical, 40)
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
@@ -197,7 +222,7 @@ struct InvoiceView: View {
                     }
 
                     if vm.isLoadingMoreInvoices {
-                        HStack { Spacer(); ProgressView().tint(.sAccent); Spacer() }
+                        HStack { Spacer(); ProgressView().tint(Color.sAccent); Spacer() }
                             .listRowSeparator(.hidden)
                             .listRowBackground(Color.clear)
                     } else if vm.loadMoreFailed {
@@ -220,7 +245,7 @@ struct InvoiceView: View {
             .refreshable { await reload() }
             .opacity(appearAnimation ? 1 : 0)
             .overlay(alignment: .top) {
-                if vm.isFetchingList {
+                if vm.isFetchingList && !vm.invoices.isEmpty {
                     ProgressView()
                         .padding(8)
                         .background(.ultraThinMaterial, in: Capsule())
@@ -297,11 +322,38 @@ struct InvoiceView: View {
     private var filterRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: AppSpacing.inline) {
-                ForEach(InvoiceFilter.allCases, id: \.self) { filter in
+                let primaryFilters: [InvoiceFilter] = [.all, .paid, .draft, .overdue]
+                ForEach(primaryFilters, id: \.self) { filter in
                     AppFilterChip(title: filterLabel(filter), isSelected: selectedFilter == filter) {
                         selectedFilter = filter
                     }
                 }
+                let secondaryFilters: [InvoiceFilter] = [.partial, .issued]
+                let secondarySelected = secondaryFilters.contains(selectedFilter)
+                Menu {
+                    ForEach(secondaryFilters, id: \.self) { filter in
+                        Button {
+                            selectedFilter = filter
+                        } label: {
+                            if selectedFilter == filter {
+                                Label(filterLabel(filter), systemImage: "checkmark")
+                            } else {
+                                Text(filterLabel(filter))
+                            }
+                        }
+                    }
+                } label: {
+                    Text(secondarySelected ? filterLabel(selectedFilter) : "More")
+                        .font(.subheadline.weight(secondarySelected ? .semibold : .regular))
+                        .foregroundStyle(secondarySelected ? Color.sAccent : Color.sForeground)
+                        .padding(.horizontal, AppSpacing.row)
+                        .padding(.vertical, AppSpacing.inline)
+                        .background(secondarySelected ? Color.sAccentMuted : Color(uiColor: .secondarySystemFill), in: Capsule())
+                        .overlay { Capsule().strokeBorder(secondarySelected ? Color.sAccent.opacity(0.4) : .clear, lineWidth: 1) }
+                        .frame(minHeight: AppSpacing.minimumTarget)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
             }
             .padding(.horizontal, AppSpacing.page)
         }
@@ -354,16 +406,9 @@ struct InvoiceView: View {
                 }
             }
 
-            Divider()
-
-            AdaptiveStatRow(stats: [
-                .init(label: "Total", value: vm.summaryFailed ? "—" : "\(vm.summary.total)"),
-                .init(label: "Paid", value: vm.summaryFailed ? "—" : "\(paidCount)"),
-                .init(label: "Drafts", value: vm.summaryFailed ? "—" : "\(draftCount)")
-            ])
         }
         .padding(12)
-        .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
+        .background(Color.sCard, in: RoundedRectangle(cornerRadius: 16))
     }
 
     // MARK: - Empty state (as a list row so it scrolls with the page)
@@ -397,7 +442,7 @@ struct InvoiceView: View {
                             .fill(Color(UIColor.secondarySystemFill))
                             .frame(width: 140, height: 14)
                         RoundedRectangle(cornerRadius: 4)
-                            .fill(Color(UIColor.tertiarySystemFill))
+                            .fill(Color.sMuted)
                             .frame(width: 100, height: 11)
                     }
                     Spacer()
@@ -406,12 +451,12 @@ struct InvoiceView: View {
                             .fill(Color(UIColor.secondarySystemFill))
                             .frame(width: 60, height: 14)
                         RoundedRectangle(cornerRadius: 4)
-                            .fill(Color(UIColor.tertiarySystemFill))
+                            .fill(Color.sMuted)
                             .frame(width: 44, height: 11)
                     }
                 }
                 .padding(.vertical, 4)
-                .listRowSeparatorTint(Color(UIColor.separator))
+                .listRowSeparatorTint(Color.sBorder)
                 .shimmer()
             }
         }
@@ -436,7 +481,7 @@ struct InvoiceView: View {
         }
         .padding()
         .background(.regularMaterial)
-        .overlay(Divider(), alignment: .top)
+        .overlay(alignment: .top) { Divider() }
     }
 
 }
@@ -469,19 +514,19 @@ struct InvoiceRow: View {
                     from: Calendar.current.startOfDay(for: due),
                     to: Calendar.current.startOfDay(for: Date())
                 ).day ?? 0)
-                return (days <= 1 ? "1d overdue" : "\(days)d overdue", .sDestructive)
+                return (days <= 1 ? "1d overdue" : "\(days)d overdue", Color.sDestructive)
             }
-            return ("Overdue", .sDestructive)
+            return ("Overdue", Color.sDestructive)
         }
         switch invoice.status {
-        case .paid:      return ("Paid",      .sSuccess)
-        case .pending:   return ("Pending",   .sWarning)
-        case .partial:   return ("Partial",   .sWarning)
-        case .draft:     return ("Draft",     .sNeutral)
+        case .paid:      return ("Paid",      Color.sSuccess)
+        case .pending:   return ("Pending",   Color.sWarning)
+        case .partial:   return ("Part paid", Color.sWarning)
+        case .draft:     return ("Draft",     Color.sNeutral)
         case .issued:    return ("Issued",    Color.sAccent)
-        case .cancelled: return ("Cancelled", .sNeutral)
-        case .sent:      return ("Sent",      .sNeutral)
-        case .overdue:   return ("Overdue",   .sDestructive)
+        case .cancelled: return ("Cancelled", Color.sNeutral)
+        case .sent:      return ("Sent",      Color.sNeutral)
+        case .overdue:   return ("Overdue",   Color.sDestructive)
         }
     }
 
@@ -550,7 +595,7 @@ struct InvoiceRow: View {
 
     private var amountAndStatus: some View {
         VStack(alignment: textSize.isAccessibilitySize ? .leading : .trailing, spacing: AppSpacing.compact) {
-            Text("\(invoice.status.acceptsPayment ? "Due" : "Total") \(Money.text(invoice.status.acceptsPayment ? invoice.remaining_amount : invoice.total))")
+            Text(invoice.status.acceptsPayment ? "Due \(Money.text(invoice.remaining_amount))" : Money.text(invoice.total))
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.primary)
                 .monospacedDigit()

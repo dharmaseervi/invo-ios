@@ -157,7 +157,7 @@ struct RecordPurchaseBillSheet: View {
             Section("Supplier") {
                 Button { showSupplierPicker = true } label: {
                     LabeledContent("Supplier", value: selectedSupplier?.name ?? "Choose supplier")
-                }.tint(.sAccent)
+                }.tint(Color.sAccent)
                 TextField("Supplier invoice number", text: $billNumber)
                     .autocorrectionDisabled()
                 DatePicker("Bill date", selection: $billDate, displayedComponents: .date)
@@ -175,7 +175,7 @@ struct RecordPurchaseBillSheet: View {
                     if !invoiceAmount.isEmpty && (invoiceAmountValue ?? 0) <= 0 {
                         Text("Enter an amount greater than zero, using digits and up to two decimal places.")
                             .font(.footnote)
-                            .foregroundColor(.sDestructive)
+                            .foregroundStyle(Color.sDestructive)
                     }
                 } header: {
                     Text("Invoice amount")
@@ -189,12 +189,12 @@ struct RecordPurchaseBillSheet: View {
                             Text(line.item.name)
                                 .font(.subheadline.weight(.medium))
                             AdaptiveFormRow {
-                                Text("Qty").font(.footnote).foregroundColor(.sMutedFG)
+                                Text("Qty").font(.footnote).foregroundStyle(Color.sMutedFG)
                                 TextField("0", text: $line.qty)
                                     .keyboardType(.numberPad)
                                     .accessibilityLabel("Quantity for \(line.item.name)")
                                     .frame(minWidth: 60)
-                                Text("Rate").font(.footnote).foregroundColor(.sMutedFG)
+                                Text("Rate").font(.footnote).foregroundStyle(Color.sMutedFG)
                                 TextField("0.00", text: $line.rate)
                                     .keyboardType(.decimalPad)
                                     .accessibilityLabel("Rate for \(line.item.name)")
@@ -245,15 +245,15 @@ struct RecordPurchaseBillSheet: View {
                     if parsedPaid == nil {
                         Text("Enter a valid paid amount, or leave blank if unpaid.")
                             .font(.footnote)
-                            .foregroundColor(.sDestructive)
+                            .foregroundStyle(Color.sDestructive)
                     } else if paidValue > total + 0.004 {
                         Text("That's more than the bill comes to.")
                             .font(.footnote)
-                            .foregroundColor(.sDestructive)
+                            .foregroundStyle(Color.sDestructive)
                     } else if total - paidValue > 0 {
                         Text("\(Money.text(total - paidValue)) will be owed to this supplier.")
                             .font(.footnote)
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                     }
                 }
             }
@@ -264,7 +264,7 @@ struct RecordPurchaseBillSheet: View {
 
             if let error = vm.errorMessage {
                 Section {
-                    Text(error).foregroundColor(.sDestructive)
+                    Text(error).foregroundStyle(Color.sDestructive)
                 }
             }
         }
@@ -353,10 +353,10 @@ struct PurchaseItemPicker: View {
                         dismiss()
                     } label: {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(item.name).foregroundColor(.sForeground)
+                            Text(item.name).foregroundStyle(Color.sForeground)
                             Text("\(item.quantity) in stock · last cost \(Money.text(item.cost_price ?? 0))")
                                 .font(.footnote)
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
                         }
                     }
                     .task { await itemVM.loadMoreIfNeeded(currentItem: item) }

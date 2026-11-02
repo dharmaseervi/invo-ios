@@ -47,7 +47,7 @@ struct CompanyEditView: View {
                     VStack(alignment: .leading, spacing: 14) {
                         Text("Company information")
                             .font(.subheadline.weight(.medium))
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
 
                         VStack(spacing: 12) {
                             CompanyFormField(title: "Company name", placeholder: "Enter company name",
@@ -71,7 +71,7 @@ struct CompanyEditView: View {
                     VStack(alignment: .leading, spacing: 14) {
                         Text("Address")
                             .font(.subheadline.weight(.medium))
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
 
                         VStack(spacing: 12) {
                             CompanyFormFieldMultiline(title: "Street address",
@@ -99,21 +99,21 @@ struct CompanyEditView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Invoice number prefix")
                                 .font(.subheadline.weight(.medium))
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
                             Text("Used when generating invoice numbers, e.g. \"INV\" → INV/2025-26/0001.")
                                 .font(.caption)
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
                         }
                         TextField("INV", text: $invoicePrefix)
                             .font(.body)
-                            .foregroundColor(.sForeground)
+                            .foregroundStyle(Color.sForeground)
                             .textInputAutocapitalization(.characters)
                             .autocorrectionDisabled()
                             .padding(.horizontal, 12)
                             .padding(.vertical, 10)
                             .background(Color.sCard)
-                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.sInput, lineWidth: 0.5))
-                            .cornerRadius(8)
+                            .overlay { RoundedRectangle(cornerRadius: 8).stroke(Color.sInput, lineWidth: 0.5) }
+                            .clipShape(.rect(cornerRadius: 8))
                             .focused($focused, equals: .prefix)
                     }
 
@@ -122,21 +122,21 @@ struct CompanyEditView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Invoice footer")
                                 .font(.subheadline.weight(.medium))
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
                             Text("Appears at the bottom of every invoice PDF — bank details, T&C, or a thank-you note.")
                                 .font(.caption)
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
                         }
 
                         TextEditor(text: $invoiceFooter)
                             .font(.subheadline)
-                            .foregroundColor(.sForeground)
+                            .foregroundStyle(Color.sForeground)
                             .scrollContentBackground(.hidden)
                             .frame(minHeight: 90)
                             .padding(10)
                             .background(Color.sCard)
-                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.sInput, lineWidth: 0.5))
-                            .cornerRadius(8)
+                            .overlay { RoundedRectangle(cornerRadius: 8).stroke(Color.sInput, lineWidth: 0.5) }
+                            .clipShape(.rect(cornerRadius: 8))
                             .focused($focused, equals: .footer)
                     }
 
@@ -147,7 +147,7 @@ struct CompanyEditView: View {
                         } label: {
                             HStack(spacing: 8) {
                                 if isSaving {
-                                    ProgressView().tint(.sAccentFG).scaleEffect(0.85)
+                                    ProgressView().tint(Color.sAccentFG).scaleEffect(0.85)
                                 } else {
                                     Image(systemName: "checkmark.circle.fill")
                                         .font(.subheadline.weight(.semibold))
@@ -155,11 +155,11 @@ struct CompanyEditView: View {
                                         .font(.subheadline.weight(.semibold))
                                 }
                             }
-                            .foregroundColor(.sAccentFG)
+                            .foregroundStyle(Color.sAccentFG)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
                             .background(isValid ? Color.sPrimary : Color.sPrimary.opacity(0.4))
-                            .cornerRadius(10)
+                            .clipShape(.rect(cornerRadius: 10))
                         }
                         .disabled(isSaving || !isValid)
 
@@ -168,10 +168,10 @@ struct CompanyEditView: View {
                                 .font(.subheadline.weight(.medium))
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 14)
-                                .foregroundColor(.sForeground)
+                                .foregroundStyle(Color.sForeground)
                                 .background(Color.sCard)
-                                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5))
-                                .cornerRadius(10)
+                                .overlay { RoundedRectangle(cornerRadius: 10).stroke(Color.sBorder, lineWidth: 0.5) }
+                                .clipShape(.rect(cornerRadius: 10))
                         }
                         .disabled(isSaving)
                     }

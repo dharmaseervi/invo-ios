@@ -36,19 +36,23 @@ struct PaymentsView: View {
                         Button("Retry") { Task { await vm.load() } }
                     }
                 }
-                ForEach(vm.payments) { payment in
-                    NavigationLink {
-                        PaymentHistoryDetailView(payment: payment, vm: vm,
-                            reverse: { reversing = $0 }, move: { moving = $0 }, refund: { refunding = $0 })
-                    } label: { paymentRow(payment) }
-                    .standardListRow()
-                    .swipeActions(edge: .trailing) {
-                        if !payment.isReversed {
-                            Button("Reverse") { reversing = payment }.tint(.red)
-                            if payment.canMove { Button("Move") { moving = payment }.tint(.sAccent) }
+                ForEach(groupedPayments, id: \.date) { group in
+                    Section(AppDate.text(fromWire: group.date)) {
+                        ForEach(group.rows) { payment in
+                            NavigationLink {
+                                PaymentHistoryDetailView(payment: payment, vm: vm,
+                                    reverse: { reversing = $0 }, move: { moving = $0 }, refund: { refunding = $0 })
+                            } label: { paymentRow(payment) }
+                            .standardListRow()
+                            .swipeActions(edge: .trailing) {
+                                if !payment.isReversed {
+                                    Button("Reverse") { reversing = payment }.tint(.red)
+                                    if payment.canMove { Button("Move") { moving = payment }.tint(Color.sAccent) }
+                                }
+                            }
+                            .task { await vm.loadMoreIfNeeded(currentItem: payment) }
                         }
                     }
-                    .task { await vm.loadMoreIfNeeded(currentItem: payment) }
                 }
                 if vm.isLoadingMore { ProgressView("Loading more payments…") }
                 if vm.loadMoreFailed {
@@ -64,7 +68,13 @@ struct PaymentsView: View {
         .searchable(text: $vm.search, prompt: "Client, invoice or reference")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button { showFilters = true } label: { Label("Filter payments", systemImage: "line.3.horizontal.decrease") }
+                Button { showFilters = true } label: {
+                    Image(systemName: vm.hasFilters
+                        ? "line.3.horizontal.decrease.circle.fill"
+                        : "line.3.horizontal.decrease.circle")
+                        .foregroundStyle(vm.hasFilters ? Color.sAccent : Color.primary)
+                }
+                .accessibilityLabel(vm.hasFilters ? "Filters active — tap to change" : "Filter payments")
             }
         }
         .task(id: "\(session.selectedCompanyId ?? 0):\(vm.query)") { await vm.load(debounce: true) }
@@ -98,25 +108,91 @@ struct PaymentsView: View {
         }
     }
 
+    private func formattedMethod(_ raw: String) -> String {
+        switch raw.lowercased() {
+        case "upi":           return "UPI"
+        case "cash":          return "Cash"
+        case "bank_transfer": return "Bank transfer"
+        case "cheque":        return "Cheque"
+        case "card":          return "Card"
+        default:              return raw
+        }
+    }
+
+    private var groupedPayments: [(date: String, rows: [PaymentHistoryRow])] {
+        var seenDates = [String]()
+        var grouped = [String: [PaymentHistoryRow]]()
+        for payment in vm.payments {
+            let dateKey = String(payment.payment_date.prefix(10))
+            if grouped[dateKey] == nil {
+                seenDates.append(dateKey)
+                grouped[dateKey] = []
+            }
+            grouped[dateKey]!.append(payment)
+        }
+        return seenDates.map { (date: $0, rows: grouped[$0]!) }
+    }
+
     private func paymentRow(_ payment: PaymentHistoryRow) -> some View {
-        AdaptiveFormRow {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(payment.client_name.isEmpty ? "Client" : payment.client_name).font(.body.weight(.medium))
-                Text("\(AppDate.text(fromWire: payment.payment_date)) · \(payment.payment_method)")
-                    .font(.footnote).foregroundStyle(.secondary)
-                if !payment.reference.isEmpty { Text(payment.reference).font(.footnote).foregroundStyle(.secondary).lineLimit(2) }
-                if payment.isReversed { Label("Reversed", systemImage: "arrow.uturn.backward").font(.caption).foregroundStyle(Color.sDestructive) }
-            }.frame(maxWidth: .infinity, alignment: .leading)
-            VStack(alignment: .leading, spacing: 4) {
-                Text(Money.text(payment.amount)).font(.subheadline.weight(.semibold)).moneyLine()
-                Text("Money received").font(.caption).foregroundStyle(.secondary)
-                if payment.taxWithheld > 0 {
-                    Text("TDS \(Money.text(payment.taxWithheld))").font(.footnote).foregroundStyle(.secondary)
+        let nums = payment.invoices.map(\.invoice_number).filter { !$0.isEmpty }
+        let invoiceRef: String = {
+            if !nums.isEmpty {
+                if nums.count == 1 { return nums[0] }
+                if nums.count == 2 { return "\(nums[0]), \(nums[1])" }
+                return "Multiple invoices"
+            }
+            return payment.reference
+        }()
+        let subtitleParts = [formattedMethod(payment.payment_method),
+                             invoiceRef.isEmpty ? nil : invoiceRef]
+            .compactMap { $0 }
+        return HStack(alignment: .top, spacing: AppSpacing.row) {
+            VStack(alignment: .leading, spacing: AppSpacing.compact) {
+                Text(payment.client_name.isEmpty ? "Client" : payment.client_name)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.primary)
+                if !subtitleParts.isEmpty {
+                    Text(subtitleParts.joined(separator: " · "))
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
-                if !payment.isReversed && payment.onAccount > 0 {
-                    Text("\(Money.text(payment.onAccount)) on account").font(.caption).foregroundStyle(Color.sAccent)
+                if payment.isReversed {
+                    Label("Reversed", systemImage: "arrow.uturn.backward")
+                        .font(.caption)
+                        .foregroundStyle(Color.sDestructive)
                 }
             }
+            Spacer(minLength: AppSpacing.inline)
+            VStack(alignment: .trailing, spacing: AppSpacing.compact) {
+                Text(Money.text(payment.amount)).moneyLine()
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(payment.isReversed ? .secondary : .primary)
+                    .monospacedDigit()
+                if payment.isReversed {
+                    Text("Reversed")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(Color.sDestructive)
+                        .padding(.horizontal, AppSpacing.inline)
+                        .padding(.vertical, AppSpacing.compact)
+                        .background(Color.sDestructive.opacity(0.1), in: Capsule())
+                } else {
+                    Text("Received")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                if payment.taxWithheld > 0 {
+                    Text("TDS \(Money.text(payment.taxWithheld))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                if !payment.isReversed && payment.onAccount > 0 {
+                    Text("\(Money.text(payment.onAccount)) on account")
+                        .font(.caption)
+                        .foregroundStyle(Color.sAccent)
+                }
+            }
+            .frame(minWidth: 88, alignment: .trailing)
         }
     }
 }
@@ -294,18 +370,18 @@ private struct MovePaymentSheet: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("\(Money.text(payment.amount)) from \(payment.client_name)")
                             .font(.subheadline.weight(.semibold))
-                            .foregroundColor(.sForeground)
+                            .foregroundStyle(Color.sForeground)
                         Text("Put it against the invoices it should have paid. Anything left over stays on the customer's account.")
                             .font(.footnote)
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                     }
 
                     if vm.isLoadingInvoices {
-                        ProgressView().tint(.sAccent).frame(maxWidth: .infinity)
+                        ProgressView().tint(Color.sAccent).frame(maxWidth: .infinity)
                     } else if vm.movableInvoices.isEmpty {
                         Text("This customer has nothing outstanding. Moving it now leaves the whole payment on their account.")
                             .font(.footnote)
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                     }
 
                     ForEach(vm.movableInvoices) { invoice in
@@ -313,10 +389,10 @@ private struct MovePaymentSheet: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(invoice.invoiceNumber)
                                     .font(.subheadline.weight(.medium))
-                                    .foregroundColor(.sForeground)
+                                    .foregroundStyle(Color.sForeground)
                                 Text("\(Money.text(invoice.remainingAmount)) owing")
                                     .font(.footnote)
-                                    .foregroundColor(.sMutedFG)
+                                    .foregroundStyle(Color.sMutedFG)
                             }
                             Spacer()
                             TextField("0", text: Binding(
@@ -328,21 +404,21 @@ private struct MovePaymentSheet: View {
                             .frame(width: 90)
                             .padding(8)
                             .background(Color.sInput.opacity(0.5))
-                            .cornerRadius(8)
+                            .clipShape(.rect(cornerRadius: 8))
                         }
                         .padding(12)
                         .background(Color.sCard)
-                        .cornerRadius(12)
+                        .clipShape(.rect(cornerRadius: 12))
                     }
 
                     if overAllocated {
                         Text("That's more than the payment is for.")
                             .font(.footnote)
-                            .foregroundColor(.sDestructive)
+                            .foregroundStyle(Color.sDestructive)
                     } else if leftOver > 0 {
                         Text("\(Money.text(leftOver)) will stay on the customer's account.")
                             .font(.footnote)
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                     }
 
                     Button {
@@ -356,11 +432,11 @@ private struct MovePaymentSheet: View {
                     } label: {
                         Text("Save")
                             .font(.subheadline.weight(.semibold))
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
                             .background(overAllocated ? Color.sMutedFG.opacity(0.4) : Color.sAccent)
-                            .cornerRadius(12)
+                            .clipShape(.rect(cornerRadius: 12))
                     }
                     .disabled(overAllocated || vm.isWorking || vm.isLoadingInvoices || !payment.canMove || amounts.values.contains { !$0.isEmpty && Money.parse($0) == nil })
                 }
@@ -410,23 +486,23 @@ private struct RefundSheet: View {
                 VStack(alignment: .leading, spacing: 14) {
                     Text("Returning money to \(clientName)")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundColor(.sForeground)
+                        .foregroundStyle(Color.sForeground)
 
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Amount")
                             .font(.footnote)
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                         TextField("0.00", text: $amount)
                             .keyboardType(.decimalPad)
                             .padding(12)
                             .background(Color.sInput.opacity(0.5))
-                            .cornerRadius(10)
+                            .clipShape(.rect(cornerRadius: 10))
                     }
 
                     VStack(alignment: .leading, spacing: 6) {
                         Text("How")
                             .font(.footnote)
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                         Picker("Payment method", selection: $method) {
                             ForEach(methods, id: \.self) { Text($0).tag($0) }
                         }
@@ -436,11 +512,11 @@ private struct RefundSheet: View {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Reference (optional)")
                             .font(.footnote)
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                         TextField("UPI reference, cheque number…", text: $reference)
                             .padding(12)
                             .background(Color.sInput.opacity(0.5))
-                            .cornerRadius(10)
+                            .clipShape(.rect(cornerRadius: 10))
                     }
 
                     Button {
@@ -460,11 +536,11 @@ private struct RefundSheet: View {
                     } label: {
                         Text("Record refund")
                             .font(.subheadline.weight(.semibold))
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
                             .background((Money.parse(amount) ?? 0) > 0 ? Color.sAccent : Color.sMutedFG.opacity(0.4))
-                            .cornerRadius(12)
+                            .clipShape(.rect(cornerRadius: 12))
                     }
                     .disabled((Money.parse(amount) ?? 0) <= 0 || vm.isWorking)
                 }

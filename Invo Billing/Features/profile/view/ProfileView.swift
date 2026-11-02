@@ -21,19 +21,19 @@ struct ProfileView: View {
                                 VStack(spacing: 20) {
                                     Text(String(profile.email.prefix(1)).uppercased())
                                         .font(.title.weight(.semibold))
-                                        .foregroundColor(.sAccentFG)
+                                        .foregroundStyle(Color.sAccentFG)
                                         .frame(width: 76, height: 76)
                                         .background(Color.sAccent)
-                                        .cornerRadius(16)
+                                        .clipShape(.rect(cornerRadius: 16))
 
                                     VStack(spacing: 4) {
                                         Text(profile.email)
                                             .font(.subheadline.weight(.semibold))
-                                            .foregroundColor(.sForeground)
+                                            .foregroundStyle(Color.sForeground)
 
                                         Text("User Account")
                                             .font(.footnote)
-                                            .foregroundColor(.sMutedFG)
+                                            .foregroundStyle(Color.sMutedFG)
                                     }
                                 }
                                 .frame(maxWidth: .infinity)
@@ -43,7 +43,7 @@ struct ProfileView: View {
                                 VStack(alignment: .leading, spacing: 10) {
                                     Text("Account information")
                                         .font(.subheadline.weight(.medium))
-                                        .foregroundColor(.sMutedFG)
+                                        .foregroundStyle(Color.sMutedFG)
 
                                     VStack(spacing: 0) {
                                         ProfileRowZara(label: "Email", value: profile.email)
@@ -52,8 +52,8 @@ struct ProfileView: View {
                                     }
                                     .padding(.horizontal, 14)
                                     .background(Color.sCard)
-                                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
-                                    .cornerRadius(12)
+                                    .overlay { RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5) }
+                                    .clipShape(.rect(cornerRadius: 12))
                                 }
                                 .padding(.horizontal, AppSpacing.page)
                                 .padding(.bottom, 24)
@@ -62,12 +62,12 @@ struct ProfileView: View {
                                 VStack(alignment: .leading, spacing: 10) {
                                     Text("Account status")
                                         .font(.subheadline.weight(.medium))
-                                        .foregroundColor(.sMutedFG)
+                                        .foregroundStyle(Color.sMutedFG)
 
                                     HStack {
                                         Text("Status")
                                             .font(.subheadline)
-                                            .foregroundColor(.sForeground)
+                                            .foregroundStyle(Color.sForeground)
 
                                         Spacer()
 
@@ -78,13 +78,13 @@ struct ProfileView: View {
 
                                             Text("Active")
                                                 .font(.subheadline)
-                                                .foregroundColor(.sForeground)
+                                                .foregroundStyle(Color.sForeground)
                                         }
                                     }
                                     .padding(14)
                                     .background(Color.sCard)
-                                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5))
-                                    .cornerRadius(12)
+                                    .overlay { RoundedRectangle(cornerRadius: 12).stroke(Color.sBorder, lineWidth: 0.5) }
+                                    .clipShape(.rect(cornerRadius: 12))
                                 }
                                 .padding(.horizontal, AppSpacing.page)
                                 .padding(.bottom, 24)
@@ -98,11 +98,11 @@ struct ProfileView: View {
                                             .font(.subheadline.weight(.semibold))
                                             .frame(maxWidth: .infinity)
                                             .padding(.vertical, 14)
-                                            .foregroundColor(.sDestructive)
-                                            .overlay(
+                                            .foregroundStyle(Color.sDestructive)
+                                            .overlay {
                                                 RoundedRectangle(cornerRadius: 10)
                                                     .stroke(Color.sDestructive, lineWidth: 0.5)
-                                            )
+                                            }
                                     }
 
                                     Button(action: { dismiss() }) {
@@ -111,8 +111,8 @@ struct ProfileView: View {
                                             .frame(maxWidth: .infinity)
                                             .padding(.vertical, 14)
                                             .background(Color.sPrimary)
-                                            .foregroundColor(.sAccentFG)
-                                            .cornerRadius(10)
+                                            .foregroundStyle(Color.sAccentFG)
+                                            .clipShape(.rect(cornerRadius: 10))
                                     }
                                 }
                                 .padding(.horizontal, AppSpacing.page)
@@ -122,11 +122,11 @@ struct ProfileView: View {
                                 VStack(spacing: 10) {
                                     Image(systemName: "exclamationmark.triangle")
                                         .font(.title)
-                                        .foregroundColor(.sDestructive)
+                                        .foregroundStyle(Color.sDestructive)
 
                                     Text(error)
                                         .font(.subheadline)
-                                        .foregroundColor(.sMutedFG)
+                                        .foregroundStyle(Color.sMutedFG)
                                         .multilineTextAlignment(.center)
                                 }
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -134,10 +134,10 @@ struct ProfileView: View {
                             } else {
                                 VStack(spacing: 12) {
                                     ProgressView()
-                                        .tint(.sAccent)
+                                        .tint(Color.sAccent)
                                     Text("Loading profile...")
                                         .font(.subheadline)
-                                        .foregroundColor(.sMutedFG)
+                                        .foregroundStyle(Color.sMutedFG)
                                 }
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                             }
@@ -161,13 +161,13 @@ struct ProfileRowZara: View {
         HStack(spacing: 0) {
             Text(label)
                 .font(.subheadline)
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
 
             Spacer()
 
             Text(value)
                 .font(.subheadline.weight(.medium))
-                .foregroundColor(.sForeground)
+                .foregroundStyle(Color.sForeground)
                 .lineLimit(1)
         }
         .padding(.vertical, 12)

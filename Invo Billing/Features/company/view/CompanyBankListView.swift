@@ -21,7 +21,7 @@ struct CompanyBankListView: View {
         Group {
             if vm.isLoading {
                 ProgressView()
-                    .tint(.sAccent)
+                    .tint(Color.sAccent)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             else if vm.banks.isEmpty {
@@ -30,7 +30,7 @@ struct CompanyBankListView: View {
                 } actions: {
                     Button("Add bank") { showForm = true }
                         .buttonStyle(.borderedProminent)
-                        .tint(.sAccent)
+                        .tint(Color.sAccent)
                 }
             }
             else {
@@ -64,11 +64,11 @@ struct CompanyBankListView: View {
                                 if bank.is_default {
                                     Text("Default")
                                         .font(.caption.weight(.medium))
-                                        .foregroundColor(.sAccent)
+                                        .foregroundStyle(Color.sAccent)
                                         .padding(.horizontal, 8)
                                         .padding(.vertical, 4)
                                         .background(Color.sAccentMuted)
-                                        .cornerRadius(6)
+                                        .clipShape(.rect(cornerRadius: 6))
                                 }
                             }
                         }

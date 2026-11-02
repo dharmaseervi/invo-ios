@@ -39,7 +39,7 @@ struct LoginView: View {
                         } label: {
                             Text("Forgot password?")
                                 .font(.footnote.weight(.medium))
-                                .foregroundColor(AuthTheme.accent)
+                                .foregroundStyle(AuthTheme.accent)
                         }
                     }
 
@@ -62,13 +62,13 @@ struct LoginView: View {
 
                     HStack(spacing: 4) {
                         Text("New to Invo Billing?")
-                            .foregroundColor(AuthTheme.muted)
+                            .foregroundStyle(AuthTheme.muted)
                         NavigationLink {
                             SignupView().environmentObject(viewModel)
                         } label: {
                             Text("Create account")
                                 .fontWeight(.semibold)
-                                .foregroundColor(AuthTheme.accent)
+                                .foregroundStyle(AuthTheme.accent)
                         }
                     }
                     .font(.subheadline)

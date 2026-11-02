@@ -20,7 +20,7 @@ struct StocktakeView: View {
         Group {
             if vm.isLoading && vm.stocktake == nil {
                 ProgressView()
-                    .tint(.sAccent)
+                    .tint(Color.sAccent)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 List {
@@ -116,18 +116,18 @@ struct StocktakeView: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(line.item_name)
                     .font(.subheadline.weight(.medium))
-                    .foregroundColor(.sForeground)
+                    .foregroundStyle(Color.sForeground)
                 Text("Books said \(line.expected) · you counted \(line.counted)")
                     .font(.footnote)
-                    .foregroundColor(.sMutedFG)
+                    .foregroundStyle(Color.sMutedFG)
             }
             Spacer(minLength: 8)
             Text(line.varianceText)
                 .font(.caption.weight(.medium))
-                .foregroundColor(line.isOff ? .sDestructive : .sSuccess)
+                .foregroundStyle(line.isOff ? Color.sDestructive : Color.sSuccess)
                 .padding(.horizontal, 7)
                 .padding(.vertical, 2)
-                .background((line.isOff ? Color.sDestructive : .sSuccess).opacity(0.1), in: Capsule())
+                .background((line.isOff ? Color.sDestructive : Color.sSuccess).opacity(0.1), in: Capsule())
         }
     }
 
@@ -139,7 +139,7 @@ struct StocktakeView: View {
             Button("Finish count") { showFinishConfirm = true }
                 .font(.subheadline.weight(.semibold))
                 .buttonStyle(.borderedProminent)
-                .tint(.sAccent)
+                .tint(Color.sAccent)
                 .disabled(vm.isWorking)
         }
         .padding(.horizontal, AppSpacing.page)
@@ -155,7 +155,7 @@ struct StocktakeView: View {
         } actions: {
             Button("Count an item") { showItemPicker = true }
                 .buttonStyle(.borderedProminent)
-                .tint(.sAccent)
+                .tint(Color.sAccent)
         }
         .padding(.vertical, 16)
     }
@@ -189,7 +189,7 @@ private struct CountItemSheet: View {
                         Text("Matches the books.")
                     } else if variance < 0 {
                         Text("\(abs(variance)) fewer than the books say.")
-                            .foregroundColor(.sDestructive)
+                            .foregroundStyle(Color.sDestructive)
                     } else {
                         Text("\(variance) more than the books say.")
                     }
@@ -236,11 +236,11 @@ private struct StocktakeItemPicker: View {
                         dismiss()
                     } label: {
                         HStack {
-                            Text(item.name).foregroundColor(.sForeground)
+                            Text(item.name).foregroundStyle(Color.sForeground)
                             Spacer()
                             Text("\(item.quantity)")
                                 .font(.subheadline)
-                                .foregroundColor(.sMutedFG)
+                                .foregroundStyle(Color.sMutedFG)
                         }
                     }
                 }

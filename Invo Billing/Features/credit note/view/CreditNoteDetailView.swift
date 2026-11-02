@@ -93,11 +93,11 @@ private extension CreditNoteDetailView {
             Text(cn.credit_number)
                 .font(.title2)
                 .tracking(1)
-                .foregroundColor(.sForeground)
+                .foregroundStyle(Color.sForeground)
             
             Text(cn.client_name)
                 .font(.subheadline)
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
             
             HStack(spacing: 8) {
                 statusBadge(cn.status)
@@ -119,10 +119,10 @@ private extension CreditNoteDetailView {
         }
         .padding(24)
         .background(Color.sMuted.opacity(0.4))
-        .overlay(
+        .overlay {
             Rectangle()
                 .stroke(Color.sBorder, lineWidth: 1)
-        )
+        }
         .padding(.horizontal, AppSpacing.page)
     }
     
@@ -131,7 +131,7 @@ private extension CreditNoteDetailView {
             
             Text("Items")
                 .font(.subheadline.weight(.medium))
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
             
             ForEach(items) { item in
                 HStack {
@@ -143,7 +143,7 @@ private extension CreditNoteDetailView {
                             "Qty \(item.qty, specifier: "%.0f") × \(Money.text(item.rate))"
                         )
                         .font(.caption)
-                        .foregroundColor(.sMutedFG)
+                        .foregroundStyle(Color.sMutedFG)
                     }
                     
                     Spacer()
@@ -158,10 +158,10 @@ private extension CreditNoteDetailView {
             }
         }
         .padding(24)
-        .overlay(
+        .overlay {
             Rectangle()
                 .stroke(Color.sBorder, lineWidth: 1)
-        )
+        }
         .padding(.horizontal, AppSpacing.page)
     }
     
@@ -179,10 +179,10 @@ private extension CreditNoteDetailView {
         }
         .padding(24)
         .background(Color.sMuted.opacity(0.4))
-        .overlay(
+        .overlay {
             Rectangle()
                 .stroke(Color.sBorder, lineWidth: 1)
-        )
+        }
         .padding(.horizontal, AppSpacing.page)
     }
     
@@ -206,7 +206,7 @@ private extension CreditNoteDetailView {
                      ? "This credit note was cancelled."
                      : "This credit note has been used up.")
                     .font(.footnote)
-                    .foregroundColor(.sMutedFG)
+                    .foregroundStyle(Color.sMutedFG)
             }
         }
         .padding(.horizontal, AppSpacing.page)
@@ -220,7 +220,7 @@ private extension CreditNoteDetailView {
         HStack {
             Text(title)
                 .font(.footnote)
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
             
             Spacer()
             
@@ -244,21 +244,21 @@ private extension CreditNoteDetailView {
     func statusBadge(_ status: String) -> some View {
         Text(status.capitalized)
             .font(.caption.weight(.medium))
-            .foregroundColor(.sSuccess)
+            .foregroundStyle(Color.sSuccess)
             .padding(.horizontal, 10)
             .padding(.vertical, 4)
             .background(Color.sSuccess.opacity(0.1))
-            .cornerRadius(6)
+            .clipShape(.rect(cornerRadius: 6))
     }
 
     func typeBadge(_ type: String) -> some View {
         Text(type.capitalized)
             .font(.caption.weight(.medium))
-            .foregroundColor(.sForeground)
+            .foregroundStyle(Color.sForeground)
             .padding(.horizontal, 10)
             .padding(.vertical, 4)
             .background(Color.sBorder.opacity(0.5))
-            .cornerRadius(6)
+            .clipShape(.rect(cornerRadius: 6))
     }
     
     /// One parser for every shape the API sends; the hand-rolled version here
@@ -277,7 +277,7 @@ private extension CreditNoteDetailView {
             ProgressView()
             Text("Loading credit note...")
                 .font(.footnote)
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -288,11 +288,11 @@ struct PrimaryCNButton: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.subheadline.weight(.semibold))
-            .foregroundColor(.sAccentFG)
+            .foregroundStyle(Color.sAccentFG)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
             .background(Color.sPrimary)
-            .cornerRadius(10)
+            .clipShape(.rect(cornerRadius: 10))
             .opacity(configuration.isPressed ? 0.8 : 1)
     }
 }
@@ -301,15 +301,15 @@ struct OutlineCNButton: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.subheadline.weight(.semibold))
-            .foregroundColor(.sForeground)
+            .foregroundStyle(Color.sForeground)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
             .background(Color.sCard)
-            .overlay(
+            .overlay {
                 RoundedRectangle(cornerRadius: 10)
                     .stroke(Color.sBorder, lineWidth: 0.5)
-            )
-            .cornerRadius(10)
+            }
+            .clipShape(.rect(cornerRadius: 10))
             .opacity(configuration.isPressed ? 0.7 : 1)
     }
 }

@@ -55,8 +55,7 @@ final class AgingReportViewModel: ObservableObject {
             loadedCompanyID = companyID
         } catch {
             guard request == loadID, companyID == SessionManager.shared.selectedCompanyId else { return }
-            errorMessage = "Couldn't load the aging report. Tap Retry to try again."
-            showAlert = true
+            errorMessage = "Couldn't load the aging report."
         }
     }
 }

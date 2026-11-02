@@ -22,7 +22,7 @@ struct ItemDetailsSection: View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Item details")
                 .font(.subheadline.weight(.medium))
-                .foregroundColor(.sMutedFG)
+                .foregroundStyle(Color.sMutedFG)
                 .padding(.horizontal, AppSpacing.page)
 
             VStack(spacing: 12) {
@@ -38,22 +38,22 @@ struct ItemDetailsSection: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("SKU / Barcode")
                         .font(.subheadline.weight(.medium))
-                        .foregroundColor(.sForeground)
+                        .foregroundStyle(Color.sForeground)
 
                     HStack(spacing: 8) {
                         TextField("Product code", text: $vm.sku)
                             .font(.body)
-                            .foregroundColor(.sForeground)
-                            .tint(.sAccent)
+                            .foregroundStyle(Color.sForeground)
+                            .tint(Color.sAccent)
                             .autocorrectionDisabled()
                             .padding(.horizontal, 12)
                             .padding(.vertical, 10)
                             .background(Color.sCard)
-                            .overlay(
+                            .overlay {
                                 RoundedRectangle(cornerRadius: 8)
                                     .stroke(Color.sInput, lineWidth: 0.5)
-                            )
-                            .cornerRadius(8)
+                            }
+                            .clipShape(.rect(cornerRadius: 8))
                             .focused($focusedField, equals: .sku)
 
                         Button {
@@ -61,11 +61,11 @@ struct ItemDetailsSection: View {
                         } label: {
                             Text("Generate")
                                 .font(.footnote.weight(.medium))
-                                .foregroundColor(.sAccent)
+                                .foregroundStyle(Color.sAccent)
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 10)
                                 .background(Color.sAccentMuted)
-                                .cornerRadius(8)
+                                .clipShape(.rect(cornerRadius: 8))
                         }
                     }
                 }
@@ -75,62 +75,62 @@ struct ItemDetailsSection: View {
                     HStack {
                         Text("HSN code")
                             .font(.subheadline.weight(.medium))
-                            .foregroundColor(.sForeground)
+                            .foregroundStyle(Color.sForeground)
                         Spacer()
                         Text("GST")
                             .font(.caption)
-                            .foregroundColor(.sMutedFG)
+                            .foregroundStyle(Color.sMutedFG)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 3)
                             .background(Color.sMuted)
-                            .cornerRadius(4)
+                            .clipShape(.rect(cornerRadius: 4))
                     }
 
                     TextField("HSN code", text: $vm.hsnCode, prompt: Text("e.g. 1234"))
                         .font(.body)
-                        .foregroundColor(.sForeground)
-                        .tint(.sAccent)
+                        .foregroundStyle(Color.sForeground)
+                        .tint(Color.sAccent)
                         .keyboardType(.numberPad)
                         .autocorrectionDisabled()
                         .padding(.horizontal, 12)
                         .padding(.vertical, 10)
                         .background(Color.sCard)
-                        .overlay(
+                        .overlay {
                             RoundedRectangle(cornerRadius: 8)
                                 .stroke(Color.sInput, lineWidth: 0.5)
-                        )
-                        .cornerRadius(8)
+                        }
+                        .clipShape(.rect(cornerRadius: 8))
                 }
 
                 // Barcode field
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Barcode")
                         .font(.subheadline.weight(.medium))
-                        .foregroundColor(.sForeground)
+                        .foregroundStyle(Color.sForeground)
 
                     HStack(spacing: 8) {
                         TextField("Scan or enter barcode", text: $vm.barcode)
                             .font(.body)
-                            .foregroundColor(.sForeground)
-                            .tint(.sAccent)
+                            .foregroundStyle(Color.sForeground)
+                            .tint(Color.sAccent)
                             .autocorrectionDisabled()
                             .textInputAutocapitalization(.never)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 10)
                             .background(Color.sCard)
-                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.sInput, lineWidth: 0.5))
-                            .cornerRadius(8)
+                            .overlay { RoundedRectangle(cornerRadius: 8).stroke(Color.sInput, lineWidth: 0.5) }
+                            .clipShape(.rect(cornerRadius: 8))
 
                         Button {
                             showBarcodeScanner = true
                         } label: {
                             Image(systemName: "barcode.viewfinder")
                                 .font(.title3)
-                                .foregroundColor(.sAccent)
+                                .foregroundStyle(Color.sAccent)
                                 .frame(width: 44, height: 44)
                                 .background(Color.sCard)
-                                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.sInput, lineWidth: 0.5))
-                                .cornerRadius(8)
+                                .overlay { RoundedRectangle(cornerRadius: 8).stroke(Color.sInput, lineWidth: 0.5) }
+                                .clipShape(.rect(cornerRadius: 8))
                         }
                         .accessibilityLabel("Scan barcode")
                     }
@@ -160,21 +160,21 @@ struct ItemDetailsSection: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Description")
                         .font(.subheadline.weight(.medium))
-                        .foregroundColor(.sForeground)
+                        .foregroundStyle(Color.sForeground)
 
                     TextEditor(text: $vm.description)
                         .accessibilityLabel("Item description")
                         .font(.body)
-                        .foregroundColor(.sForeground)
+                        .foregroundStyle(Color.sForeground)
                         .scrollContentBackground(.hidden)
                         .frame(height: 80)
                         .padding(8)
                         .background(Color.sCard)
-                        .overlay(
+                        .overlay {
                             RoundedRectangle(cornerRadius: 8)
                                 .stroke(Color.sInput, lineWidth: 0.5)
-                        )
-                        .cornerRadius(8)
+                        }
+                        .clipShape(.rect(cornerRadius: 8))
                 }
             }
             .padding(.horizontal, AppSpacing.page)
@@ -197,7 +197,7 @@ struct UnitPicker: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Unit")
                 .font(.subheadline.weight(.medium))
-                .foregroundColor(.sForeground)
+                .foregroundStyle(Color.sForeground)
 
             Menu {
                 ForEach(units, id: \.self) { unit in
@@ -211,22 +211,22 @@ struct UnitPicker: View {
                 HStack {
                     Text(selectedUnit ?? "Select unit")
                         .font(.subheadline)
-                        .foregroundColor(selectedUnit == nil ? .sMutedFG : .sForeground)
+                        .foregroundStyle(selectedUnit == nil ? Color.sMutedFG : Color.sForeground)
 
                     Spacer()
 
                     Image(systemName: "chevron.down")
                         .font(.caption.weight(.medium))
-                        .foregroundColor(.sMutedFG)
+                        .foregroundStyle(Color.sMutedFG)
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
                 .background(Color.sCard)
-                .overlay(
+                .overlay {
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(Color.sInput, lineWidth: 0.5)
-                )
-                .cornerRadius(8)
+                }
+                .clipShape(.rect(cornerRadius: 8))
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -242,7 +242,7 @@ struct CategoryPicker: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Category")
                 .font(.subheadline.weight(.medium))
-                .foregroundColor(.sForeground)
+                .foregroundStyle(Color.sForeground)
 
             Menu {
                 ForEach(vm.categories) { cat in
@@ -271,23 +271,23 @@ struct CategoryPicker: View {
                         : "Select category"
                     )
                     .font(.subheadline)
-                    .foregroundColor(vm.selectedCategoryId == nil ? .sMutedFG : .sForeground)
+                    .foregroundStyle(vm.selectedCategoryId == nil ? Color.sMutedFG : Color.sForeground)
                     .lineLimit(1)
 
                     Spacer()
 
                     Image(systemName: "chevron.down")
                         .font(.caption.weight(.medium))
-                        .foregroundColor(.sMutedFG)
+                        .foregroundStyle(Color.sMutedFG)
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
                 .background(Color.sCard)
-                .overlay(
+                .overlay {
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(Color.sInput, lineWidth: 0.5)
-                )
-                .cornerRadius(8)
+                }
+                .clipShape(.rect(cornerRadius: 8))
             }
             .sheet(isPresented: $showAddCategory, onDismiss: {
                 Task {

@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "figma-swiftui": {
+      "source": "figma/mcp-server-guide",
+      "sourceType": "github",
+      "skillPath": "skills/figma-swiftui/SKILL.md",
+      "computedHash": "5a153bc910b9f39a9a7a625d1e4a92087f612c971a70315ceb087ca7d646510f"
+    },
+    "swiftui-pro": {
+      "source": "twostraws/swiftui-agent-skill",
+      "sourceType": "github",
+      "skillPath": "swiftui-pro/SKILL.md",
+      "computedHash": "88fefb2239299c8815366b89737ba15e91358ab3e9a6fb69af2436ed4a704299"
+    }
+  }
+}
