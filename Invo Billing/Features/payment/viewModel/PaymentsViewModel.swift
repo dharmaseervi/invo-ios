@@ -37,6 +37,20 @@ final class PaymentsViewModel: ObservableObject {
               clientID: clientID, start: startDate.map(AppDate.wireString), end: endDate.map(AppDate.wireString))
     }
     var hasFilters: Bool { !search.isEmpty || !method.isEmpty || clientID != nil || startDate != nil }
+
+    var groupedPayments: [(date: String, rows: [PaymentHistoryRow])] {
+        var seenDates = [String]()
+        var grouped = [String: [PaymentHistoryRow]]()
+        for payment in payments {
+            let dateKey = String(payment.payment_date.prefix(10))
+            if grouped[dateKey] == nil {
+                seenDates.append(dateKey)
+                grouped[dateKey] = []
+            }
+            grouped[dateKey]!.append(payment)
+        }
+        return seenDates.map { (date: $0, rows: grouped[$0]!) }
+    }
     private var loadedQuery: Query?
 
     @Published var errorMessage: String?

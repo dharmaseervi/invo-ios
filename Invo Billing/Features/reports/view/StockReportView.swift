@@ -45,6 +45,12 @@ struct StockReportView: View {
                 .listStyle(.plain)
                 .contentMargins(.bottom, 16, for: .scrollContent)
                 .refreshable { await vm.load() }
+            } else {
+                ContentUnavailableView {
+                    Label("Couldn't load stock", systemImage: "exclamationmark.triangle")
+                } description: {
+                    Text("Pull down to try again")
+                }
             }
         }
         .searchable(text: $vm.searchText, prompt: "Search name, SKU or category")
@@ -134,7 +140,7 @@ struct StockReportView: View {
                         .font(.footnote.weight(.medium))
                         .foregroundStyle(margin >= 0 ? profitColor : Color.sDestructive)
                 }
-                if totals.costValue < 0 || totals.retailValue < 0 {
+                if totals.hasNegativeStock {
                     Text("Some items have negative stock counts")
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -381,7 +387,7 @@ private struct CategoryBreakdownRow: View {
                     Capsule().fill(Color(UIColor.secondarySystemFill))
                     Capsule()
                         .fill(Color.sAccent)
-                        .frame(width: max(2, geo.size.width * min(1, category.share_of_value / 100)))
+                        .frame(width: geo.size.width * min(1, max(0, category.share_of_value) / 100))
                 }
             }
             .frame(height: 4)

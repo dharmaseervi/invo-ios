@@ -37,6 +37,12 @@ struct SupplierAgingReportView: View {
                     systemImage: "doc.text.magnifyingglass",
                     description: Text("All bills are paid or there are no bills yet.")
                 )
+            } else {
+                ContentUnavailableView {
+                    Label("Couldn't load supplier aging", systemImage: "exclamationmark.triangle")
+                } description: {
+                    Text("Pull down to try again")
+                }
             }
         }
         .safeAreaInset(edge: .top) {

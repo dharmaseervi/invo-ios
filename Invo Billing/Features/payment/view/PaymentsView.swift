@@ -36,7 +36,7 @@ struct PaymentsView: View {
                         Button("Retry") { Task { await vm.load() } }
                     }
                 }
-                ForEach(groupedPayments, id: \.date) { group in
+                ForEach(vm.groupedPayments, id: \.date) { group in
                     Section(AppDate.text(fromWire: group.date)) {
                         ForEach(group.rows) { payment in
                             NavigationLink {
@@ -115,22 +115,8 @@ struct PaymentsView: View {
         case "bank_transfer": return "Bank transfer"
         case "cheque":        return "Cheque"
         case "card":          return "Card"
-        default:              return raw
+        default:              return raw.replacingOccurrences(of: "_", with: " ").capitalized
         }
-    }
-
-    private var groupedPayments: [(date: String, rows: [PaymentHistoryRow])] {
-        var seenDates = [String]()
-        var grouped = [String: [PaymentHistoryRow]]()
-        for payment in vm.payments {
-            let dateKey = String(payment.payment_date.prefix(10))
-            if grouped[dateKey] == nil {
-                seenDates.append(dateKey)
-                grouped[dateKey] = []
-            }
-            grouped[dateKey]!.append(payment)
-        }
-        return seenDates.map { (date: $0, rows: grouped[$0]!) }
     }
 
     private func paymentRow(_ payment: PaymentHistoryRow) -> some View {
@@ -176,7 +162,7 @@ struct PaymentsView: View {
                         .padding(.horizontal, AppSpacing.inline)
                         .padding(.vertical, AppSpacing.compact)
                         .background(Color.sDestructive.opacity(0.1), in: Capsule())
-                } else {
+                } else if payment.onAccount <= 0 {
                     Text("Received")
                         .font(.caption)
                         .foregroundStyle(.secondary)

@@ -69,13 +69,13 @@ struct HomeView: View {
                             }
                             revenueCard
                             statsRow
+                            quickActionsCard
+                            recentActivityCard
                         } else if viewModel.isLoading {
                             skeletonView.accessibilityHidden(true)
                         } else if let error = viewModel.errorMessage {
                             errorView(error)
                         }
-                        quickActionsCard
-                        if viewModel.dashboard != nil { recentActivityCard }
                     }
                 }
                 .padding(.top, 20)

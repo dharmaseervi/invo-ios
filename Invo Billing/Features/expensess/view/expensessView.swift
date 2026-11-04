@@ -197,12 +197,16 @@ struct ExpenseView: View {
         }
     }
 
-    private func scopeDate(_ date: Date) -> String {
+    private static let scopeDateFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "d MMM yyyy"
         f.locale = Locale(identifier: "en_IN")
         f.calendar = Calendar(identifier: .gregorian)
-        return f.string(from: date)
+        return f
+    }()
+
+    private func scopeDate(_ date: Date) -> String {
+        Self.scopeDateFormatter.string(from: date)
     }
 
     private var scopeLabel: String {

@@ -27,7 +27,7 @@ enum StockSortOption: String, CaseIterable, Identifiable {
         case .nameAToZ: return "Name (A → Z)"
         case .quantityLowToHigh: return "Quantity (low → high)"
         case .quantityHighToLow: return "Quantity (high → low)"
-        case .profitHighToLow: return "Potential profit (high → low)"
+        case .profitHighToLow: return "Est. gross margin (high → low)"
         }
     }
 }
@@ -41,6 +41,7 @@ struct StockTotals {
     var retailValue: Double = 0
     var lowCount = 0
     var outCount = 0
+    var hasNegativeStock = false
 
     var potentialProfit: Double { retailValue - costValue }
 }
@@ -121,7 +122,8 @@ final class StockReportViewModel: ObservableObject {
                 costValue: report.total_cost_value,
                 retailValue: report.total_retail_value,
                 lowCount: report.low_stock_count,
-                outCount: report.out_of_stock_count
+                outCount: report.out_of_stock_count,
+                hasNegativeStock: report.allItems.contains { $0.quantity < 0 }
             )
         }
 
@@ -131,6 +133,7 @@ final class StockReportViewModel: ObservableObject {
             totals.units += item.quantity
             totals.costValue += item.stock_value
             totals.retailValue += item.retailValue
+            if item.quantity < 0 { totals.hasNegativeStock = true }
             switch item.stockStatus {
             case .low: totals.lowCount += 1
             case .out: totals.outCount += 1

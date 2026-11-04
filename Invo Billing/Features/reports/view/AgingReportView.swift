@@ -31,6 +31,12 @@ struct AgingReportView: View {
                 .listStyle(.plain)
                 .contentMargins(.bottom, 16, for: .scrollContent)
                 .refreshable { await vm.load() }
+            } else {
+                ContentUnavailableView {
+                    Label("Couldn't load aging report", systemImage: "exclamationmark.triangle")
+                } description: {
+                    Text("Pull down to try again")
+                }
             }
         }
         .safeAreaInset(edge: .top) {
